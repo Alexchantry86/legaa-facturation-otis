@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.0 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.1 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -265,6 +265,30 @@ details > summary.ph{list-style:none;cursor:pointer}
 @media (max-width:600px){.toolbar .sp{margin-left:0}.stb{padding:8px 10px}}
 @media (max-width:860px){.mtree{display:flex;overflow-x:auto}.mtree .ph{display:none}.mtree .mitem{flex:0 0 auto;min-width:130px;border-bottom:0;border-right:1px solid var(--line-2)}.mtree .pb{flex:0 0 auto}}
 
+
+/* ---- v3.1 : Paramètres sur une colonne, sélecteur de période ---- */
+.onecol{max-width:900px;margin-inline:auto}
+.col-f{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.col-f .fld{max-width:620px}
+.docs1{grid-template-columns:minmax(0,1fr)}
+.selbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:3px}
+.bigsel{border:1px solid var(--ink);background:var(--surface);color:var(--ink);border-radius:2px;padding:6px 10px;font-family:var(--f-label);font-weight:600;font-size:14.5px;min-width:0;max-width:100%}
+.persel{display:inline-flex;align-items:center;gap:4px}
+.persel .btn{font-size:16px;line-height:1;padding:5px 9px}
+
+/* ---- v3.2 : principes, complétude, colonnes factures ---- */
+.princ{background:var(--sunk);border:1px solid var(--line);border-radius:3px;padding:12px 14px;display:grid;gap:8px}
+.princ dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:6px 20px}
+.princ dl div{display:grid;gap:1px}
+.princ dt{font-size:11.5px;color:var(--muted)}
+.princ dd{margin:0;font-size:13.5px}
+.kpi .bar{display:block;height:4px;background:var(--line-2);border-radius:2px;overflow:hidden;margin-top:4px}
+.kpi .bar i{display:block;height:100%;background:var(--ink)}
+table.invt2 td{vertical-align:top}
+table.invt2 td.n,table.invt2 td.c{vertical-align:middle}
+table.invt2 td.apcol{font-size:12px;white-space:nowrap}
+table.invt2 td:nth-child(9){vertical-align:middle}
+.princ dl div{align-content:start}
 </style>
 </head>
 <body>
@@ -1256,17 +1280,17 @@ function vParams(){
   if (!ST.parAg && ags.length) ST.parAg = ags[0].code;
   var h = '<section class="view">';
   if (!isAdmin()) h += '<p class="note">Consultation : seuls les administrateurs modifient les paramètres.</p>';
-  h += '<div class="lay"><aside class="panel mtree"><div class="ph"><h3>Agences</h3></div>'+ags.map(function(a){ return '<button class="mitem" data-par="'+esc(a.code)+'" aria-current="'+(ST.parAg===a.code && !ST.newAg)+'"><span>'+esc(a.label||'AG '+a.code)+'</span><span class="muted num">'+esc(a.code)+(a.active===false?' · archivée':'')+'</span></button>'; }).join('')+
-    (isAdmin() ? '<div class="pb"><button class="btn pri" data-newag>+ Créer une agence</button></div>' : '')+'</aside><div class="mpanel">';
+  h = '<section class="view onecol">' + (isAdmin() ? '' : '<p class="note">Consultation : seuls les administrateurs modifient les paramètres.</p>');
+  h += '<div class="selbar"><label class="lbl" for="parsel">Agence</label><select id="parsel" class="bigsel"'+(ST.newAg?' disabled':'')+'>'+ags.map(function(a){ return '<option value="'+esc(a.code)+'"'+(ST.parAg===a.code?' selected':'')+'>'+esc(a.label||'AG '+a.code)+' · '+esc(a.code)+(a.active===false?' · archivée':'')+'</option>'; }).join('')+'</select>'+
+    (isAdmin() && !ST.newAg ? '<button class="btn pri" data-newag>+ Créer une agence</button>' : '')+'</div>';
   if (ST.newAg) h += newAgForm();
   else if (ST.parAg && ST.cfg.agencies[ST.parAg]) h += agEditor(ST.cfg.agencies[ST.parAg]);
   else h += '<div class="panel empty">Aucune agence. Créer la première agence.</div>';
-  h += '</div></div>';
   h += commonParams();
   return h + '</section>';
 }
 function newAgForm(){
-  return '<div class="panel"><div class="ph"><h2>Nouvelle agence</h2></div><form class="pb" id="agform" autocomplete="off"><div class="grid-f">'+
+  return '<div class="panel"><div class="ph"><h2>Nouvelle agence</h2></div><form class="pb" id="agform" autocomplete="off"><div class="col-f">'+
     '<div class="fld"><label class="lbl" for="na_code">Code agence</label><input id="na_code" placeholder="ex. 58, CRA495"><span class="hint">Lettres et chiffres, sans espace. Non modifiable ensuite.</span></div>'+
     '<div class="fld"><label class="lbl" for="na_label">Libellé</label><input id="na_label" placeholder="ex. AG 58 Lille"></div>'+
     '<div class="fld"><label class="lbl" for="na_match">Client dans Odoo (début de la colonne « Client »)</label><input id="na_match" placeholder="ex. OTIS CN AG 58"><span class="hint">Texte qui précède la virgule et le nom du contremaître.</span></div>'+
@@ -1275,13 +1299,13 @@ function newAgForm(){
 }
 function agEditor(a){
   var p = 'agencies.'+a.code+'.', g = ST.cfg.grids[a.grid] || ST.cfg.grids.STD, gp = 'grids.'+a.grid+'.';
-  var h = '<div class="panel"><div class="ph"><h2>'+esc(a.label||'AG '+a.code)+'</h2><span class="muted num">code '+esc(a.code)+'</span></div><div class="pb grid-f">'+
+  var h = '<div class="panel"><div class="ph"><h2>'+esc(a.label||'AG '+a.code)+'</h2><span class="muted num">code '+esc(a.code)+'</span></div><div class="pb col-f">'+
     field('Libellé', cfIn(p+'label', a.label))+
     field('Client dans Odoo', cfIn(p+'match', a.match), 'Début de la colonne « Client » des exports Odoo')+
     field('Adresse de facturation OTIS', '<textarea data-cf="'+p+'address" rows="3"'+ADM()+'>'+esc(a.address||'')+'</textarea>', 'Reprise sur les pro forma PDF')+
     field('Statut', cfSel(p+'active', a.active === false ? 'false' : 'true', [['true','Active'],['false','Archivée (masquée de la facturation)']]))+
     '</div></div>';
-  h += '<div class="panel"><div class="ph"><h3>Documents de référence</h3><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs">';
+  h += '<div class="panel"><div class="ph"><h3>Documents de référence</h3><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs docs1">';
   DOCK.forEach(function(k){
     var d = (a.docs||{})[k[0]];
     h += '<div class="docslot"><span class="lbl">'+k[1]+'</span>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Télécharger</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
@@ -1290,7 +1314,7 @@ function agEditor(a){
   h += '</div>';
   if ((a.cmList||[]).length) h += '<details class="pb"><summary class="lbl">Contremaîtres de l\'agence ('+a.cmList.length+')</summary><div class="tw"><table><thead><tr><th>Code</th><th>Nom</th></tr></thead><tbody>'+a.cmList.map(function(c){ return '<tr><td class="num">'+esc(c.code)+'</td><td>'+esc(c.nom)+'</td></tr>'; }).join('')+'</tbody></table></div></details>';
   h += '</div>';
-  h += '<div class="panel"><div class="ph"><h3>Principes de facturation appliqués</h3></div><div class="pb grid-f">'+
+  h += '<div class="panel"><div class="ph"><h3>Principes de facturation appliqués</h3></div><div class="pb col-f">'+
     field('Une facture par', cfSel(p+'split', a.split, [['affaire','Affaire'],['cm','Contremaître'],['appareil','Appareil (n° de commande)'],['ag','Agence (facture unique)']]))+
     field('Process OTIS', cfSel(p+'cas', a.cas, [['2','Cas 2 · sans commande client'],['1','Cas 1 · devis puis commande']]))+
     field('Annexe détaillée sur la facture', cfSel(p+'annexe', a.annexe ? 'true':'false', [['false','Non'],['true','Oui : détail colis en annexe du PDF']]))+
@@ -1307,15 +1331,15 @@ function gRow(path, label, v){ return '<tr><td>'+label+'</td><td class="n">'+cfI
 function commonParams(){
   var c = ST.cfg, co = c.company || {};
   var miss = ['address','siret','tva'].filter(function(k){ return !co[k]; });
-  return '<div class="two"><div class="panel"><div class="ph"><h3>Règles de calcul communes</h3></div><div class="pb grid-f">'+
+  return '<div class="panel"><div class="ph"><h3>Règles de calcul communes</h3></div><div class="pb col-f">'+
     field('Unité payante manutention', cfSel('rules.upMode', c.rules.upMode, [['max','max(m³ ; tonnes) : lecture « M3/T »'],['vol','m³ seul (pratique Odoo)']]))+
     field('Minimum 30 m² par appareil', cfSel('rules.min30', c.rules.min30 ? 'true':'false', [['true','Appliqué'],['false','Non appliqué']]))+
     '</div><p class="pb note muted" style="margin:0">Jours de stock comptés bornes incluses · tranche : 22 j et plus = mois, 15 à 21 j = quinzaine + semaine, 8 à 14 j = quinzaine, 1 à 7 j = semaine · arrondi au centime par colis.</p></div>'+
-    '<div class="panel"><div class="ph"><h3>Émetteur des pro forma</h3>'+(miss.length?'<span class="pill p-verifier">À compléter</span>':'')+'</div><div class="pb grid-f">'+
+    '<div class="panel"><div class="ph"><h3>Émetteur des pro forma</h3>'+(miss.length?'<span class="pill p-verifier">À compléter</span>':'')+'</div><div class="pb col-f">'+
     field('Raison sociale', cfIn('company.name', co.name))+field('Adresse', '<textarea data-cf="company.address" rows="3"'+ADM()+'>'+esc(co.address||'')+'</textarea>')+
     field('SIRET', cfIn('company.siret', co.siret))+field('TVA intracommunautaire', cfIn('company.tva', co.tva))+
     field('IBAN', cfIn('company.iban', co.iban))+field('Délai de paiement (jours)', cfIn('company.paymentDays', co.paymentDays, 'number'))+
-    field('Mentions de bas de page', '<textarea data-cf="company.mentions" rows="2"'+ADM()+'>'+esc(co.mentions||'')+'</textarea>')+'</div></div></div>';
+    field('Mentions de bas de page', '<textarea data-cf="company.mentions" rows="2"'+ADM()+'>'+esc(co.mentions||'')+'</textarea>')+'</div></div>';
 }
 function setPath(obj, path, val){ var k = path.split('.'), o = obj; for (var i=0;i<k.length-1;i++){ if (o[k[i]] === undefined) o[k[i]] = {}; o = o[k[i]]; } o[k[k.length-1]] = val; }
 function getPath(obj, path){ return path.split('.').reduce(function(o, k){ return o === undefined || o === null ? undefined : o[k]; }, obj); }
@@ -1352,12 +1376,7 @@ function vFactures(){
   if (!ags.length) return '<section class="view"><div class="panel empty">Aucune agence active. Créer une agence dans Paramètres.</div></section>';
   if (!ST.ag || !ags.some(function(a){ return a.code === ST.ag; })){ selectMonth(ags[0].code, ST.month || defaultMonth()); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
   var h = '<section class="view"><nav class="subnav" role="tablist">'+ags.map(function(a){ return '<button class="subtab" role="tab" data-agsel="'+esc(a.code)+'" aria-selected="'+(a.code===ST.ag)+'"><span class="st-l">'+esc(a.label||'AG '+a.code)+'</span></button>'; }).join('')+'</nav>';
-  var idx = {}; ST.monthsIndex.forEach(function(m){ idx[m.id] = m; });
-  h += '<div class="lay"><aside class="panel mtree"><div class="ph"><h3>Mois de facturation</h3></div>'+last18().map(function(m){
-      var d = idx[ST.ag+'_'+m], st = d ? (d.status||'ouvert') : 'vide', ht = (ST.month===m && ST.R) ? ST.R.totals.HT : (d && d.summary ? d.summary.HT : null);
-      return '<button class="mitem" data-mon="'+m+'" aria-current="'+(ST.month===m)+'"><span>'+monthLabel(m)+'</span><span class="mst"><i class="dot d-'+st+'"></i>'+STATUS[st]+(ht!==null?' · <span class="num">'+n2(ht)+'</span>':'')+'</span></button>';
-    }).join('')+'</aside><div class="mpanel">';
-  h += monthHead();
+  h += '<div class="mpanel">' + monthHead();
   if (ST.busy) h += '<div class="panel empty">'+esc(ST.busy)+'</div>';
   else {
     var blk = ST.R ? ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0) : 0;
@@ -1365,11 +1384,14 @@ function vFactures(){
     h += '<nav class="subtabs">'+[['imp','A · Import'],['ano','B · Anomalies'+(blk?' <span class="cnt">'+blk+'</span>':'')],['fac','C · Factures'],['ctl','D · Contrôle factures'+(pb?' <span class="cnt w">'+pb+'</span>':'')]].map(function(t){ return '<button class="stb" data-sub="'+t[0]+'" aria-selected="'+(ST.sub===t[0])+'">'+t[1]+'</button>'; }).join('')+'</nav>';
     h += ST.sub === 'imp' ? vImport() : ST.sub === 'ano' ? vAnomalies() : ST.sub === 'fac' ? vInvoices() : vControl();
   }
-  return h + '</div></div></section>';
+  return h + '</div></section>';
 }
 function monthHead(){
   var d = ST.doc || { status:'vide' }, st = d.status || 'vide';
-  var h = '<div class="strip"><strong>'+esc(agLabel(ST.ag))+' · '+monthLabel(ST.month)+'</strong><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
+  var idx = {}; ST.monthsIndex.forEach(function(m){ idx[m.id] = m; });
+  var L = last18(), i = L.indexOf(ST.month); if (i < 0){ L.push(ST.month); L.sort().reverse(); i = L.indexOf(ST.month); }
+  var opts = L.map(function(m){ var dd = idx[ST.ag+'_'+m], s2 = dd ? (dd.status||'ouvert') : 'vide', ht = (ST.month===m && ST.R) ? ST.R.totals.HT : (dd && dd.summary ? dd.summary.HT : null); return '<option value="'+m+'"'+(m===ST.month?' selected':'')+'>'+monthLabel(m)+'</option>'; }).join('');
+  var h = '<div class="strip"><span class="lbl">Période</span><span class="persel"><button class="btn sm" data-mon="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="persel" class="bigsel" aria-label="Période de facturation">'+opts+'</select><button class="btn sm" data-mon="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span><strong>'+esc(agLabel(ST.ag))+'</strong><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
   if (st === 'clos') h += '<span class="muted">clôturé le '+esc(d.closedAt ? new Date(d.closedAt).toLocaleDateString('fr-FR') : '')+' par '+esc(d.closedBy||'')+' · montants et grille figés</span>';
   else h += '<span class="muted" id="save">'+(d.updatedAt ? 'Enregistré le '+dt(d.updatedAt)+' par '+esc(d.updatedBy||'') : '')+'</span>';
   if (st === 'clos' && isAdmin()) h += '<span class="sp"><button class="btn" data-a="reopen">Rouvrir le mois</button></span>';
@@ -1622,16 +1644,32 @@ function vInvoices(){
     var stk = E.r2(I.totals.STK + I.totals.MIN); t.E = E.r2(t.E + I.totals.E); t.S = E.r2(t.S + I.totals.S); t.STK = E.r2(t.STK + stk); t.HT = E.r2(t.HT + I.totals.HT);
     var aps = Object.keys(I.appareils).sort();
     function amt(f, v){ var fk = famKeys(I, FAM3.filter(function(x){ return x.k===f; })[0]); return fk.keys.length ? '<button class="amt" data-amt="'+esc(I.key)+'|'+f+'">'+n2(v)+(fk.excluded.length ? '<span class="xn" title="lignes exclues">−'+fk.excluded.length+'</span>' : '')+'</button>' : '<span class="muted">—</span>'; }
-    return '<tr class="st-'+st+'"><td><span class="num inum">'+esc(I.num)+'</span><br><strong class="num">'+esc(I.sub)+'</strong> <span class="muted">'+esc(Object.keys(I.cms).join(', '))+'</span><br><span class="muted num aps">'+aps.length+' appareil'+(aps.length>1?'s':'')+' : '+esc(aps.join(' · '))+'</span></td>'+
+    var affs = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r && r.affaire) affs[r.affaire] = 1; }); });
+    return '<tr class="st-'+st+'"><td class="num inum">'+esc(I.num)+'</td><td>'+Object.keys(I.cms).map(esc).join('<br>')+(Object.keys(I.cmCodes).length?'<br><span class="muted num">'+esc(Object.keys(I.cmCodes).join(', '))+'</span>':'')+'</td><td class="num">'+Object.keys(affs).sort().map(esc).join('<br>')+'</td><td class="num apcol">'+aps.map(esc).join('<br>')+'</td>'+
       '<td class="n">'+amt('E', I.totals.E)+'</td><td class="n">'+amt('S', I.totals.S)+'</td><td class="n">'+amt('STK', stk)+'</td><td class="n"><strong>'+n2(I.totals.HT)+'</strong></td>'+
       '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
       '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
   }).join('');
-  h += '<div class="kpis">'+kpi('Total HT', eur(t.HT), R.invoices.length+' factures')+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées', cnt.editee, '')+'</div>';
-  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr></thead><tbody>'+body+
-    '</tbody><tfoot><tr class="tot"><td>Total '+esc(agLabel(ST.ag))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
+  var nI = R.invoices.length, pct = nI ? Math.round(cnt.editee / nI * 100) : 0;
+  h += principles();
+  h += '<div class="kpis">'+kpi('Total HT', eur(t.HT), nI+' factures')+'<div class="kpi"><span class="lbl">Complétude</span><span class="v">'+pct+' %</span><span class="s">'+cnt.editee+' / '+nI+' factures éditées</span><span class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></span></div>'+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées', cnt.editee, '')+'</div>';
+  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th>Contremaître(s)</th><th>Affaire(s)</th><th>Appareil(s)</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr></thead><tbody>'+body+
+    '</tbody><tfoot><tr class="tot"><td colspan="4">Total '+esc(agLabel(ST.ag))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
     '<p class="pb note muted" style="margin:0">Cliquer un montant pour voir le détail colis par colis et exclure des lignes. Le PDF passe la facture en « Éditée ».</p></div>';
   return h;
+}
+function principles(){
+  var A = ST.cfg.agencies[ST.ag] || {}, c = ST.cfgM || ST.cfg, g = c.grids[A.grid] || c.grids.STD || {};
+  var split = ({affaire:'une facture par affaire',cm:'une facture par contremaître',appareil:'une facture par appareil (n° de commande)',ag:'une facture unique pour l\'agence'})[A.split||'cm'];
+  var items = [
+    ['Découpage', split],
+    ['Process OTIS', A.cas === 1 ? 'cas 1 : devis, facturation après commande' : 'cas 2 : facturation sans commande client'],
+    ['Annexe', A.annexe ? 'détail colis joint à la facture' : 'sans annexe, n° d\'appareils sur la facture'],
+    ['Entrées / sorties', nx(g.rate)+' € par UP '+(c.rules.upMode==='max'?'(max m³ ; t)':'(m³)')+', minimum '+n2(g.minChariot)+' € (chariot) / '+n2(g.minManuel)+' € (manuel)'],
+    ['Stockage', g.storeMode==='volume' ? 'volume × coefficient, '+nx((g.prices['Intérieur']||{}).mois)+' €/m² au mois' : 'surface × '+nx(g.coefSurface)+', '+nx((g.prices['Intérieur']||{}).mois)+' €/m² au mois'],
+    ['Minimum', c.rules.min30 && g.min30 ? g.min30+' m² par appareil et par mois' : 'aucun']
+  ];
+  return '<div class="princ"><span class="lbl">Principes de facturation · '+esc(A.label||'')+'</span><dl>'+items.map(function(i){ return '<div><dt>'+i[0]+'</dt><dd>'+esc(i[1])+'</dd></div>'; }).join('')+'</dl></div>';
 }
 /* fenêtre de détail */
 function renderModal(){
@@ -2161,7 +2199,7 @@ document.addEventListener('click', function(e){
   if (d.ltab){ ST.ltab = d.ltab; ST.modal = null; render(); window.scrollTo(0,0); if (d.ltab==='adm') loadAdmin(); return; }
   if (d.ttab){ ST.ttab = d.ttab; render(); return; }
   if (d.agsel){ selectMonth(d.agsel, ST.month || defaultMonth()); return; }
-  if (d.mon){ selectMonth(ST.ag, d.mon); return; }
+  if (d.mon !== undefined){ if (d.mon) selectMonth(ST.ag, d.mon); return; }
   if (d.sub){ ST.sub = d.sub; ST.modal = null; render(); return; }
   if (d.par){ ST.parAg = d.par; ST.newAg = false; render(); return; }
   if (d.newag !== undefined){ ST.newAg = true; render(); return; }
@@ -2220,6 +2258,8 @@ document.addEventListener('change', function(e){
   }
   if (d.docup){ if (t.files[0]) agDocUpload(d.docup, t.files[0]); t.value = ''; return; }
   if (d.slotin){ if (t.files[0]) importFile(t.files[0], d.slotin); t.value = ''; return; }
+  if (t.id === 'persel'){ selectMonth(ST.ag, t.value); return; }
+  if (t.id === 'parsel'){ ST.parAg = t.value; render(); return; }
   if (t.id === 'trf_m' || t.id === 'trf_a'){ ST.trF = { month:$('trf_m').value, ag:$('trf_a').value }; render(); return; }
   if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
