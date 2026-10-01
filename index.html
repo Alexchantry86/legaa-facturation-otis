@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.6 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.7 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -321,6 +321,29 @@ tr.frow th{padding-top:4px;padding-bottom:6px;font-weight:400;text-transform:non
 select.fsel{width:100%;max-width:190px;font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink)}
 select.fsel.on{border-color:var(--ink);font-weight:600}
 .toolbar .sp{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+/* ---- v3.7 : menu agences (sandwich), filtres multi-valeurs ---- */
+.agwrap{position:relative;display:inline-flex}
+.agbtn{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:3px;padding:6px 10px;font:inherit;font-size:14px;cursor:pointer}
+.agbtn strong{font-weight:600;white-space:nowrap}
+.agbtn .caret{font-size:11px;opacity:.7}
+.agbtn:hover{background:#2b2f33}
+.agpop{position:absolute;top:calc(100% + 4px);left:0;z-index:30;min-width:260px;background:var(--bg);border:1px solid var(--ink);border-radius:3px;box-shadow:0 6px 18px rgba(0,0,0,.14);padding:6px;display:grid;gap:2px}
+.agpop .lbl{padding:4px 8px}
+.agitem{text-align:left;background:none;border:0;border-radius:2px;padding:8px 10px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.agitem:hover{background:var(--sunk)}
+.agitem.cur{background:var(--ink);color:#fff;font-weight:600}
+.mfilt{position:relative}
+.fbtn{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;max-width:200px;font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink);cursor:pointer;text-align:left}
+.fbtn span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fbtn.on{border-color:var(--ink);font-weight:600}
+.fbtn .caret{font-size:10px;opacity:.6}
+.fpop{z-index:40;background:var(--bg);border:1px solid var(--ink);border-radius:3px;box-shadow:0 6px 18px rgba(0,0,0,.14);padding:8px;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:6px;text-transform:none;letter-spacing:0;font-weight:400}
+.fpop .fq{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:3px;width:100%;box-sizing:border-box}
+.fpop-h{display:flex;justify-content:space-between}
+.fpop-l{overflow:auto;max-height:280px;display:grid;gap:1px}
+.fpop-l label{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 4px;border-radius:2px;cursor:pointer;color:var(--ink)}
+.fpop-l label[hidden]{display:none}
+.fpop-l label:hover{background:var(--sunk)}
 </style>
 </head>
 <body>
@@ -1297,6 +1320,7 @@ function render(){
   else h = vFactures();
   m.innerHTML = h;
   renderModal();
+  placePop();
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); }
   if (ST.module === 'log' && ST.ltab === 'syn') bindChartTips();
   if (ST.module === 'trp' && ST.ttab === 'new') calcTransport();
@@ -1417,8 +1441,7 @@ function vFactures(){
   var ags = agencies();
   if (!ags.length) return '<section class="view"><div class="panel empty">Aucune agence active. Créer une agence dans Paramètres.</div></section>';
   if (!ST.ag || !ags.some(function(a){ return a.code === ST.ag; })){ selectMonth(ags[0].code, ST.month || defaultMonth()); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
-  var h = '<section class="view"><nav class="subnav" role="tablist">'+ags.map(function(a){ return '<button class="subtab" role="tab" data-agsel="'+esc(a.code)+'" aria-selected="'+(a.code===ST.ag)+'"><span class="st-l">'+esc(a.label||'AG '+a.code)+'</span></button>'; }).join('')+'</nav>';
-  h += '<div class="mpanel">' + monthHead();
+  var h = '<section class="view"><div class="mpanel">' + monthHead(ags);
   if (ST.busy) h += '<div class="panel empty">'+esc(ST.busy)+'</div>';
   else {
     var blk = ST.R ? ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0) : 0;
@@ -1428,12 +1451,18 @@ function vFactures(){
   }
   return h + '</div></section>';
 }
-function monthHead(){
+var BURGER = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 5h14v1.8H3zM3 9.1h14v1.8H3zM3 13.2h14V15H3z"/></svg>';
+function agMenu(ags){
+  var h = '<span class="agwrap"><button class="agbtn" data-a="agmenu" aria-haspopup="true" aria-expanded="'+(!!ST.agMenu)+'" title="Choisir l\'agence">'+BURGER+'<strong>'+esc(agLabel(ST.ag))+'</strong><span class="caret">▾</span></button>';
+  if (ST.agMenu) h += '<div class="agpop" role="menu"><span class="lbl">Agences ('+ags.length+')</span>'+ags.map(function(a){ return '<button role="menuitem" class="agitem'+(a.code===ST.ag?' cur':'')+'" data-agsel="'+esc(a.code)+'">'+esc(a.label||'AG '+a.code)+'</button>'; }).join('')+'</div>';
+  return h + '</span>';
+}
+function monthHead(ags){
   var d = ST.doc || { status:'vide' }, st = d.status || 'vide';
   var idx = {}; ST.monthsIndex.forEach(function(m){ idx[m.id] = m; });
   var L = last18(), i = L.indexOf(ST.month); if (i < 0){ L.push(ST.month); L.sort().reverse(); i = L.indexOf(ST.month); }
   var opts = L.map(function(m){ var dd = idx[ST.ag+'_'+m], s2 = dd ? (dd.status||'ouvert') : 'vide', ht = (ST.month===m && ST.R) ? ST.R.totals.HT : (dd && dd.summary ? dd.summary.HT : null); return '<option value="'+m+'"'+(m===ST.month?' selected':'')+'>'+monthLabel(m)+'</option>'; }).join('');
-  var h = '<div class="strip"><span class="lbl">Période</span><span class="persel"><button class="btn sm" data-mon="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="persel" class="bigsel" aria-label="Période de facturation">'+opts+'</select><button class="btn sm" data-mon="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span><strong>'+esc(agLabel(ST.ag))+'</strong><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
+  var h = '<div class="strip">'+agMenu(ags || agencies())+'<span class="lbl">Période</span><span class="persel"><button class="btn sm" data-mon="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="persel" class="bigsel" aria-label="Période de facturation">'+opts+'</select><button class="btn sm" data-mon="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
   if (st === 'clos') h += '<span class="muted">clôturé le '+esc(d.closedAt ? new Date(d.closedAt).toLocaleDateString('fr-FR') : '')+' par '+esc(d.closedBy||'')+' · montants et grille figés</span>';
   else h += '<span class="muted" id="save">'+(d.updatedAt ? 'Enregistré le '+dt(d.updatedAt)+' par '+esc(d.updatedBy||'') : '')+'</span>';
   if (st === 'clos' && isAdmin()) h += '<span class="sp"><button class="btn" data-a="reopen">Rouvrir le mois</button></span>';
@@ -1444,7 +1473,7 @@ function openCount(a){ if (a.code !== 'NON_RATTACHE' && a.code !== 'AFFAIRE_INCO
 
 /* chargement d'un mois d'une agence */
 function selectMonth(ag, m){
-  if (ST.ag !== ag || ST.month !== m) ST.invF = {};
+  if (ST.ag !== ag || ST.month !== m){ ST.invF = {}; ST.fOpen = null; ST.fq = {}; }
   ST.ag = ag; ST.month = m; ST.busy = 'Chargement de '+agLabel(ag)+' · '+monthLabel(m)+'…'; ST.R = null; ST.files = []; ST.pdfs = []; ST.modal = null; ST.pending = null; ST.confirmClose = false; render();
   var id = monthId();
   return STORE.getMonth(id).then(function(doc){
@@ -1677,7 +1706,7 @@ function invVals(I){
 }
 function invPass(I, skip){
   var F = ST.invF || {}, v = invVals(I);
-  return Object.keys(F).every(function(k){ return k === skip || !F[k] || v[k].indexOf(F[k]) >= 0; });
+  return Object.keys(F).every(function(k){ return k === skip || !F[k] || !F[k].length || v[k].some(function(x){ return F[k].indexOf(x) >= 0; }); });
 }
 function fileBase(){ return 'OTIS '+noAcc(agLabel(ST.ag)).replace(/[^\w\- ]+/g,'')+' '+ST.month; }
 function exportInvTable(){
@@ -1687,7 +1716,7 @@ function exportInvTable(){
       'Entrées':I.totals.E, 'Sorties':I.totals.S, 'Stockage':stk, 'Total HT':I.totals.HT, 'Statut':INVST[ST.ov.status[I.key] || autoStatus(I)] };
   });
   var wb = XLSX.utils.book_new(), ws = XLSX.utils.json_to_sheet(rows);
-  var flt = Object.keys(F).filter(function(k){ return F[k]; }).map(function(k){ return ({cm:'Contremaître',code:'Code contremaître',aff:'Affaire',ap:'Appareil'})[k]+' = '+F[k]; });
+  var flt = Object.keys(F).filter(function(k){ return F[k] && F[k].length; }).map(function(k){ return ({cm:'Contremaître',code:'Code contremaître',aff:'Affaire',ap:'Appareil'})[k]+' = '+F[k].join(', '); });
   XLSX.utils.sheet_add_aoa(ws, [[], ['Total', '', '', '', '', sumK(rows,'Entrées'), sumK(rows,'Sorties'), sumK(rows,'Stockage'), sumK(rows,'Total HT')], [], ['Agence', agLabel(ST.ag)], ['Période', monthLabel(ST.month)], ['Filtres', flt.join(' ; ') || 'aucun'], ['Extraction', new Date().toLocaleString('fr-FR')+' · '+(STORE.profile.email||'')]], { origin:-1 });
   XLSX.utils.book_append_sheet(wb, ws, 'Factures');
   saveXlsx(wb, fileBase()+' factures'+(flt.length ? ' (filtré)' : '')+'.xlsx');
@@ -1731,7 +1760,7 @@ function vInvoices(){
   var t = { E:0, S:0, STK:0, HT:0 }, cnt = { verifier:0, editer:0, editee:0 }, F = ST.invF = ST.invF || {}, opts = { cm:{}, code:{}, aff:{}, ap:{} };
   // Filtres en cascade : chaque liste ne propose que les valeurs des factures qui passent les autres filtres
   R.invoices.forEach(function(I){ var v = invVals(I); cnt[ST.ov.status[I.key] || autoStatus(I)]++; Object.keys(opts).forEach(function(k){ if (invPass(I, k)) v[k].forEach(function(x){ opts[k][x] = 1; }); }); });
-  Object.keys(opts).forEach(function(k){ if (F[k]) opts[k][F[k]] = 1; });
+  Object.keys(opts).forEach(function(k){ (F[k] || []).forEach(function(x){ opts[k][x] = 1; }); });
   var shown = R.invoices.filter(invPass);
   var body = shown.map(function(I){
     var st = ST.ov.status[I.key] || autoStatus(I);
@@ -1744,8 +1773,15 @@ function vInvoices(){
       '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
       '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
   }).join('');
-  var nI = R.invoices.length, pct = nI ? Math.round(cnt.editee / nI * 100) : 0, nF = Object.keys(F).filter(function(k){ return F[k]; }).length;
-  function fsel(k){ return '<select class="fsel'+(F[k]?' on':'')+'" data-invf="'+k+'" aria-label="Filtrer"><option value="">Tous</option>'+Object.keys(opts[k]).sort().map(function(x){ return '<option'+(F[k]===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+'</select>'; }
+  var nI = R.invoices.length, pct = nI ? Math.round(cnt.editee / nI * 100) : 0, nF = Object.keys(F).filter(function(k){ return F[k] && F[k].length; }).length;
+  function fsel(k){
+    var sel = F[k] || [], on = sel.length, q = ((ST.fq||{})[k]||'').toLowerCase(), list = Object.keys(opts[k]).sort();
+    var lab = !on ? 'Tous' : on === 1 ? sel[0] : on+' sélectionnés';
+    var h2 = '<div class="mfilt"><button class="fbtn'+(on?' on':'')+'" data-fopen="'+k+'" aria-expanded="'+(ST.fOpen===k)+'" title="'+esc(sel.join(', '))+'"><span>'+esc(lab)+'</span><span class="caret">▾</span></button>';
+    if (ST.fOpen === k) h2 += '<div class="fpop" id="fpop"><input type="search" class="fq" data-fsearch="'+k+'" placeholder="Rechercher…" value="'+esc((ST.fq||{})[k]||'')+'"><div class="fpop-h"><button class="lnk" data-fall="'+k+'">Tout cocher</button><button class="lnk" data-fnone="'+k+'">Aucun filtre</button></div><div class="fpop-l">'+
+      list.map(function(x){ return '<label'+(q && x.toLowerCase().indexOf(q) < 0 ? ' hidden' : '')+'><input type="checkbox" data-fchk="'+k+'" value="'+esc(x)+'"'+(sel.indexOf(x)>=0?' checked':'')+'> '+esc(x)+'</label>'; }).join('')+'</div></div>';
+    return h2 + '</div>';
+  }
   h += principles();
   h += '<div class="kpis">'+kpi('Total HT', eur(E.r2(R.invoices.reduce(function(x, I){ return x + I.totals.HT; }, 0))), nI+' factures')+'<div class="kpi"><span class="lbl">Complétude</span><span class="v">'+pct+' %</span><span class="s">'+cnt.editee+' / '+nI+' factures éditées dans Odoo</span><span class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></span></div>'+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées / Odoo', cnt.editee, '')+'</div>';
   h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th>Contremaître(s)</th><th>Code contremaître</th><th>Affaire(s)</th><th>Appareil(s)</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr>'+
@@ -2339,7 +2375,15 @@ function changeMyPassword(){
 
 /* ============ ÉVÉNEMENTS ============ */
 document.addEventListener('click', function(e){
-  if (e.target.closest('select')) return;
+  if (ST.agMenu && !e.target.closest('.agwrap')){ ST.agMenu = false; render(); if (!e.target.closest('button,[data-mod],tr[data-pdf]')) return; }
+  if (ST.fOpen && !e.target.closest('.mfilt')){ ST.fOpen = null; render(); if (!e.target.closest('button,[data-mod],tr[data-pdf]')) return; }
+  if (e.target.closest('select,.fpop label')) return;
+  var fo = e.target.closest('[data-fopen],[data-fall],[data-fnone]');
+  if (fo){ var fd = fo.dataset, FF = ST.invF = ST.invF || {};
+    if (fd.fopen) ST.fOpen = ST.fOpen === fd.fopen ? null : fd.fopen;
+    else if (fd.fall){ var boxes = document.querySelectorAll('#fpop label:not([hidden]) input'); FF[fd.fall] = Array.prototype.map.call(boxes, function(b){ return b.value; }); }
+    else if (fd.fnone) FF[fd.fnone] = [];
+    render(); var qi = document.querySelector('#fpop .fq'); if (qi && fd.fopen) qi.focus(); return; }
   if (e.target.id === 'modal'){ ST.modal = null; renderModal(); return; }
   var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
   if (!t || t.disabled) return;
@@ -2349,7 +2393,7 @@ document.addEventListener('click', function(e){
   if (d.mod){ ST.module = d.mod; if (d.ltabgo) ST.ltab = d.ltabgo; render(); window.scrollTo(0,0); if (ST.module==='log' && ST.ltab==='adm') loadAdmin(); return; }
   if (d.ltab){ ST.ltab = d.ltab; ST.modal = null; render(); window.scrollTo(0,0); if (d.ltab==='adm') loadAdmin(); return; }
   if (d.ttab){ ST.ttab = d.ttab; render(); return; }
-  if (d.agsel){ selectMonth(d.agsel, ST.month || defaultMonth()); return; }
+  if (d.agsel){ ST.agMenu = false; selectMonth(d.agsel, ST.month || defaultMonth()); return; }
   if (d.mon !== undefined){ if (d.mon) selectMonth(ST.ag, d.mon); return; }
   if (d.sub){ ST.sub = d.sub; ST.modal = null; ST.hlInv = null; ST.backCtl = null; render(); return; }
   if (d.par){ ST.parAg = d.par; ST.newAg = false; render(); return; }
@@ -2399,7 +2443,8 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsInv') exportInvTable();
   else if (a === 'xlsFam') exportFamDetail();
   else if (a === 'xlsCtl') exportCtl();
-  else if (a === 'invfReset'){ ST.invF = {}; render(); }
+  else if (a === 'invfReset'){ ST.invF = {}; ST.fOpen = null; ST.fq = {}; render(); }
+  else if (a === 'agmenu'){ ST.agMenu = !ST.agMenu; render(); }
   else if (a === 'addTr') validateTransport();
   else if (a === 'agcreate') createAgency();
   else if (a === 'agcancel'){ ST.newAg = false; render(); }
@@ -2426,7 +2471,7 @@ document.addEventListener('change', function(e){
   if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
-  if (d.invf){ ST.invF = ST.invF || {}; ST.invF[d.invf] = t.value; render(); return; }
+  if (d.fchk){ var FF = ST.invF = ST.invF || {}, arr = FF[d.fchk] = (FF[d.fchk] || []).filter(function(x){ return x !== t.value; }); if (t.checked) arr.push(t.value); var fl = document.querySelector('#fpop .fpop-l'), st0 = fl ? fl.scrollTop : 0; render(); fl = document.querySelector('#fpop .fpop-l'); if (fl) fl.scrollTop = st0; return; }
   if (d.pchk){ if (!canEdit() || monthClosed()){ render(); return; } ST.ov.pchk = ST.ov.pchk || {}; ST.ov.pchk[d.pchk] = t.value; var pp = ST.pdfs.filter(function(x){ return x.id === d.pchk; })[0]; render(); persist('Check '+(pp ? pp.name : d.pchk)+' : '+PCHK[t.value]); return; }
   if (d.st){ if (!canEdit()){ render(); return; } ST.ov.status[d.st] = t.value; render(); persist('Statut '+(ST.R.invoices.filter(function(I){ return I.key===d.st; })[0]||{}).num+' : '+INVST[t.value]); return; }
   if ((d.aff || d.excl || d.assign) && !canEdit()){ render(); return; }
@@ -2439,8 +2484,24 @@ document.addEventListener('change', function(e){
   if (t.id === 't_ag'){ var dlst = $('t_cml'); if (dlst) dlst.innerHTML = ((ST.cfg.agencies[t.value]||{}).cmList||[]).map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join(''); }
   if (t.closest && t.closest('#tform')) calcTransport();
 });
-document.addEventListener('input', function(e){ if (e.target.closest && e.target.closest('#tform')) calcTransport(); });
-document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && ST.modal){ ST.modal = null; renderModal(); } });
+document.addEventListener('input', function(e){
+  if (e.target.closest && e.target.closest('#tform')) calcTransport();
+  var fs = e.target.dataset && e.target.dataset.fsearch;
+  if (fs){ ST.fq = ST.fq || {}; ST.fq[fs] = e.target.value; var q = e.target.value.toLowerCase(); Array.prototype.forEach.call(document.querySelectorAll('#fpop .fpop-l label'), function(l){ l.hidden = !!q && l.textContent.toLowerCase().indexOf(q) < 0; }); }
+});
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  if (ST.modal){ ST.modal = null; renderModal(); return; }
+  if (ST.fOpen || ST.agMenu){ ST.fOpen = null; ST.agMenu = false; render(); }
+});
+// Popover de filtre en position fixe (le tableau défile horizontalement et couperait un menu en position absolue)
+function placePop(){
+  var p = document.getElementById('fpop'); if (!p) return;
+  var b = p.parentNode.querySelector('.fbtn').getBoundingClientRect(), w = Math.max(240, b.width);
+  p.style.position = 'fixed'; p.style.top = (b.bottom + 4)+'px'; p.style.left = Math.max(8, Math.min(b.left, window.innerWidth - w - 8))+'px'; p.style.width = w+'px';
+  p.style.maxHeight = Math.max(160, window.innerHeight - b.bottom - 16)+'px';
+}
+window.addEventListener('scroll', placePop, true); window.addEventListener('resize', placePop);
 document.addEventListener('submit', function(e){ e.preventDefault(); if (e.target.id === 'loginForm') doLogin(); });
 function createAgency(){
   var code = ($('na_code').value||'').trim().toUpperCase().replace(/\s+/g,''), label = ($('na_label').value||'').trim(), match = ($('na_match').value||'').trim(), tpl = $('na_tpl').value;
