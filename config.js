@@ -1,6 +1,7 @@
-/* À remplacer par la configuration de VOTRE projet Firebase
-   (Console Firebase → Paramètres du projet → Vos applications → Application Web → Configuration).
-   Ces valeurs ne sont pas secrètes : la sécurité repose sur l'authentification et les règles Firestore / Storage. */
+/* Configuration du projet Firebase legaa-facturation-otis.
+   Remplacer les 3 valeurs « À_REMPLACER » par celles du bloc firebaseConfig
+   (Console Firebase → Paramètres du projet → Général → Vos applications → plateforme-otis).
+   Ces valeurs ne sont pas secrètes : la sécurité repose sur l'authentification et les règles Firestore. */
 window.FIREBASE_CONFIG = {
   apiKey: "À_REMPLACER",
   authDomain: "legaa-facturation-otis.firebaseapp.com",

@@ -1,17 +1,16 @@
 (function(){
 'use strict';
 var E = ENGINE;
-var ST = { files: [], globalCfg: clone(E.DEFAULT_CONFIG), cfg: clone(E.DEFAULT_CONFIG), user: null, months: [], monthDoc: null, pdfs: [], openPdf: null, users: null, logs: null, admTab: 'users', synAg: 'all', logF: { type:'', q:'' }, pending: null, busy: '', ov: { assign: {}, exclude: {}, affaire: {}, affMap: {} }, month: null, R: null, view: 'fac', inv: null, ag: null, done: {}, openLine: null, openAnom: {}, lim: {}, sample: true, transport: [] };
+/* ============ ÉTAT ============ */
+var ST = {
+  user:null, module:'home', ltab:'fac', ttab:'new', sub:'imp',
+  cfg: clone(E.DEFAULT_CONFIG), monthsIndex:[],
+  ag:null, month:null, doc:null, files:[], R:null, ov:null, flags:{}, pdfs:[],
+  busy:'', pending:null, modal:null, openAnom:{}, lim:{}, openPdf:null, confirmClose:false,
+  parAg:null, newAg:false, transports:null, trF:{ month:'', ag:'' },
+  users:null, logs:null, admTab:'users', synAg:'all', logF:{ type:'', q:'' }, pwFor:null
+};
 var dl = null;
-function role(){ return ST.user ? ST.user.role : 'lecture'; }
-function isAdmin(){ return role() === 'admin'; }
-function monthClosed(){ return ST.monthDoc && ST.monthDoc.status === 'clos'; }
-function canEdit(){ return role() !== 'lecture' && !monthClosed(); }
-function RO(){ return canEdit() ? '' : ' disabled'; }
-function hhmm(){ var d = new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-function blankOv(){ return { assign:{}, exclude:{}, affaire:{}, affMap:{} }; }
-function deepMerge(base, over){ if (!over || typeof over !== 'object' || Array.isArray(over)) return over === undefined ? base : over; var o = clone(base); Object.keys(over).forEach(function(k){ o[k] = (base && typeof base[k] === 'object' && !Array.isArray(base[k])) ? deepMerge(base[k], over[k]) : over[k]; }); return o; }
-function last18(){ var o = [], d = new Date(); d.setDate(1); for (var i=0;i<18;i++){ o.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); d.setMonth(d.getMonth()-1); } return o; }
 function clone(x){ return JSON.parse(JSON.stringify(x)); }
 function esc(s){ return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function eur(x){ return (x||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'; }
@@ -19,234 +18,342 @@ function n2(x){ return (x||0).toLocaleString('fr-FR',{minimumFractionDigits:2,ma
 function n3(x){ return isNaN(x) ? '' : x.toLocaleString('fr-FR',{minimumFractionDigits:3,maximumFractionDigits:3}); }
 function nx(x){ return isNaN(x) ? '' : x.toLocaleString('fr-FR',{maximumFractionDigits:4}); }
 function $(id){ return document.getElementById(id); }
-function toast(t){ var e=$('toast'); e.textContent=t; e.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(function(){ e.hidden=true; },2600); }
+function toast(t){ var e=$('toast'); e.textContent=t; e.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(function(){ e.hidden=true; },3200); }
+function hhmm(){ var d = new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function dt(iso){ return iso ? new Date(iso).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}) : ''; }
 var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 function monthLabel(ym){ var p=ym.split('-'); return MOIS[+p[1]-1]+' '+p[0]; }
-var FAM = { E:'Entrées en stock', S:'Sorties de stock', STK:'Stockage', MIN:'Complément minimum 30 m² / appareil' };
-var FAMU = { E:'UP (m³/t)', S:'UP (m³/t)', STK:'m² facturés', MIN:'m² complément' };
 var SEV = { bloquant:'Bloquant', verifier:'À vérifier', info:'Info' };
+var STATUS = { ouvert:'en cours', clos:'clôturé', vide:'vide' };
+var INVST = { verifier:'À vérifier', editer:'À éditer', editee:'Éditée' };
+function role(){ return ST.user ? ST.user.role : 'lecture'; }
+function isAdmin(){ return role() === 'admin'; }
+function monthClosed(){ return ST.doc && ST.doc.status === 'clos'; }
+function canEdit(){ return role() !== 'lecture' && !monthClosed(); }
+function RO(){ return canEdit() ? '' : ' disabled'; }
+function ADM(){ return isAdmin() ? '' : ' disabled'; }
+function monthId(){ return ST.ag + '_' + ST.month; }
+function blankOv(){ return { assign:{}, exclude:{}, affaire:{}, affMap:{}, status:{} }; }
+function deepMerge(base, over){ if (!over || typeof over !== 'object' || Array.isArray(over)) return over === undefined ? base : over; var o = clone(base || {}); Object.keys(over).forEach(function(k){ o[k] = (base && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) ? deepMerge(base[k], over[k]) : over[k]; }); return o; }
+function last18(){ var o = [], d = new Date(); d.setDate(1); for (var i=0;i<18;i++){ o.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); d.setMonth(d.getMonth()-1); } return o; }
+function agencies(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.code).localeCompare(String(b.code), 'fr', { numeric:true }); }); }
+function agLabel(code){ var a = ST.cfg.agencies[code]; return a ? (a.label || 'AG '+code) : 'AG '+code; }
+function kpi(l,v,s){ return '<div class="kpi"><span class="lbl">'+esc(l)+'</span><span class="v">'+esc(v)+'</span><span class="s">'+esc(s||'')+'</span></div>'; }
+function uniqA(a){ return a.filter(function(x,i){ return a.indexOf(x)===i; }); }
+var GEAR = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4a4.9 4.9 0 010-1.6L3.6 5.8l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1h2.6zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg>';
 
-/* ---------- données (base de données via STORE) ---------- */
-function refreshMonths(){ return STORE.listMonths().then(function(L){ ST.months = L; renderTop(); if (ST.view==='syn') render(); }); }
-function loadMonth(m){
-  ST.month = m; ST.busy = 'Chargement de '+monthLabel(m)+'…'; ST.R = null; ST.files = []; ST.pdfs = []; ST.openLine = null; ST.pending = null; renderTop(); render();
-  return STORE.getMonth(m).then(function(doc){
-    if (ST.month !== m) return null;
-    ST.monthDoc = doc || { id:m, status:'vide', files:[] };
+/* ============ NAVIGATION ============ */
+function renderTop(){
+  var mod = ST.module, tabs = [];
+  if (mod === 'log'){
+    tabs = [['par','Paramètres'],['fac','Factures logistiques'],['syn','Synthèse']];
+    if (isAdmin()) tabs.push(['adm','Administration']);
+  } else if (mod === 'trp') tabs = [['new','Nouveau transport'],['hist','Historique des transports']];
+  var cur = mod === 'log' ? ST.ltab : ST.ttab;
+  $('tabs').innerHTML = tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+(mod==='log'?'ltab':'ttab')+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
+  $('tabs').hidden = !tabs.length;
+  $('modname').textContent = mod === 'log' ? 'Logistique' : mod === 'trp' ? 'Transport' : mod === 'acc' ? 'Mon compte' : '';
+  if (ST.user) $('who').textContent = ST.user.name + ' · ' + ({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role];
+  $('src').textContent = STORE.mode === 'demo' ? 'mode démo' : '';
+}
+function render(){
+  renderTop();
+  var m = $('main'), h;
+  if (ST.module === 'home') h = vLanding();
+  else if (ST.module === 'acc') h = vAccount();
+  else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vTransport();
+  else if (ST.ltab === 'par') h = vParams();
+  else if (ST.ltab === 'syn') h = vSynth();
+  else if (ST.ltab === 'adm') h = vAdmin();
+  else h = vFactures();
+  m.innerHTML = h;
+  renderModal();
+  if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); }
+  if (ST.module === 'log' && ST.ltab === 'syn') bindChartTips();
+  if (ST.module === 'trp' && ST.ttab === 'new') calcTransport();
+}
+
+/* ============ ACCUEIL ============ */
+function vLanding(){
+  var ags = agencies(), open = ST.monthsIndex.filter(function(m){ return m.status === 'ouvert'; }).length;
+  var cm = new Date().toISOString().slice(0,7), trn = (ST.transports || []).filter(function(t){ return (t.date||'').slice(0,7) === cm; }).length;
+  return '<section class="landing"><p class="lbl">'+esc(ST.user ? 'Bonjour '+ST.user.name : '')+'</p><h2>Que souhaitez-vous facturer ?</h2><div class="choices">'+
+    '<button class="choice" data-mod="log"><span class="k">Logistique</span><span class="d">Factures mensuelles des agences OTIS : imports Odoo WMS, anomalies, génération des factures, contrôle avant envoi, clôture du mois.</span><span class="m">'+ags.length+' agence'+(ags.length>1?'s':'')+' paramétrée'+(ags.length>1?'s':'')+' · '+open+' mois en cours</span></button>'+
+    '<button class="choice" data-mod="trp"><span class="k">Transport</span><span class="d">Chiffrage d\'une livraison chantier : véhicule recommandé, tarif de la grille, validation et historique des transports.</span><span class="m">'+(ST.transports ? trn+' transport'+(trn>1?'s':'')+' validé'+(trn>1?'s':'')+' ce mois-ci' : 'Grille transport OTIS 2023')+'</span></button>'+
+    '</div>'+(isAdmin() ? '<p><button class="btn" data-mod="log" data-ltabgo="adm">Administration des accès</button></p>' : '')+'</section>';
+}
+
+/* ============ LOGISTIQUE · PARAMÈTRES ============ */
+function cfIn(path, val, type, extra){ return '<input type="'+(type||'text')+'" data-cf="'+esc(path)+'" value="'+esc(val === undefined || val === null ? '' : val)+'"'+(type==='number'?' step="any"':'')+ADM()+(extra||'')+'>'; }
+function cfSel(path, val, opts){ return '<select data-cf="'+esc(path)+'"'+ADM()+'>'+opts.map(function(o){ return '<option value="'+esc(o[0])+'"'+(String(val)===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select>'; }
+function field(label, input, hint){ return '<div class="fld"><span class="lbl">'+label+'</span>'+input+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>'; }
+var DOCK = [['grille','Grille tarifaire','PDF ou Excel signé avec OTIS. Document de référence ; les valeurs appliquées sont saisies ci-dessous.','.pdf,.xls,.xlsx'],['cm','Liste des contremaîtres','Excel ou CSV avec une colonne « Code » et une colonne « Nom ». Sert à contrôler les codes contremaîtres d\'Odoo.','.xls,.xlsx,.csv'],['principes','Principes de facturation','PDF ou Word décrivant les règles propres à l\'agence. Les choix appliqués sont réglés ci-dessous.','.pdf,.doc,.docx']];
+function vParams(){
+  var ags = agencies(true);
+  if (!ST.parAg && ags.length) ST.parAg = ags[0].code;
+  var h = '<section class="view">';
+  if (!isAdmin()) h += '<p class="note">Consultation : seuls les administrateurs modifient les paramètres.</p>';
+  h += '<div class="lay"><aside class="panel mtree"><div class="ph"><h3>Agences</h3></div>'+ags.map(function(a){ return '<button class="mitem" data-par="'+esc(a.code)+'" aria-current="'+(ST.parAg===a.code && !ST.newAg)+'"><span>'+esc(a.label||'AG '+a.code)+'</span><span class="muted num">'+esc(a.code)+(a.active===false?' · archivée':'')+'</span></button>'; }).join('')+
+    (isAdmin() ? '<div class="pb"><button class="btn pri" data-newag>+ Créer une agence</button></div>' : '')+'</aside><div class="mpanel">';
+  if (ST.newAg) h += newAgForm();
+  else if (ST.parAg && ST.cfg.agencies[ST.parAg]) h += agEditor(ST.cfg.agencies[ST.parAg]);
+  else h += '<div class="panel empty">Aucune agence. Créer la première agence.</div>';
+  h += '</div></div>';
+  h += commonParams();
+  return h + '</section>';
+}
+function newAgForm(){
+  return '<div class="panel"><div class="ph"><h2>Nouvelle agence</h2></div><form class="pb" id="agform" autocomplete="off"><div class="grid-f">'+
+    '<div class="fld"><label class="lbl" for="na_code">Code agence</label><input id="na_code" placeholder="ex. 58, CRA495"><span class="hint">Lettres et chiffres, sans espace. Non modifiable ensuite.</span></div>'+
+    '<div class="fld"><label class="lbl" for="na_label">Libellé</label><input id="na_label" placeholder="ex. AG 58 Lille"></div>'+
+    '<div class="fld"><label class="lbl" for="na_match">Client dans Odoo (début de la colonne « Client »)</label><input id="na_match" placeholder="ex. OTIS CN AG 58"><span class="hint">Texte qui précède la virgule et le nom du contremaître.</span></div>'+
+    '<div class="fld"><label class="lbl" for="na_tpl">Grille de départ</label><select id="na_tpl"><option value="STD">Grille OTIS 2022</option><option value="TOURS">Grille Tours The Link</option></select></div>'+
+    '</div><div class="row" style="margin-top:12px"><button class="btn pri" type="button" data-a="agcreate">Créer l\'agence</button><button class="btn" type="button" data-a="agcancel">Annuler</button></div></form></div>';
+}
+function agEditor(a){
+  var p = 'agencies.'+a.code+'.', g = ST.cfg.grids[a.grid] || ST.cfg.grids.STD, gp = 'grids.'+a.grid+'.';
+  var h = '<div class="panel"><div class="ph"><h2>'+esc(a.label||'AG '+a.code)+'</h2><span class="muted num">code '+esc(a.code)+'</span></div><div class="pb grid-f">'+
+    field('Libellé', cfIn(p+'label', a.label))+
+    field('Client dans Odoo', cfIn(p+'match', a.match), 'Début de la colonne « Client » des exports Odoo')+
+    field('Adresse de facturation OTIS', '<textarea data-cf="'+p+'address" rows="3"'+ADM()+'>'+esc(a.address||'')+'</textarea>', 'Reprise sur les pro forma PDF')+
+    field('Statut', cfSel(p+'active', a.active === false ? 'false' : 'true', [['true','Active'],['false','Archivée (masquée de la facturation)']]))+
+    '</div></div>';
+  h += '<div class="panel"><div class="ph"><h3>Documents de référence</h3><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs">';
+  DOCK.forEach(function(k){
+    var d = (a.docs||{})[k[0]];
+    h += '<div class="docslot"><span class="lbl">'+k[1]+'</span>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Télécharger</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
+      : '<span class="muted">Aucun fichier.</span>'+(isAdmin()?'<label class="btn sm pri">Charger le fichier<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label>':''))+'<span class="hint">'+k[2]+'</span></div>';
+  });
+  h += '</div>';
+  if ((a.cmList||[]).length) h += '<details class="pb"><summary class="lbl">Contremaîtres de l\'agence ('+a.cmList.length+')</summary><div class="tw"><table><thead><tr><th>Code</th><th>Nom</th></tr></thead><tbody>'+a.cmList.map(function(c){ return '<tr><td class="num">'+esc(c.code)+'</td><td>'+esc(c.nom)+'</td></tr>'; }).join('')+'</tbody></table></div></details>';
+  h += '</div>';
+  h += '<div class="panel"><div class="ph"><h3>Principes de facturation appliqués</h3></div><div class="pb grid-f">'+
+    field('Une facture par', cfSel(p+'split', a.split, [['affaire','Affaire'],['cm','Contremaître'],['appareil','Appareil (n° de commande)'],['ag','Agence (facture unique)']]))+
+    field('Process OTIS', cfSel(p+'cas', a.cas, [['2','Cas 2 · sans commande client'],['1','Cas 1 · devis puis commande']]))+
+    field('Annexe détaillée sur la facture', cfSel(p+'annexe', a.annexe ? 'true':'false', [['false','Non'],['true','Oui : détail colis en annexe du PDF']]))+
+    '</div></div>';
+  h += '<div class="panel"><div class="ph"><h3>Grille tarifaire appliquée</h3><span class="muted">'+esc(g.label||'')+'</span><div class="sp">'+(isAdmin()?'<select id="tplsel"><option value="STD">Modèle OTIS 2022</option><option value="TOURS">Modèle Tours The Link</option></select><button class="btn sm" data-a="gridreset">Réinitialiser depuis le modèle</button>':'')+'</div></div><div class="pb tbl-in"><div class="tw"><table><tbody>'+
+    gRow(gp+'rate','Entrée / sortie, € par unité payante (> 0,500)',g.rate)+gRow(gp+'minChariot','Minimum chariot / transpalette (≥ 0,250 m³ ou > 20 kg)',g.minChariot)+gRow(gp+'minManuel','Minimum manuel (< 0,250 m³ et ≤ 20 kg)',g.minManuel);
+  Object.keys(g.prices).forEach(function(t){ [['mois','mois (22 j et plus)'],['quinz','quinzaine (14 j)'],['sem','semaine (7 j)']].forEach(function(pp){ h += gRow(gp+'prices.'+t+'.'+pp[0], 'Stockage '+t.toLowerCase()+' · '+pp[1]+', €/m²', g.prices[t][pp[0]]); }); });
+  if (g.storeMode === 'volume') g.coefs.forEach(function(c, i){ h += gRow(gp+'coefs.'+i+'.coef', 'Coefficient volume → m², '+c.label, c.coef); });
+  else h += gRow(gp+'coefSurface','Coefficient sur surface au sol', g.coefSurface);
+  h += gRow(gp+'min30','Minimum m² par appareil et par mois (0 = sans)', g.min30);
+  return h + '</tbody></table></div></div></div>';
+}
+function gRow(path, label, v){ return '<tr><td>'+label+'</td><td class="n">'+cfIn(path, v, 'number')+'</td></tr>'; }
+function commonParams(){
+  var c = ST.cfg, co = c.company || {};
+  var miss = ['address','siret','tva'].filter(function(k){ return !co[k]; });
+  return '<div class="two"><div class="panel"><div class="ph"><h3>Règles de calcul communes</h3></div><div class="pb grid-f">'+
+    field('Unité payante manutention', cfSel('rules.upMode', c.rules.upMode, [['max','max(m³ ; tonnes) : lecture « M3/T »'],['vol','m³ seul (pratique Odoo)']]))+
+    field('Minimum 30 m² par appareil', cfSel('rules.min30', c.rules.min30 ? 'true':'false', [['true','Appliqué'],['false','Non appliqué']]))+
+    '</div><p class="pb note muted" style="margin:0">Jours de stock comptés bornes incluses · tranche : 22 j et plus = mois, 15 à 21 j = quinzaine + semaine, 8 à 14 j = quinzaine, 1 à 7 j = semaine · arrondi au centime par colis.</p></div>'+
+    '<div class="panel"><div class="ph"><h3>Émetteur des pro forma</h3>'+(miss.length?'<span class="pill p-verifier">À compléter</span>':'')+'</div><div class="pb grid-f">'+
+    field('Raison sociale', cfIn('company.name', co.name))+field('Adresse', '<textarea data-cf="company.address" rows="3"'+ADM()+'>'+esc(co.address||'')+'</textarea>')+
+    field('SIRET', cfIn('company.siret', co.siret))+field('TVA intracommunautaire', cfIn('company.tva', co.tva))+
+    field('IBAN', cfIn('company.iban', co.iban))+field('Délai de paiement (jours)', cfIn('company.paymentDays', co.paymentDays, 'number'))+
+    field('Mentions de bas de page', '<textarea data-cf="company.mentions" rows="2"'+ADM()+'>'+esc(co.mentions||'')+'</textarea>')+'</div></div></div>';
+}
+function setPath(obj, path, val){ var k = path.split('.'), o = obj; for (var i=0;i<k.length-1;i++){ if (o[k[i]] === undefined) o[k[i]] = {}; o = o[k[i]]; } o[k[k.length-1]] = val; }
+function getPath(obj, path){ return path.split('.').reduce(function(o, k){ return o === undefined || o === null ? undefined : o[k]; }, obj); }
+var cfgT = null;
+function saveCfg(what){
+  clearTimeout(cfgT);
+  cfgT = setTimeout(function(){ STORE.saveConfig(ST.cfg, what).then(function(){ toast('Paramètre enregistré : '+what); }, function(e){ toast('Enregistrement impossible : '+e.message); }); }, 300);
+  if (ST.R && !monthClosed()){ ST.cfgM = ST.cfg; rebuild(true); }
+}
+function parseCmList(rows){
+  var hdr = (rows[0]||[]).map(function(x){ return String(x||'').toLowerCase(); });
+  var ci = hdr.findIndex(function(x){ return /code/.test(x); }), ni = hdr.findIndex(function(x){ return /nom|name|contrema/.test(x) && !/code/.test(x); });
+  var start = 1; if (ci < 0 || ni < 0){ ci = 0; ni = 1; start = /\d/.test(String((rows[0]||[])[0])) ? 0 : 1; }
+  var out = []; for (var i = start; i < rows.length; i++){ var r = rows[i]||[]; var c = String(r[ci] === null || r[ci] === undefined ? '' : r[ci]).replace(/\.0$/,'').trim(), n = String(r[ni]||'').trim(); if (c || n) out.push({ code:c, nom:n }); }
+  return out;
+}
+function agDocUpload(kind, file){
+  var a = ST.cfg.agencies[ST.parAg]; if (!a || !isAdmin()) return;
+  var old = (a.docs||{})[kind];
+  var pre = kind === 'cm' ? new Promise(function(res){ var fr = new FileReader(); fr.onload = function(){ try { var wb = XLSX.read(new Uint8Array(fr.result), { type:'array' }); res(parseCmList(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:null }))); } catch(e){ res(null); } }; fr.readAsArrayBuffer(file); }) : Promise.resolve(null);
+  pre.then(function(list){
+    if (kind === 'cm' && (!list || !list.length)){ toast('Liste illisible : il faut une colonne Code et une colonne Nom.'); return; }
+    return STORE.uploadAgencyDoc(a.code, kind, file).then(function(meta){
+      if (old) STORE.deleteFile(old);
+      a.docs = a.docs || {}; a.docs[kind] = meta; if (list) a.cmList = list;
+      saveCfg(a.label+' : '+DOCK.filter(function(k){ return k[0]===kind; })[0][1]+' chargée'); render();
+    });
+  }).catch(function(e){ toast('Chargement impossible : '+e.message); });
+}
+
+/* ============ LOGISTIQUE · FACTURES ============ */
+function vFactures(){
+  var ags = agencies();
+  if (!ags.length) return '<section class="view"><div class="panel empty">Aucune agence active. Créer une agence dans Paramètres.</div></section>';
+  if (!ST.ag || !ags.some(function(a){ return a.code === ST.ag; })){ selectMonth(ags[0].code, ST.month || defaultMonth()); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
+  var h = '<section class="view"><nav class="subnav" role="tablist">'+ags.map(function(a){ return '<button class="subtab" role="tab" data-agsel="'+esc(a.code)+'" aria-selected="'+(a.code===ST.ag)+'"><span class="st-l">'+esc(a.label||'AG '+a.code)+'</span></button>'; }).join('')+'</nav>';
+  var idx = {}; ST.monthsIndex.forEach(function(m){ idx[m.id] = m; });
+  h += '<div class="lay"><aside class="panel mtree"><div class="ph"><h3>Mois de facturation</h3></div>'+last18().map(function(m){
+      var d = idx[ST.ag+'_'+m], st = d ? (d.status||'ouvert') : 'vide', ht = (ST.month===m && ST.R) ? ST.R.totals.HT : (d && d.summary ? d.summary.HT : null);
+      return '<button class="mitem" data-mon="'+m+'" aria-current="'+(ST.month===m)+'"><span>'+monthLabel(m)+'</span><span class="mst"><i class="dot d-'+st+'"></i>'+STATUS[st]+(ht!==null?' · <span class="num">'+n2(ht)+'</span>':'')+'</span></button>';
+    }).join('')+'</aside><div class="mpanel">';
+  h += monthHead();
+  if (ST.busy) h += '<div class="panel empty">'+esc(ST.busy)+'</div>';
+  else {
+    var blk = ST.R ? ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0) : 0;
+    var pb = ST.pdfs.filter(function(p){ return p.result && p.result.status !== 'conforme'; }).length;
+    h += '<nav class="subtabs">'+[['imp','A · Import'],['ano','B · Anomalies'+(blk?' <span class="cnt">'+blk+'</span>':'')],['fac','C · Factures'],['ctl','D · Contrôle factures'+(pb?' <span class="cnt w">'+pb+'</span>':'')]].map(function(t){ return '<button class="stb" data-sub="'+t[0]+'" aria-selected="'+(ST.sub===t[0])+'">'+t[1]+'</button>'; }).join('')+'</nav>';
+    h += ST.sub === 'imp' ? vImport() : ST.sub === 'ano' ? vAnomalies() : ST.sub === 'fac' ? vInvoices() : vControl();
+  }
+  return h + '</div></div></section>';
+}
+function monthHead(){
+  var d = ST.doc || { status:'vide' }, st = d.status || 'vide';
+  var h = '<div class="strip"><strong>'+esc(agLabel(ST.ag))+' · '+monthLabel(ST.month)+'</strong><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
+  if (st === 'clos') h += '<span class="muted">clôturé le '+esc(d.closedAt ? new Date(d.closedAt).toLocaleDateString('fr-FR') : '')+' par '+esc(d.closedBy||'')+' · montants et grille figés</span>';
+  else h += '<span class="muted" id="save">'+(d.updatedAt ? 'Enregistré le '+dt(d.updatedAt)+' par '+esc(d.updatedBy||'') : '')+'</span>';
+  if (st === 'clos' && isAdmin()) h += '<span class="sp"><button class="btn" data-a="reopen">Rouvrir le mois</button></span>';
+  return h + '</div>';
+}
+function defaultMonth(){ var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function openCount(a){ if (a.code !== 'NON_RATTACHE' && a.code !== 'AFFAIRE_INCONNUE') return a.keys.length; return a.keys.filter(function(k){ return !ST.ov.assign[k] && !ST.ov.exclude[k] && !ST.ov.affaire[k]; }).length; }
+
+/* chargement d'un mois d'une agence */
+function selectMonth(ag, m){
+  ST.ag = ag; ST.month = m; ST.busy = 'Chargement de '+agLabel(ag)+' · '+monthLabel(m)+'…'; ST.R = null; ST.files = []; ST.pdfs = []; ST.modal = null; ST.pending = null; ST.confirmClose = false; render();
+  var id = monthId();
+  return STORE.getMonth(id).then(function(doc){
+    if (monthId() !== id) return null;
+    ST.doc = doc || { id:id, status:'vide', files:[] };
     ST.ov = deepMerge(blankOv(), (doc && doc.ov) || {});
-    ST.done = (doc && doc.done) || {}; ST.transport = (doc && doc.transport) || [];
-    ST.cfg = (doc && doc.status==='clos' && doc.cfgSnapshot) ? doc.cfgSnapshot : ST.globalCfg;
+    ST.cfgM = (doc && doc.status==='clos' && doc.cfgSnapshot) ? doc.cfgSnapshot : ST.cfg;
     return Promise.all(((doc && doc.files) || []).map(function(meta){
       return STORE.loadImportRows(meta).then(function(rows){ var p = E.parseFile(meta.name, rows); p.meta = meta; return p; },
         function(e){ return { name:meta.name, meta:meta, error:'Lecture impossible : '+e.message }; });
     }));
   }).then(function(parsed){
-    if (ST.month !== m || !parsed) return;
+    if (monthId() !== id || !parsed) return;
     ST.files = parsed; ST.busy = ''; rebuild();
-    return STORE.listPdfs(m).then(function(p){ if (ST.month === m){ ST.pdfs = p; if (ST.view==='pdf') render(); } });
+    return STORE.listPdfs(id).then(function(p){ if (monthId() === id){ ST.pdfs = p; render(); } });
   }).catch(function(e){ ST.busy = ''; toast('Chargement impossible : '+e.message); render(); });
 }
-function rebuild(){
-  var ok = ST.files.filter(function(f){ return !f.error; });
-  ST.R = ok.length ? E.build(ok, ST.cfg, ST.ov, ST.month) : null;
+function rebuild(noRender){
+  var ok = ST.files.filter(function(f){ return !f.error && f.kind; });
+  ST.R = ok.length ? E.build(ok, ST.cfgM || ST.cfg, ST.ov, ST.month, ST.ag) : null;
   ST.flags = {};
   if (ST.R) ST.R.anomalies.forEach(function(a){ a.keys.forEach(function(k){ (ST.flags[k] = ST.flags[k] || []).push(a); }); });
-  renderTop(); render();
+  render();
 }
-/* Enregistrement différé des décisions de l'ADV (rattachements, exclusions, statut des factures, transports) */
 var saveT = null, saveWhat = [];
 function persist(what){
   if (!canEdit()) return;
   if (what) saveWhat.push(what);
-  clearTimeout(saveT); setSave('Enregistrement…');
+  clearTimeout(saveT); var s = $('save'); if (s) s.textContent = 'Enregistrement…';
+  var id = monthId();
   saveT = setTimeout(function(){
     var w = saveWhat.splice(0);
-    STORE.saveMonth(ST.month, { ov:ST.ov, done:ST.done, transport:ST.transport, summary: ST.R ? summarize(ST.R) : null }).then(function(){
-      setSave('Enregistré à '+hhmm()); if (w.length) STORE.log('modification', w.slice(0,6).join(' · ')+(w.length>6?' (+'+(w.length-6)+')':''), ST.month); refreshMonths();
-    }, function(e){ setSave('Échec de l\'enregistrement : '+e.message); toast('Enregistrement impossible : '+e.message); });
+    STORE.saveMonth(id, { ov:ST.ov, summary: ST.R ? summarize(ST.R) : null }).then(function(){
+      var s2 = $('save'); if (s2) s2.textContent = 'Enregistré à '+hhmm();
+      if (w.length) STORE.log('modification', w.slice(0,6).join(' · ')+(w.length>6?' (+'+(w.length-6)+')':''), id);
+      refreshIndex();
+    }, function(e){ toast('Enregistrement impossible : '+e.message); });
   }, 700);
 }
-function setSave(t){ var e = $('save'); if (e) e.textContent = t; }
-/* Chiffres clés du mois, stockés pour la synthèse et l'historique */
-function summarize(R){
-  var out = { HT:R.totals.HT, at:new Date().toISOString(), byAg:{} };
-  R.invoices.forEach(function(I){
-    var a = out.byAg[I.ag] = out.byAg[I.ag] || { label:I.agLabel, inv:0, HT:0, E:{n:0,up:0,eur:0}, S:{n:0,up:0,eur:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0} };
-    a.inv++; a.HT = E.r2(a.HT + I.totals.HT);
-    I.lineList.forEach(function(l){
-      if (l.fam==='E' || l.fam==='S'){ a[l.fam].n += l.n; a[l.fam].up = Math.round((a[l.fam].up + l.qty)*1000)/1000; a[l.fam].eur = E.r2(a[l.fam].eur + l.amount); }
-      else if (l.fam==='STK'){ a.STK.n += l.n; a.STK.m2 = Math.round((a.STK.m2 + l.qty)*1000)/1000; a.STK.eur = E.r2(a.STK.eur + l.amount); }
-      else { a.STK.minM2 = Math.round((a.STK.minM2 + l.qty)*1000)/1000; a.STK.minEur = E.r2(a.STK.minEur + l.amount); a.STK.m2 = Math.round((a.STK.m2 + l.qty)*1000)/1000; a.STK.eur = E.r2(a.STK.eur + l.amount); }
-    });
+function refreshIndex(){ return STORE.listMonths().then(function(L){ ST.monthsIndex = L; if (ST.module==='log' && (ST.ltab==='fac' || ST.ltab==='syn')) render(); }); }
+
+/* A · Import : 2 fichiers */
+var SLOTS = [['manut','Entrées et sorties','Export Odoo « Fichier Manutention »'],['stock','Stockage','Export Odoo « Fichier Client Stockage »']];
+function agCountIn(p, code){
+  var a = ST.cfg.agencies[code], m = a && a.match ? a.match.toUpperCase() : null, n = 0, others = {};
+  (p.records||[]).forEach(function(r){ var raw = (r.clientRaw||'').toUpperCase(); var mine = m ? raw.indexOf(m) === 0 : r.ag === code; if (mine) n++; else if (r.ag || raw !== 'FALSE'){ var oa = matchAg(r); if (oa) others[oa] = (others[oa]||0)+1; } });
+  return { n:n, others:others };
+}
+function matchAg(r){ var raw = (r.clientRaw||'').toUpperCase(), best = null; agencies(true).forEach(function(a){ if (a.match && raw.indexOf(a.match.toUpperCase()) === 0 && (!best || a.match.length > ST.cfg.agencies[best].match.length)) best = a.code; }); return best || (r.ag ? 'AG '+r.ag+' (non paramétrée)' : null); }
+function vImport(){
+  var h = '';
+  if (ST.pending) h += pendingBox();
+  h += '<div class="slots">';
+  SLOTS.forEach(function(s){
+    var f = ST.files.filter(function(x){ return x.kind === s[0] || (!x.kind && x.meta && false); })[0];
+    h += '<div class="panel slot"><div class="ph"><h3>'+s[1]+'</h3><span class="muted">'+s[2]+'</span></div><div class="pb" style="display:grid;gap:10px">';
+    if (f){
+      var c = agCountIn(f, ST.ag), mo = E.detectMonth([f]);
+      h += '<dl class="kv"><dt>Fichier</dt><dd>'+esc(f.name)+'</dd><dt>Importé</dt><dd>'+dt(f.meta && f.meta.at)+' · '+esc(f.meta ? f.meta.by : '')+'</dd><dt>Lignes</dt><dd class="num">'+f.records.length+' dont '+c.n+' pour '+esc(agLabel(ST.ag))+'</dd>'+
+        (Object.keys(c.others).length ? '<dt>Autres clients</dt><dd>'+Object.keys(c.others).map(function(k){ return esc(ST.cfg.agencies[k] ? agLabel(k) : k)+' : '+c.others[k]; }).join(' · ')+' <span class="muted">(ignorées ici)</span></dd>' : '')+
+        '<dt>Données de</dt><dd>'+(mo ? monthLabel(mo) : '—')+(mo && mo !== ST.month ? ' <span class="pill p-verifier">≠ période</span>' : '')+'</dd><dt>Structure</dt><dd>'+(f.missing && f.missing.length ? '<span class="pill p-bloquant">Colonnes manquantes</span> '+esc(f.missing.join(', ')) : f.kind==='stock' && f.fmt==='B' ? '<span class="pill p-verifier">Incomplet</span> sans dates d\'entrée/sortie : durées reconstruites depuis les mouvements' : '<span class="pill p-ok">Conforme</span>')+'</dd></dl>';
+      if (canEdit()) h += '<div class="row"><label class="btn sm">Remplacer<input type="file" hidden data-slotin="'+s[0]+'" accept=".xls,.xlsx,.csv"></label><button class="btn sm" data-rmfile="'+esc(f.meta ? f.meta.id : '')+'">Supprimer</button></div>';
+    } else if (canEdit()) h += '<label class="drop" data-slot="'+s[0]+'"><input type="file" data-slotin="'+s[0]+'" accept=".xls,.xlsx,.csv"><strong>Déposer le fichier</strong><span class="muted">ou cliquer pour le choisir</span></label>';
+    else h += '<div class="empty">Aucun fichier.</div>';
+    h += '</div></div>';
   });
-  return out;
+  h += '</div>';
+  var bad = ST.files.filter(function(x){ return x.error || !x.kind; });
+  if (bad.length) h += '<p class="note"><span class="pill p-bloquant">Illisible</span> '+bad.map(function(b){ return esc(b.name)+' : '+esc(b.error||'format non reconnu'); }).join(' · ')+'</p>';
+  if (ST.R){
+    var R = ST.R;
+    h += '<div class="kpis">'+kpi('Entrées', R.M.filter(function(r){ return r.op==='E' && r.billable; }).length, 'mouvements facturables')+kpi('Sorties', R.M.filter(function(r){ return r.op==='S' && r.billable; }).length, 'mouvements facturables')+kpi('Lignes de stock', R.S.filter(function(r){ return r.billable; }).length, 'colis présents sur la période')+kpi('Factures', R.invoices.length, 'à générer')+'</div>';
+    h += '<div><button class="btn pri" data-sub="ano">Passer aux anomalies →</button></div>';
+  }
+  return h;
+}
+function pendingBox(){
+  var P = ST.pending, h = '<div class="panel pb warnbox">';
+  if (P.type === 'month') h += '<p><span class="pill p-verifier">Période</span> Le fichier <strong>'+esc(P.file.name)+'</strong> porte sur <strong>'+monthLabel(P.month)+'</strong>, la période ouverte est <strong>'+monthLabel(ST.month)+'</strong>.</p><div class="row"><button class="btn pri" data-a="pendGo">Importer dans '+monthLabel(P.month)+'</button><button class="btn" data-a="pendHere">Importer quand même dans '+monthLabel(ST.month)+'</button><button class="btn" data-a="pendNo">Annuler</button></div>';
+  else h += '<p><span class="pill p-verifier">Agence</span> Le fichier <strong>'+esc(P.file.name)+'</strong> ne contient aucune ligne de <strong>'+esc(agLabel(ST.ag))+'</strong>'+(P.ag ? ' mais '+P.n+' lignes de <strong>'+esc(agLabel(P.ag))+'</strong>' : '')+'.</p><div class="row">'+(P.ag ? '<button class="btn pri" data-a="pendAg">Importer dans '+esc(agLabel(P.ag))+'</button>' : '')+'<button class="btn" data-a="pendHere">Importer quand même ici</button><button class="btn" data-a="pendNo">Annuler</button></div>';
+  return h + '</div>';
 }
 function parseLocal(file){
   return new Promise(function(res){
     var fr = new FileReader();
-    fr.onload = function(){ try { var wb = XLSX.read(new Uint8Array(fr.result), { type:'array', raw:false, cellDates:false }); var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:null }); res(E.parseFile(file.name, rows)); } catch(e){ res({ name:file.name, error:'Fichier illisible : '+e.message }); } };
+    fr.onload = function(){ try { var wb = XLSX.read(new Uint8Array(fr.result), { type:'array', raw:false, cellDates:false }); res(E.parseFile(file.name, XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:null }))); } catch(e){ res({ name:file.name, error:'Fichier illisible : '+e.message }); } };
     fr.onerror = function(){ res({ name:file.name, error:'Lecture impossible' }); };
     fr.readAsArrayBuffer(file);
   });
 }
-function readFiles(list){
-  var arr = Array.prototype.slice.call(list);
-  if (!arr.length) return;
-  if (!canEdit()){ toast(monthClosed() ? 'Mois clôturé : le rouvrir avant d\'importer.' : 'Droits insuffisants pour importer.'); return; }
+function importFile(file, slot){
+  if (!canEdit()){ toast(monthClosed() ? 'Mois clôturé : le rouvrir avant d\'importer.' : 'Droits insuffisants.'); return; }
   if (typeof XLSX === 'undefined'){ toast('Lecteur Excel indisponible : vérifier la connexion.'); return; }
-  ST.busy = 'Lecture de '+arr.length+' fichier(s)…'; render();
-  Promise.all(arr.map(parseLocal)).then(function(parsed){
-    ST.busy = '';
-    var bad = parsed.filter(function(p){ return p.error || !p.kind; });
-    if (bad.length){ toast(bad.length+' fichier(s) rejeté(s) : '+bad.map(function(b){ return b.name; }).join(', ')); }
-    var good = []; parsed.forEach(function(p, i){ if (!p.error && p.kind) good.push({ file:arr[i], parsed:p, month:E.detectMonth([p]) }); });
-    if (!good.length){ render(); return; }
-    var other = good.filter(function(g){ return g.month && g.month !== ST.month; });
-    if (other.length){ ST.pending = good; render(); return; }
-    upload(good, ST.month);
+  parseLocal(file).then(function(p){
+    if (p.error || !p.kind){ toast(file.name+' : '+(p.error || 'format non reconnu (ni Manutention ni Stockage)')); return; }
+    if (slot && p.kind !== slot) toast('« '+file.name+' » est un export '+(p.kind==='manut'?'Manutention (entrées/sorties)':'Stockage')+' : rangé dans la bonne case.');
+    var mo = E.detectMonth([p]), c = agCountIn(p, ST.ag);
+    if (!c.n){ var top = Object.keys(c.others).filter(function(k){ return ST.cfg.agencies[k]; }).sort(function(a,b){ return c.others[b]-c.others[a]; })[0]; ST.pending = { type:'agency', file:file, parsed:p, ag:top, n:top ? c.others[top] : 0 }; render(); return; }
+    if (mo && mo !== ST.month){ ST.pending = { type:'month', file:file, parsed:p, month:mo }; render(); return; }
+    doUpload(file, p, ST.ag, ST.month);
   });
 }
-function upload(items, month){
-  ST.pending = null; ST.busy = 'Enregistrement de '+items.length+' fichier(s) en base…'; render();
-  var existing = (month === ST.month && ST.monthDoc && ST.monthDoc.files) || [];
-  var chain = Promise.resolve();
-  items.forEach(function(it){
-    existing.filter(function(m){ return m.name === it.file.name; }).forEach(function(m){ chain = chain.then(function(){ return STORE.deleteImport(month, m); }); });
-    chain = chain.then(function(){ return STORE.uploadImport(month, it.file); });
+function doUpload(file, p, ag, month){
+  ST.pending = null; var id = ag+'_'+month, prev = (ag === ST.ag && month === ST.month) ? ST.files.filter(function(f){ return f.kind === p.kind && f.meta; }).map(function(f){ return f.meta; }) : null;
+  ST.busy = 'Enregistrement de '+file.name+'…'; render();
+  var chain = prev ? Promise.resolve(prev) : STORE.getMonth(id).then(function(d){
+    if (d && d.status === 'clos') throw new Error(agLabel(ag)+' · '+monthLabel(month)+' est clôturé');
+    return Promise.all(((d && d.files) || []).map(function(meta){ return STORE.loadImportRows(meta).then(function(rows){ return E.parseFile(meta.name, rows).kind === p.kind ? meta : null; }); })).then(function(L){ return L.filter(Boolean); });
   });
-  chain.then(function(){ ST.busy = ''; toast(items.length+' fichier(s) enregistré(s) pour '+monthLabel(month)); refreshMonths(); return loadMonth(month); },
-    function(e){ ST.busy = ''; toast('Import impossible : '+e.message); render(); });
+  chain.then(function(old){ return old.reduce(function(pr, m){ return pr.then(function(){ return STORE.deleteImport(id, m); }); }, Promise.resolve()); })
+    .then(function(){ return STORE.uploadImport(id, file); })
+    .then(function(){ ST.busy = ''; toast(file.name+' enregistré pour '+agLabel(ag)+' · '+monthLabel(month)); refreshIndex(); return selectMonth(ag, month); },
+      function(e){ ST.busy = ''; toast('Import impossible : '+e.message); render(); });
+}
+function bindDrops(){
+  Array.prototype.forEach.call(document.querySelectorAll('.drop[data-slot]'), function(d){
+    d.ondragover = function(e){ e.preventDefault(); d.classList.add('over'); };
+    d.ondragleave = function(){ d.classList.remove('over'); };
+    d.ondrop = function(e){ e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) importFile(e.dataTransfer.files[0], d.dataset.slot); };
+  });
 }
 
-/* ---------- barre ---------- */
-var STATUS = { ouvert:'en cours', clos:'clôturé', vide:'vide' };
-function renderTop(){
-  var sel = $('month'), have = {};
-  ST.months.forEach(function(m){ have[m.id] = m; });
-  var list = last18(); if (ST.month && list.indexOf(ST.month) < 0) list.push(ST.month);
-  Object.keys(have).forEach(function(k){ if (list.indexOf(k) < 0) list.push(k); });
-  list.sort().reverse();
-  sel.innerHTML = list.map(function(k){ var st = have[k] ? (have[k].status || 'ouvert') : 'vide'; return '<option value="'+k+'"'+(k===ST.month?' selected':'')+'>'+monthLabel(k)+' · '+STATUS[st]+'</option>'; }).join('');
-  $('src').textContent = STORE.mode === 'demo' ? 'mode démo' : '';
-  if (ST.user) $('who').textContent = ST.user.name + ' · ' + ({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role];
-  var blk = ST.R ? ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s + openCount(a); },0) : 0;
-  $('cntBlk').hidden = !blk; $('cntBlk').textContent = blk;
-  var pb = ST.pdfs.filter(function(p){ return p.result && p.result.status !== 'conforme'; }).length;
-  $('cntPdf').hidden = !pb; $('cntPdf').textContent = pb;
-  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){ t.setAttribute('aria-selected', t.dataset.v === ST.view ? 'true':'false'); if (t.dataset.v === 'adm') t.hidden = !isAdmin(); });
-}
-function openCount(a){ if (a.code !== 'NON_RATTACHE' && a.code !== 'AFFAIRE_INCONNUE') return a.keys.length; return a.keys.filter(function(k){ return !ST.ov.assign[k] && !ST.ov.exclude[k] && !ST.ov.affaire[k]; }).length; }
-
-function render(){
-  var m = $('main');
-  if (ST.busy && ST.view !== 'adm' && ST.view !== 'syn' && ST.view !== 'acc') { m.innerHTML = '<section class="view"><div class="panel empty">'+esc(ST.busy)+'</div></section>'; return; }
-  if (ST.view === 'imp') m.innerHTML = vImport();
-  else if (ST.view === 'pdf') m.innerHTML = vPdf();
-  else if (ST.view === 'syn') m.innerHTML = vSynth();
-  else if (ST.view === 'adm') m.innerHTML = vAdmin();
-  else if (ST.view === 'acc') m.innerHTML = vAccount();
-  else if (ST.view === 'ctl') m.innerHTML = vControls();
-  else if (ST.view === 'fac') m.innerHTML = vInvoices();
-  else if (ST.view === 'trp') m.innerHTML = vTransport();
-  else m.innerHTML = vRules();
-  if (ST.view === 'imp') bindDrop();
-  if (ST.view === 'pdf') bindPdfDrop();
-  if (ST.view === 'syn') bindChartTips();
-  if (ST.view === 'trp') calcTransport();
-}
-
-/* ---------- 1. Imports ---------- */
-function vImport(){
-  var f = ST.files, h = '<section class="view">';
-  h += monthStrip();
-  if (ST.pending) h += pendingBox();
-  h += '<div class="panel"><div class="ph"><h2>Exports Odoo WMS · '+monthLabel(ST.month)+'</h2><span class="muted">Fichiers enregistrés en base, rechargés à chaque ouverture du mois</span></div><div class="pb" style="display:grid;gap:14px">';
-  if (canEdit()) h += '<label class="drop" id="drop"><input type="file" id="fin" multiple accept=".xls,.xlsx,.csv"><strong>Déposer les exports Odoo ici</strong><span class="muted">« Fichier Manutention » et « Fichier Client Stockage », une paire par agence. Formats .xls / .xlsx. Un fichier de même nom remplace le précédent.</span><span class="btn sm">Choisir des fichiers</span></label>';
-  else h += '<p class="note muted">'+(monthClosed() ? 'Mois clôturé : lecture seule. Un administrateur peut le rouvrir.' : 'Profil en lecture seule.')+'</p>';
-  if (!f.length) h += '<div class="empty">Aucun export enregistré pour '+monthLabel(ST.month)+'.</div>';
-  else {
-    h += '<div class="tw"><table><thead><tr><th>Fichier</th><th>Type</th><th>Format</th><th>Agence(s)</th><th class="n">Lignes</th><th>Contrôle de structure</th><th>Importé</th><th></th></tr></thead><tbody>';
-    f.forEach(function(x,i){
-      var st = x.error ? '<span class="pill p-bloquant">Rejeté</span> '+esc(x.error)
-        : x.missing.length ? '<span class="pill p-bloquant">Colonnes manquantes</span> '+esc(x.missing.join(', '))
-        : x.kind==='stock' && x.fmt==='B' ? '<span class="pill p-verifier">Incomplet</span> Sans dates d\'entrée/sortie, type de stockage ni prix : durées reconstruites depuis les mouvements.'
-        : '<span class="pill p-ok">Conforme</span>';
-      h += '<tr><td>'+esc(x.name)+'</td><td>'+(x.kind==='manut'?'Manutention':x.kind==='stock'?'Stockage':'—')+'</td><td>'+(x.kind==='stock'?(x.fmt==='A'?'Complet (dates)':'Réduit (jours seuls)'):x.kind?'Standard':'')+'</td><td>'+esc((x.agences||[]).join(', ')||'—')+'</td><td class="n">'+(x.records?x.records.length:'')+'</td><td>'+st+(x.kind && E.detectMonth([x]) && E.detectMonth([x]) !== ST.month ? ' <span class="pill p-verifier">Données de '+monthLabel(E.detectMonth([x]))+'</span>' : '')+'</td><td class="muted" style="font-size:12px;white-space:nowrap">'+(x.meta ? esc(new Date(x.meta.at).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}))+'<br>'+esc(x.meta.by) : '')+'</td><td>'+(canEdit() ? '<button class="btn sm" data-a="rm" data-i="'+i+'">Supprimer</button>' : '')+'</td></tr>';
-    });
-    h += '</tbody></table></div>';
-    // couverture par agence
-    var cov = {};
-    f.forEach(function(x){ (x.agences||[]).forEach(function(a){ cov[a] = cov[a] || {}; cov[a][x.kind] = 1; }); });
-    var miss = Object.keys(cov).filter(function(a){ return !cov[a].manut || !cov[a].stock; });
-    if (miss.length) h += '<p class="note"><span class="pill p-bloquant">Incomplet</span> Fichier manquant pour : '+miss.map(function(a){ return esc(a)+' ('+(cov[a].manut?'stockage':'manutention')+')'; }).join(', ')+'.</p>';
-  }
-  h += '</div></div>';
-  if (ST.R){
-    var R = ST.R, nm = R.M.length, ns = R.S.length;
-    h += '<div class="kpis">'+kpi('Mouvements', nm.toLocaleString('fr-FR'), R.M.filter(function(r){return r.op==='E';}).length+' entrées · '+R.M.filter(function(r){return r.op==='S';}).length+' sorties')+
-      kpi('Lignes de stock', ns.toLocaleString('fr-FR'), 'colis présents sur la période')+
-      kpi('Agences', uniqA(R.records.map(function(r){ return r.agLabel; }).filter(Boolean)).length, uniqA(R.records.map(function(r){ return r.agLabel; }).filter(Boolean)).join(' · '))+
-      kpi('Période détectée', monthLabel(R.month), R.mb.len+' jours')+'</div>';
-    h += '<div><button class="btn pri" data-go="ctl">Passer aux anomalies Odoo →</button></div>';
-  }
-  return h + '</section>';
-}
-function monthStrip(){
-  var d = ST.monthDoc || { status:'vide' }, st = d.status || 'vide', h = '<div class="strip"><span class="lbl">Période de facturation</span><strong>'+monthLabel(ST.month)+'</strong>';
-  h += '<span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
-  if (st==='clos') h += '<span class="muted">le '+esc(d.closedAt ? new Date(d.closedAt).toLocaleDateString('fr-FR') : '')+' par '+esc(d.closedBy||'')+' · grilles figées à la clôture</span>';
-  else if (d.updatedAt) h += '<span class="muted" id="save">Dernier enregistrement '+esc(new Date(d.updatedAt).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}))+' par '+esc(d.updatedBy||'')+'</span>';
-  else h += '<span class="muted" id="save"></span>';
-  h += '<span class="sp">';
-  if (st==='ouvert' && role()!=='lecture' && ST.R){
-    var blk = ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0);
-    h += blk ? '<button class="btn" disabled title="Traiter les lignes bloquantes avant de clôturer">Clôturer le mois ('+blk+' bloquante'+(blk>1?'s':'')+')</button>' : (ST.confirmClose ? '<span class="muted">Figer les montants et les grilles ?</span><button class="btn pri" data-a="closeOk">Confirmer la clôture</button><button class="btn" data-a="closeNo">Annuler</button>' : '<button class="btn pri" data-a="close">Clôturer '+monthLabel(ST.month)+'</button>');
-  }
-  if (st==='clos' && isAdmin()) h += '<button class="btn" data-a="reopen">Rouvrir le mois</button>';
-  return h + '</span></div>';
-}
-function pendingBox(){
-  var ms = {}; ST.pending.forEach(function(g){ if (g.month) ms[g.month] = 1; });
-  var target = Object.keys(ms).filter(function(k){ return k !== ST.month; })[0];
-  return '<div class="panel pb warnbox"><p><span class="pill p-verifier">Période</span> Les fichiers déposés portent sur <strong>'+Object.keys(ms).map(monthLabel).join(', ')+'</strong>, alors que la période sélectionnée est <strong>'+monthLabel(ST.month)+'</strong>.</p><div class="row">'+
-    (target ? '<button class="btn pri" data-a="pendGo" data-m="'+target+'">Importer dans '+monthLabel(target)+'</button>' : '')+
-    '<button class="btn" data-a="pendHere">Importer quand même dans '+monthLabel(ST.month)+'</button><button class="btn" data-a="pendNo">Annuler</button></div></div>';
-}
-function closeMonth(){
-  var R = ST.R; ST.confirmClose = false;
-  STORE.saveMonth(ST.month, { status:'clos', cfgSnapshot: ST.cfg, summary: summarize(R), ov:ST.ov, done:ST.done, transport:ST.transport })
-    .then(function(){ return STORE.log('month_close', monthLabel(ST.month)+' · '+eur(R.totals.HT)+' HT', ST.month); })
-    .then(function(){ toast(monthLabel(ST.month)+' clôturé'); refreshMonths(); loadMonth(ST.month); }, function(e){ toast('Clôture impossible : '+e.message); });
-}
-function reopenMonth(){
-  STORE.saveMonth(ST.month, { status:'ouvert', cfgSnapshot:null }).then(function(){ return STORE.log('month_reopen', monthLabel(ST.month), ST.month); })
-    .then(function(){ toast(monthLabel(ST.month)+' rouvert'); refreshMonths(); loadMonth(ST.month); }, function(e){ toast('Réouverture impossible : '+e.message); });
-}
-function uniqA(a){ return a.filter(function(x,i){ return a.indexOf(x)===i; }); }
-function kpi(l,v,s){ return '<div class="kpi"><span class="lbl">'+esc(l)+'</span><span class="v">'+esc(v)+'</span><span class="s">'+esc(s||'')+'</span></div>'; }
-function bindDrop(){
-  var d = $('drop'), i = $('fin'); if (!d) return;
-  i.onchange = function(){ readFiles(i.files); i.value=''; };
-  d.ondragover = function(e){ e.preventDefault(); d.classList.add('over'); };
-  d.ondragleave = function(){ d.classList.remove('over'); };
-  d.ondrop = function(e){ e.preventDefault(); d.classList.remove('over'); readFiles(e.dataTransfer.files); };
-}
-
-/* ---------- 2. Contrôles ---------- */
-function vControls(){
-  if (!ST.R) return noData();
-  var A = ST.R.anomalies, c = { bloquant:0, verifier:0, info:0 };
+/* B · Anomalies */
+function vAnomalies(){
+  if (!ST.R) return '<div class="panel empty">Importer d\'abord les deux exports Odoo.</div>';
+  var A = ST.R.anomalies.filter(function(a){ return a.code !== 'AUTRE_AGENCE'; }), c = { bloquant:0, verifier:0, info:0 };
   A.forEach(function(a){ c[a.sev] += openCount(a); });
-  var h = '<section class="view"><div class="kpis">'+kpi('Bloquant', c.bloquant, 'lignes exclues des factures tant que non traitées')+kpi('À vérifier', c.verifier, 'facturées selon la règle, à confirmer')+kpi('Information', c.info, 'écarts Odoo sans action requise')+kpi('Lignes exclues par l\'ADV', Object.keys(ST.ov.exclude).length, 'cochées « exclure »')+'</div>';
-  h += '<div class="panel"><div class="ph"><h2>Incohérences des données Odoo</h2><span class="muted">Chaque contrôle liste les lignes concernées, avec fichier et n° de ligne Excel.</span></div>';
-  if (!A.length) h += '<div class="empty">Aucune incohérence détectée.</div>';
+  var h = '<div class="kpis">'+kpi('Bloquant', c.bloquant, 'lignes non facturées tant que non traitées')+kpi('À vérifier', c.verifier, 'facturées selon la règle, à confirmer')+kpi('Information', c.info, 'écarts Odoo sans action requise')+kpi('Lignes exclues', Object.keys(ST.ov.exclude).length, 'par l\'ADV')+'</div>';
+  h += '<div class="panel"><div class="ph"><h2>Journal des anomalies</h2><span class="muted">Chaque contrôle liste les lignes concernées, avec fichier et n° de ligne Excel.</span></div>';
+  if (!A.length) h += '<div class="empty">Aucune anomalie.</div>';
   A.forEach(function(a){
     var open = ST.openAnom[a.code];
     h += '<div class="anom"><button class="anom-h" data-anom="'+a.code+'" aria-expanded="'+(open?'true':'false')+'"><span class="pill p-'+a.sev+'">'+SEV[a.sev]+'</span><span class="t">'+esc(a.title)+'</span><span class="num">'+openCount(a)+' l.</span><span class="e">'+esc(a.explain)+(a.note?'<br><span class="muted">'+esc(a.note)+'</span>':'')+'</span></button>';
     if (open) h += '<div class="anom-b">'+(a.code==='NON_RATTACHE' ? assignTable(a) : a.code==='AFFAIRE_INCONNUE' ? affTable(a) : (a.merge ? mergeBox(a) : '') + recTable(a.keys, 'anom-'+a.code))+'</div>';
     h += '</div>';
   });
-  return h + '</div></section>';
+  return h + '</div>';
 }
 function cmOptions(sel){
   var o = ['<option value="">— Rattacher à —</option>'], seen = {};
@@ -304,7 +411,7 @@ function recTable(keys, id){
   return h;
 }
 
-/* ---------- 3. Factures ---------- */
+/* C · Factures */
 var FAM3 = [ { k:'E', label:'Entrées', fams:['E'], unit:'UP (m³/t)' }, { k:'S', label:'Sorties', fams:['S'], unit:'UP (m³/t)' }, { k:'STK', label:'Stockage', fams:['STK','MIN'], unit:'m² facturés' } ];
 function famAgg(I, f){
   var o = { n:0, qty:0, amount:0, keys:[], minAmt:0, minKeys:[] };
@@ -316,41 +423,64 @@ function famAgg(I, f){
   });
   return o;
 }
-function agList(){ var o = {}; ST.R.invoices.forEach(function(I){ o[I.ag] = o[I.ag] || { ag:I.ag, label:I.agLabel, n:0, ht:0, done:0 }; o[I.ag].n++; o[I.ag].ht = E.r2(o[I.ag].ht + I.totals.HT); if (ST.done[I.key]) o[I.ag].done++; }); return Object.keys(o).sort().map(function(k){ return o[k]; }); }
-function vInvoices(){
-  if (!ST.R) return noData();
-  var R = ST.R, ags = agList();
-  if (!ags.length) return '<section class="view"><div class="panel empty">Aucune facture sur la période.</div></section>';
-  if (!ags.some(function(a){ return a.ag === ST.ag; })) ST.ag = ags[0].ag;
-  var A = ags.filter(function(a){ return a.ag === ST.ag; })[0];
-  var list = R.invoices.filter(function(I){ return I.ag === ST.ag; });
-  var blk = R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0);
-  var h = '<section class="view">' + monthStrip();
-  // sous-menu agences
-  h += '<nav class="subnav" role="tablist">'+ags.map(function(a){ return '<button class="subtab" role="tab" data-ag="'+esc(a.ag)+'" aria-selected="'+(a.ag===ST.ag)+'"><span class="st-l">'+esc(a.label)+'</span><span class="st-v num">'+eur(a.ht)+'</span><span class="st-s">'+a.n+' factures · '+a.done+' éditée'+(a.done>1?'s':'')+'</span></button>'; }).join('')+'</nav>';
-  var t = { E:0, S:0, STK:0 }; list.forEach(function(I){ t.E = E.r2(t.E+I.totals.E); t.S = E.r2(t.S+I.totals.S); t.STK = E.r2(t.STK+I.totals.STK+I.totals.MIN); });
-  h += '<div class="kpis">'+kpi('Total HT '+A.label, eur(A.ht), monthLabel(R.month))+kpi('Entrées', eur(t.E), '')+kpi('Sorties', eur(t.S), '')+kpi('Stockage', eur(t.STK), 'dont minimum 30 m² : '+eur(list.reduce(function(s,I){ return s+I.totals.MIN; },0)))+kpi('À éditer', (A.n-A.done)+' / '+A.n, 'factures restantes')+'</div>';
-  if (blk) h += '<p class="note"><span class="pill p-bloquant">'+blk+' ligne(s) bloquante(s)</span> Non incluses dans les montants. <button class="btn sm" data-go="ctl">Traiter dans Contrôles</button></p>';
-  // liste des factures
-  var cfgA = ST.cfg.agencies[ST.ag] || {};
-  h += '<div class="panel"><div class="ph"><h2>Factures à éditer</h2><span class="muted">'+({affaire:'Une facture par affaire',cm:'Une facture par contremaître',appareil:'Une facture par appareil',ag:'Une facture pour l\'agence'})[cfgA.split||'cm']+' · '+(cfgA.cas===1?'cas 1, devis à valider':'cas 2, sans commande client')+' · '+(cfgA.annexe?'avec annexe':'sans annexe')+'</span><div class="sp"><button class="btn" data-a="xlsAll"'+(canSave()?'':' disabled')+'>Exporter le mois, toutes agences</button><button class="btn" data-a="xlsAg"'+(canSave()?'':' disabled title="Téléchargement indisponible dans cette vue"')+'>Exporter l\'agence (.xlsx)</button></div></div>';
-  h += '<div class="tw"><table class="invt"><thead><tr><th>Facture</th><th>'+({affaire:'Affaire',cm:'Contremaître',appareil:'Appareil',ag:'Périmètre'})[cfgA.split||'cm']+'</th><th>Désignation</th><th class="n">Colis</th><th class="n">Quantité</th><th>Unité</th><th class="n">Montant HT</th><th>Statut</th></tr></thead>';
-  list.forEach(function(I){
-    var done = !!ST.done[I.key], aps = Object.keys(I.appareils).sort(), det = '';
-    h += '<tbody class="inv'+(done?' done':'')+'">';
-    FAM3.forEach(function(f, i){
-      var g = famAgg(I, f), id = I.key+'|'+f.k, open = ST.openLine === id, empty = !g.keys.length && !g.minKeys.length;
-      h += '<tr class="'+(empty?'zero':'click')+(open?' open':'')+(i===0?' first':'')+'"'+(empty?'':' data-line="'+esc(id)+'" aria-expanded="'+open+'"')+'>';
-      if (i === 0) h += '<td rowspan="4" class="ihead"><span class="num inum">'+esc(I.num)+'</span></td><td rowspan="4" class="ihead"><span class="num" style="font-weight:600">'+esc(I.sub)+'</span><br><span class="muted">'+esc(Object.keys(I.cms).join(', '))+'</span><br><span class="muted num aps" title="'+esc(aps.join(' · '))+'">'+aps.length+' appareil'+(aps.length>1?'s':'')+' : '+esc(aps.join(' · '))+'</span></td>';
-      h += '<td>'+(empty?'':(open?'▾ ':'▸ '))+f.label+(g.minAmt?' <span class="muted">(dont min. 30 m² '+n2(g.minAmt)+')</span>':'')+'</td><td class="n">'+(g.n||'—')+'</td><td class="n">'+(g.qty?n3(g.qty):'—')+'</td><td class="muted" style="font-size:12px">'+f.unit+'</td><td class="n">'+n2(g.amount)+'</td>';
-      if (i === 0) h += '<td rowspan="4" class="ihead"><button class="btn sm'+(done?' pri':'')+'" data-done="'+esc(I.key)+'"'+RO()+'>'+(done?'✓ Éditée':'À éditer')+'</button><br><button class="btn sm" style="margin-top:6px" data-xinv="'+esc(I.key)+'"'+(canSave()?'':' disabled')+'>Excel</button></td>';
-      h += '</tr>';
-      if (open) det = '<tr class="det"><td colspan="8"><div class="det-h"><span class="lbl">Détail '+f.label.toLowerCase()+' · '+esc(I.num)+'</span><button class="btn sm" data-line="'+esc(id)+'">Fermer</button></div><div class="det-w">'+famDetail(I, f, g, id)+'</div></td></tr>';
-    });
-    h += '<tr class="tot"><td colspan="4">Total HT</td><td class="n">'+n2(I.totals.HT)+'</td></tr>'+det+'</tbody>';
+function filesSig(){ return ST.files.filter(function(f){ return f.meta; }).map(function(f){ return f.meta.id; }).sort().join(','); }
+function subOf(r, I){ return I.split === 'affaire' ? r.affaire : I.split === 'cm' ? r.eff.cm : I.split === 'appareil' ? r.apLabel : 'Agence'; }
+function famKeys(I, f){
+  var g = famAgg(I, f), ex = [];
+  ST.R.records.forEach(function(r){
+    if (!ST.ov.exclude[r.key] || !r.eff || r.eff.ag !== I.ag) return;
+    var fam = r.kind === 'manut' ? r.op : 'STK'; if (f.fams.indexOf(fam) < 0) return;
+    if (subOf(r, I) === I.sub) ex.push(r.key);
   });
-  h += '</table></div></div>';
-  return h + '</section>';
+  var all = g.keys.concat(ex).sort(function(a, b){ var A = ST.R.byKey[a], B = ST.R.byKey[b]; return A.file === B.file ? A.line - B.line : A.file.localeCompare(B.file); });
+  return { g:g, keys:all, excluded:ex };
+}
+function autoStatus(I){ var bad = I.lineList.some(function(l){ return l.keys.some(function(k){ return (ST.flags[k]||[]).some(function(a){ return a.sev !== 'info'; }); }); }); return bad ? 'verifier' : 'editer'; }
+function generate(){
+  if (!canEdit() || !ST.R) return;
+  var n = 0; ST.R.invoices.forEach(function(I){ if (!ST.ov.status[I.key]){ ST.ov.status[I.key] = autoStatus(I); n++; } });
+  ST.doc.gen = { at:new Date().toISOString(), by:ST.user.email, sig:filesSig(), n:ST.R.invoices.length };
+  STORE.saveMonth(monthId(), { gen:ST.doc.gen, ov:ST.ov, summary:summarize(ST.R) }).then(function(){ STORE.log('generation', ST.R.invoices.length+' factures · '+eur(ST.R.totals.HT)+' HT', monthId()); refreshIndex(); });
+  toast(ST.R.invoices.length+' factures générées'); render();
+}
+function vInvoices(){
+  if (!ST.R) return '<div class="panel empty">Importer d\'abord les deux exports Odoo.</div>';
+  var R = ST.R, gen = ST.doc && ST.doc.gen, stale = gen && gen.sig !== filesSig();
+  var blk = R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0);
+  var h = '<div class="toolbar">'+(canEdit() ? '<button class="btn pri" data-a="gen">'+(gen ? 'Régénérer les factures' : 'Générer les factures')+'</button>' : '')+
+    '<span class="muted">'+(gen ? 'Générées le '+dt(gen.at)+' par '+esc(gen.by) : 'Factures non générées')+'</span>'+
+    (stale ? '<span class="pill p-verifier">Les imports ont changé depuis la génération : régénérer</span>' : '')+
+    (blk ? '<span class="pill p-bloquant">'+blk+' ligne(s) bloquante(s) non facturée(s)</span>' : '')+
+    '<span class="sp">'+(gen ? '<button class="btn" data-a="xlsAg"'+(canSave()?'':' disabled')+'>Exporter le détail (.xlsx)</button>' : '')+'</span></div>';
+  if (!gen) return h + '<div class="panel empty">'+R.invoices.length+' factures prêtes à être générées pour '+esc(agLabel(ST.ag))+' · '+monthLabel(ST.month)+' ('+eur(R.totals.HT)+' HT).'+(blk ? '<br>Traiter d\'abord les '+blk+' ligne(s) bloquante(s) dans Anomalies, sinon elles ne seront pas facturées.' : '')+'</div>';
+  var t = { E:0, S:0, STK:0, HT:0 }, cnt = { verifier:0, editer:0, editee:0 };
+  var body = R.invoices.map(function(I){
+    var st = ST.ov.status[I.key] || autoStatus(I); cnt[st]++;
+    var stk = E.r2(I.totals.STK + I.totals.MIN); t.E = E.r2(t.E + I.totals.E); t.S = E.r2(t.S + I.totals.S); t.STK = E.r2(t.STK + stk); t.HT = E.r2(t.HT + I.totals.HT);
+    var aps = Object.keys(I.appareils).sort();
+    function amt(f, v){ var fk = famKeys(I, FAM3.filter(function(x){ return x.k===f; })[0]); return fk.keys.length ? '<button class="amt" data-amt="'+esc(I.key)+'|'+f+'">'+n2(v)+(fk.excluded.length ? '<span class="xn" title="lignes exclues">−'+fk.excluded.length+'</span>' : '')+'</button>' : '<span class="muted">—</span>'; }
+    return '<tr class="st-'+st+'"><td><span class="num inum">'+esc(I.num)+'</span><br><strong class="num">'+esc(I.sub)+'</strong> <span class="muted">'+esc(Object.keys(I.cms).join(', '))+'</span><br><span class="muted num aps">'+aps.length+' appareil'+(aps.length>1?'s':'')+' : '+esc(aps.join(' · '))+'</span></td>'+
+      '<td class="n">'+amt('E', I.totals.E)+'</td><td class="n">'+amt('S', I.totals.S)+'</td><td class="n">'+amt('STK', stk)+'</td><td class="n"><strong>'+n2(I.totals.HT)+'</strong></td>'+
+      '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
+      '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
+  }).join('');
+  h += '<div class="kpis">'+kpi('Total HT', eur(t.HT), R.invoices.length+' factures')+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées', cnt.editee, '')+'</div>';
+  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr></thead><tbody>'+body+
+    '</tbody><tfoot><tr class="tot"><td>Total '+esc(agLabel(ST.ag))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
+    '<p class="pb note muted" style="margin:0">Cliquer un montant pour voir le détail colis par colis et exclure des lignes. Le PDF passe la facture en « Éditée ».</p></div>';
+  return h;
+}
+/* fenêtre de détail */
+function renderModal(){
+  var box = $('modal'); if (!box) return;
+  if (!ST.modal || !ST.R){ box.hidden = true; box.innerHTML = ''; document.body.classList.remove('noscroll'); return; }
+  var I = ST.R.invoices.filter(function(x){ return x.key === ST.modal.inv; })[0];
+  if (!I){ ST.modal = null; box.hidden = true; return; }
+  var f = FAM3.filter(function(x){ return x.k === ST.modal.fam; })[0], fk = famKeys(I, f), g = fk.g;
+  var h = '<div class="mbox" role="dialog" aria-modal="true" aria-label="Détail '+esc(f.label)+'"><div class="mhead"><div><span class="lbl">'+esc(I.num)+' · '+esc(I.sub)+'</span><h2>'+f.label+'</h2></div><button class="btn" data-mclose>Fermer</button></div>';
+  h += '<div class="kpis">'+kpi('Colis facturés', g.n, fk.excluded.length ? fk.excluded.length+' ligne(s) exclue(s), grisée(s)' : 'aucune exclusion')+kpi('Quantité', n3(g.qty), f.unit)+kpi('Montant HT', eur(g.amount), g.minAmt ? 'dont minimum 30 m² : '+eur(g.minAmt) : '')+'</div>';
+  h += '<div class="mbody">'+famDetail(I, f, { keys:fk.keys, minKeys:g.minKeys }, 'm-'+I.key+f.k)+'</div></div>';
+  box.innerHTML = h; box.hidden = false; document.body.classList.add('noscroll');
 }
 function famDetail(I, f, g, id){
   var h = '';
@@ -360,185 +490,87 @@ function famDetail(I, f, g, id){
   if (g.keys.length) h += recTable(g.keys, id);
   return h;
 }
-/* ---------- 4. Transport ---------- */
-var VEH = [
-  { id:'break', label:'Break 500 kg', pal:1, kg:500, len:null, dims:'—', hayon:false, grue:false, p:{A:[156,277],B:[175,296],C:[194,315]}, h:41, km:0.63 },
-  { id:'f1300', label:'Fourgon 1300 kg', pal:4, kg:1300, len:null, dims:'—', hayon:false, grue:false, p:{A:[192,301],B:[217,326],C:[242,351]}, h:47, km:0.83 },
-  { id:'f700', label:'Fourgon 700 kg hayon', pal:7, kg:700, len:3900, dims:'3,9 × 2,1 × 2,1', hayon:true, grue:false, p:{A:[224,374],B:[252,402],C:[280,430]}, h:56, km:0.92 },
-  { id:'f2t', label:'Fourgon 2T hayon / débâchable', pal:12, kg:2000, len:5200, dims:'5,2 × 2,45 × 2,25', hayon:true, grue:false, p:{A:[263,429],B:[298,464],C:[333,499]}, h:65, km:1.17 },
-  { id:'f5t', label:'Fourgon / débâchable 5T hayon', pal:15, kg:5000, len:7000, dims:'7,0 × 2,45 × 2,35', hayon:true, grue:false, p:{A:[282,443],B:[320,481],C:[358,519]}, h:75, km:1.28 },
-  { id:'grue', label:'Porteur 10T bras de grue', pal:null, kg:10000, len:7800, dims:'7,8 × 2,4 × 2,4', hayon:false, grue:true, p:{A:[425,637],B:[468,680],C:[511,722]}, h:96, km:1.43 }
-];
-var KMI = { A:[70,150], B:[100,180], C:[130,210] }, MANUT = [152,272];
-function zoneOf(cp, half78){
-  var d = String(cp||'').trim().slice(0,2); if (!/^\d{2}$/.test(d)) return null;
-  if (['75','92','93','95'].indexOf(d)>=0) return 'A';
-  if (['91','77','94'].indexOf(d)>=0) return 'B';
-  if (d === '78') return half78 || null;
-  return 'C';
-}
-function vTransport(){
-  var h = '<section class="view"><div class="two"><div class="panel"><div class="ph"><h2>Nouvelle livraison chantier</h2><span class="muted">Grille transport OTIS 2023 (01/07/2023)</span></div><form class="pb" id="tform" style="display:grid;gap:14px">';
-  h += '<div class="grid-f">'+fld('Agence OTIS','t_ag','text','AG 496 Major Project')+fld('Contremaître','t_cm','text','')+fld('Appareil / N° commande','t_cmd','text','')+fld('Date de livraison','t_date','date','')+'</div>';
-  h += '<div class="grid-f">'+fld('Code postal du chantier','t_cp','text','92400')+fld('Commune','t_ville','text','Courbevoie')+
-    '<div class="fld" id="w78" hidden><span class="lbl">Yvelines (78) : zone</span><select id="t_78"><option value="">Choisir</option><option value="A">Zone A (moitié Est)</option><option value="B">Zone B (moitié Ouest)</option></select></div></div>';
-  h += '<div class="grid-f">'+fld('Palettes Europe','t_pal','number','3')+fld('Poids total (kg)','t_kg','number','850')+fld('Plus grande longueur (mm)','t_len','number','2500')+'</div>';
-  h += '<div class="grid-f">'+fld('Durée estimée (h)','t_h','number','3.5')+fld('Km estimés (aller-retour)','t_km','number','60')+'</div>';
-  h += '<div style="display:flex;flex-wrap:wrap;gap:10px 22px"><label class="chk"><input type="checkbox" id="t_hayon" checked>Livraison sans quai (hayon requis)</label><label class="chk"><input type="checkbox" id="t_grue">Levage par grue</label><label class="chk"><input type="checkbox" id="t_man">Manutentionnaire en plus</label></div>';
-  h += '</form></div><div style="display:grid;gap:16px"><div id="treco"></div></div></div>';
-  h += '<div class="panel"><div class="ph"><h2>Transports du mois</h2><span class="muted">Cas 1 : un devis par livraison, facturé après validation OTIS</span><div class="sp"><button class="btn" data-a="xlsTr"'+(ST.transport.length&&canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
-  if (!ST.transport.length) h += '<div class="empty">Aucun transport ajouté. Renseigner une livraison puis « Ajouter à la facturation ».</div>';
-  else {
-    h += '<div class="tw"><table><thead><tr><th>Date</th><th>Agence</th><th>Contremaître</th><th>Appareil</th><th>Chantier</th><th>Zone</th><th>Véhicule</th><th>Détail</th><th class="n">Montant HT</th><th></th></tr></thead><tbody>';
-    ST.transport.forEach(function(t,i){ h += '<tr><td>'+esc(E.frDate(t.date))+'</td><td>'+esc(t.ag)+'</td><td>'+esc(t.cm)+'</td><td class="num">'+esc(t.cmd)+'</td><td>'+esc(t.cp+' '+t.ville)+'</td><td>'+t.zone+'</td><td>'+esc(t.veh)+'</td><td class="formula">'+esc(t.detail)+'</td><td class="n">'+n2(t.total)+'</td><td><button class="btn sm" data-trm="'+i+'"'+RO()+'>Retirer</button></td></tr>'; });
-    h += '<tr class="tot"><td colspan="8">Total</td><td class="n">'+n2(ST.transport.reduce(function(s,t){ return s+t.total; },0))+'</td><td></td></tr></tbody></table></div>';
-  }
-  return h + '</div></section>';
-}
-function fld(l,id,type,v){ return '<div class="fld"><label class="lbl" for="'+id+'">'+l+'</label><input id="'+id+'" type="'+type+'" value="'+esc(v)+'"'+(type==='number'?' step="any" min="0"':'')+'></div>'; }
-function tv(id){ var e=$(id); return e ? (e.type==='checkbox' ? e.checked : e.value) : null; }
-function quote(v, zone, hrs, km, man){
-  var half = hrs <= 4 || (hrs <= 6), base = half ? v.p[zone][0] : v.p[zone][1];
-  var xh = half ? Math.max(0, hrs-4) : Math.max(0, hrs-7), kmi = KMI[zone][half?0:1], xk = Math.max(0, km-kmi);
-  var m = man ? MANUT[half?0:1] : 0;
-  var tot = E.r2(base + xh*v.h + xk*v.km + m);
-  var det = (half?'½ journée':'Journée')+' '+base+' + '+nx(xh)+' h × '+v.h+' + '+nx(xk)+' km × '+String(v.km).replace('.',',')+(m?' + manut. '+m:'')+' = '+n2(tot);
-  return { half:half, base:base, xh:xh, xk:xk, kmi:kmi, man:m, total:tot, detail:det };
-}
-var LAST_Q = null;
-function calcTransport(){
-  var box = $('treco'); if (!box) return;
-  var cp = tv('t_cp'); $('w78').hidden = String(cp).slice(0,2) !== '78';
-  var zone = zoneOf(cp, tv('t_78')), pal = +tv('t_pal')||0, kg = +tv('t_kg')||0, len = +tv('t_len')||0, hrs = +tv('t_h')||0, km = +tv('t_km')||0;
-  var hay = tv('t_hayon'), grue = tv('t_grue'), man = tv('t_man');
-  if (!zone){ box.innerHTML = '<div class="panel pb note">'+(String(cp).slice(0,2)==='78'?'Yvelines : choisir la zone A ou B (la grille partage le 78 en deux moitiés).':'Saisir un code postal valide pour déterminer la zone.')+'</div>'; LAST_Q=null; return; }
-  var rows = VEH.map(function(v){
-    var why = [];
-    if (grue && !v.grue) why.push('pas de grue');
-    if (!grue && v.grue && false) why.push('');
-    if (v.pal !== null && pal > v.pal) why.push(pal+' pal. > '+v.pal);
-    if (kg > v.kg) why.push(kg+' kg > '+v.kg);
-    if (v.len === null ? len > 1200 : len > v.len) why.push(v.len===null ? 'dimensions non garanties > 1 200 mm' : 'longueur > '+v.len+' mm');
-    if (hay && !v.hayon && !v.grue) why.push('pas de hayon');
-    var q = quote(v, zone, hrs, km, man);
-    return { v:v, ok:!why.length, why:why, q:q };
-  });
-  var ok = rows.filter(function(r){ return r.ok; }).sort(function(a,b){ return a.q.total-b.q.total; });
-  var best = ok[0];
-  var h = '<div class="panel"><div class="ph"><h2>Recommandation</h2><span class="pill p-info">Zone '+zone+'</span></div><div class="pb" style="display:grid;gap:12px">';
-  if (!best){ h += '<p class="note"><span class="pill p-bloquant">Hors grille</span> Aucun véhicule de la grille ne convient : transport sur devis.</p>'; LAST_Q=null; }
-  else {
-    LAST_Q = { zone:zone, veh:best.v.label, detail:best.q.detail, total:best.q.total };
-    h += '<div class="reco"><span class="lbl">Véhicule recommandé</span><strong style="font-size:17px">'+esc(best.v.label)+'</strong><span class="muted">'+(best.v.dims!=='—'?'Caisse '+best.v.dims+' m · ':'')+(best.v.pal?best.v.pal+' pal. max · ':'')+best.v.kg+' kg max'+(best.v.hayon?' · transpalette comprise':'')+'</span><span class="price">'+eur(best.q.total)+' HT</span><span class="formula">'+esc(best.q.detail)+'</span><span class="muted" style="font-size:12.5px">'+(best.q.half?'½ journée : 4 h et '+best.q.kmi+' km inclus ; dépassement facturé à l\'heure jusqu\'à 2 h.':'Journée : 7 h et '+best.q.kmi+' km inclus.')+'</span><div><button class="btn pri" data-a="addTr"'+RO()+'>Ajouter à la facturation</button></div></div>';
-  }
-  h += '<div class="tw"><table><thead><tr><th>Véhicule</th><th>Compatibilité</th><th class="n">Montant HT</th></tr></thead><tbody>';
-  rows.forEach(function(r){ h += '<tr'+(best&&r.v===best.v?' class="open"':'')+'><td>'+esc(r.v.label)+'</td><td>'+(r.ok?'<span class="pill p-ok">OK</span>':'<span class="muted">'+esc(r.why.join(' · '))+'</span>')+'</td><td class="n">'+n2(r.q.total)+'</td></tr>'; });
-  h += '</tbody></table></div><p class="muted" style="font-size:12.5px;margin:0">Au-delà de 6 h, bascule en journée (dépassement ½ journée limité à 2 h). Véhicules sans dimensions dans la grille (Break, Fourgon 1300) : retenus seulement si la plus grande longueur ≤ 1 200 mm. Annotations manuscrites de la grille (semi, 26T…) non intégrées.</p></div></div>';
-  box.innerHTML = h;
-}
 
-/* ---------- 5. Grilles & règles ---------- */
-function vRules(){
-  var c = ST.cfg, h = '<section class="view">';
-  h += '<p class="note">'+(monthClosed() ? '<span class="pill p-ok">Figé</span> '+monthLabel(ST.month)+' est clôturé : les grilles affichées sont celles en vigueur à la clôture. Toute modification s\'applique aux mois ouverts.' : isAdmin() ? 'Les modifications sont enregistrées en base, tracées au journal et appliquées à tous les mois ouverts.' : 'Consultation seule : seuls les administrateurs modifient les grilles et les règles.')+'</p>';
-  h += '<div class="panel"><div class="ph"><h2>Paramétrage par agence</h2><span class="muted">Process OTIS : AG 495 et 496 en cas 2, une facture par affaire avec les n° d\'appareils, sans annexe. AG 58 en cas 1, par contremaître. CRA (BU), NSA et Tours à paramétrer à l\'arrivée de leurs exports.</span></div><div class="tw"><table><thead><tr><th>Agence</th><th>Grille tarifaire</th><th>Une facture par</th><th>Process</th><th>Annexe détaillée</th></tr></thead><tbody>';
-  var ags = {}; if (ST.R) ST.R.records.forEach(function(r){ if (r.ag) ags[r.ag] = r.agLabel; });
-  Object.keys(c.agencies).forEach(function(a){ ags[a] = ags[a] || 'AG '+a; });
-  Object.keys(ags).sort().forEach(function(a){
-    var ac = c.agencies[a] || { grid:'STD', split:'cm', cas:2, annexe:false };
-    h += '<tr><td>'+esc(ags[a])+'</td><td><select'+CFGRO()+' data-agcfg="'+a+'" data-f="grid">'+Object.keys(c.grids).map(function(g){ return '<option value="'+g+'"'+(ac.grid===g?' selected':'')+'>'+esc(c.grids[g].label)+'</option>'; }).join('')+'</select></td><td><select'+CFGRO()+' data-agcfg="'+a+'" data-f="split"><option value="affaire"'+(ac.split==='affaire'?' selected':'')+'>Affaire</option><option value="cm"'+(ac.split==='cm'?' selected':'')+'>Contremaître</option><option value="appareil"'+(ac.split==='appareil'?' selected':'')+'>Appareil (N° de commande)</option><option value="ag"'+(ac.split==='ag'?' selected':'')+'>Agence (facture unique)</option></select></td><td><select'+CFGRO()+' data-agcfg="'+a+'" data-f="cas"><option value="2"'+(ac.cas!=1?' selected':'')+'>Cas 2 · sans commande</option><option value="1"'+(ac.cas==1?' selected':'')+'>Cas 1 · devis puis commande</option></select></td><td><select'+CFGRO()+' data-agcfg="'+a+'" data-f="annexe"><option value="0"'+(!ac.annexe?' selected':'')+'>Non</option><option value="1"'+(ac.annexe?' selected':'')+'>Oui</option></select></td></tr>';
+/* Pro forma PDF */
+function invLines(I){
+  var g = ST.cfgM || ST.cfg, grid = g.grids[I.grid] || g.grids.STD, out = [];
+  ['E','S'].forEach(function(fam){
+    var recs = []; I.lineList.forEach(function(l){ if (l.fam === fam) l.keys.forEach(function(k){ recs.push(ST.R.byKey[k]); }); });
+    if (!recs.length) return;
+    var lab = fam === 'E' ? 'Entrées en stock' : 'Sorties de stock';
+    var tx = recs.filter(function(r){ return r.applied === 'taux'; }), mc = recs.filter(function(r){ return r.applied !== 'taux' && r.minCat === 'chariot'; }), mm = recs.filter(function(r){ return r.applied !== 'taux' && r.minCat === 'manuel'; });
+    var sum = function(a, k){ return a.reduce(function(s, r){ return s + r[k]; }, 0); };
+    if (tx.length) out.push({ fam:fam, label:lab+' · '+tx.length+' colis au tarif', qty:sum(tx,'up'), unit:'UP (m³/t)', pu:grid.rate, pud:4, amount:E.r2(sum(tx,'amount')) });
+    if (mc.length) out.push({ fam:fam, label:lab+' · minimum chariot / transpalette', qty:mc.length, unit:'colis', pu:E.r2(grid.minChariot), pud:2, amount:E.r2(sum(mc,'amount')) });
+    if (mm.length) out.push({ fam:fam, label:lab+' · minimum manuel', qty:mm.length, unit:'colis', pu:E.r2(grid.minManuel), pud:2, amount:E.r2(sum(mm,'amount')) });
   });
-  h += '</tbody></table></div></div>';
-  h += '<div class="two">';
-  Object.keys(c.grids).forEach(function(gk){
-    var g = c.grids[gk];
-    h += '<div class="panel"><div class="ph"><h3>'+esc(g.label)+'</h3></div><div class="pb tbl-in" style="display:grid;gap:12px"><div class="tw"><table><tbody>'+
-      gRow(gk,'rate','Entrée / sortie, €/unité payante (> 0,500)',g.rate)+gRow(gk,'minChariot','Minimum chariot / transpalette (≥ 0,250 m³ ou > 20 kg)',g.minChariot)+gRow(gk,'minManuel','Minimum manuel (< 0,250 m³ et ≤ 20 kg)',g.minManuel);
-    Object.keys(g.prices).forEach(function(t){ ['mois','quinz','sem'].forEach(function(p){ h += '<tr><td>Stockage '+t.toLowerCase()+' · '+({mois:'mois (≥ 22 j)',quinz:'quinzaine (14 j)',sem:'semaine (7 j)'})[p]+', €/m²</td><td class="n"><input type="number" step="any"'+CFGRO()+' data-gp="'+gk+'|'+t+'|'+p+'" value="'+g.prices[t][p]+'"></td></tr>'; }); });
-    if (g.storeMode==='volume') g.coefs.forEach(function(cf,i){ h += '<tr><td>Coefficient volume → m², '+esc(cf.label)+'</td><td class="n"><input type="number" step="any"'+CFGRO()+' data-gc="'+gk+'|'+i+'" value="'+cf.coef+'"></td></tr>'; });
-    else h += gRow(gk,'coefSurface','Coefficient sur surface au sol',g.coefSurface);
-    h += gRow(gk,'min30','Minimum m² par appareil et par mois (0 = sans)',g.min30);
-    h += '</tbody></table></div></div></div>';
-  });
-  h += '</div>';
-  h += '<div class="panel"><div class="ph"><h2>Règles de calcul</h2><div class="sp">'+(isAdmin() && !monthClosed() ? '<button class="btn" data-a="reset">Revenir aux valeurs contractuelles</button>' : '')+'</div></div><div class="pb rules">';
-  h += '<div class="grid-f"><div class="fld"><label class="lbl" for="r_up">Unité payante manutention</label><select id="r_up"'+CFGRO()+' data-rule="upMode"><option value="max"'+(c.rules.upMode==='max'?' selected':'')+'>max(m³ ; tonnes) — lecture « M3/T »</option><option value="vol"'+(c.rules.upMode==='vol'?' selected':'')+'>m³ seul (pratique Odoo)</option></select></div>'+
-    '<div class="fld"><span class="lbl">Minimum 30 m² / appareil</span><label class="chk"><input type="checkbox"'+CFGRO()+' data-rule="min30"'+(c.rules.min30?' checked':'')+'>Appliquer</label></div></div>';
-  h += '<ol>'+
-    '<li><strong>Manutention (entrée ou sortie)</strong>, par colis et par mouvement : <code>UP = max(volume m³ ; poids t)</code> ; <code>montant = arrondi₂( max( taux × UP ; minimum ) )</code>. Minimum « manuel » si volume &lt; 0,250 m³ et poids ≤ 20 kg, sinon minimum « chariot ».</li>'+
-    '<li><strong>Durée de stockage</strong> sur le mois : jours comptés bornes incluses, de max(entrée, 1<sup>er</sup> du mois) à min(sortie, dernier jour). Export stockage sans dates : entrée et sortie reprises des mouvements du fichier Manutention ; à défaut, colis présent tout le mois. Le nombre de jours Odoo n\'est utilisé que si aucune date n\'est exploitable (plafonné au mois).</li>'+
-    '<li><strong>Tranche</strong> : 22 j et plus = mois ; 15 à 21 j = quinzaine + semaine ; 8 à 14 j = quinzaine ; 1 à 7 j = semaine.</li>'+
-    '<li><strong>Surface facturée</strong> (grille 2022) : <code>volume × coefficient de sa tranche de volume</code> (≥ 1 m³ : 2,6832 ; 0,5–0,999 : 3,224 ; 0,25–0,499 : 3,744 ; &lt; 0,25 : 4,2952). Grille Tours : <code>surface au sol × 1,50</code>. <code>montant = arrondi₂(surface facturée × prix de la tranche)</code>.</li>'+
-    '<li><strong>Minimum 30 m²</strong> : par agence et par appareil, somme des surfaces facturées au mois. Si inférieure à 30 m², complément <code>(30 − somme) × prix mois</code>, porté par le contremaître qui détient la plus grande surface.</li>'+
-    '<li><strong>Affaire et appareil</strong> : le n° de commande Odoo se lit <code>APPAREIL / AFFAIRE</code> (ex. <code>45K1BZY5 / 45KRXI9F</code>). Si l\'affaire manque (retour chantier), elle est reprise de l\'appareil, puis de l\'historique du colis ; sinon la ligne est bloquée jusqu\'à saisie par l\'ADV. Une facture par agence et par affaire ; une ligne par famille et par appareil.</li>'+
-    '<li><strong>Arrondis</strong> : au centime par ligne colis ; les totaux sont la somme des lignes arrondies. TVA 20 % sur le total HT.</li>'+
-    '<li><strong>Exclusions</strong> : lignes sans client, dimensions nulles ou mouvement hors période ne sont jamais facturées. L\'ADV peut exclure toute ligne (case « Excl. ») ; l\'exclusion apparaît dans l\'export.</li>'+
-  '</ol></div></div>';
-  return h + '</section>';
-}
-function CFGRO(){ return isAdmin() && !monthClosed() ? '' : ' disabled'; }
-function saveCfg(what){ ST.globalCfg = ST.cfg; STORE.saveConfig(ST.cfg, what).then(function(){ toast('Enregistré : '+what); }, function(e){ toast('Enregistrement impossible : '+e.message); }); rebuild(); if (canEdit()) persist(); }
-function gRow(gk,f,l,v){ return '<tr><td>'+l+'</td><td class="n"><input type="number" step="any"'+CFGRO()+' data-g="'+gk+'|'+f+'" value="'+v+'"></td></tr>'; }
-function noData(){ return '<section class="view">'+monthStrip()+'<div class="panel empty">Aucune donnée pour '+monthLabel(ST.month)+' : importer les exports Odoo du mois. <button class="btn sm" data-go="imp">Aller aux imports</button></div></section>'; }
-
-/* ---------- Exports Excel ---------- */
-function recRow(r, I){
-  var fl = (ST.flags[r.key]||[]).map(function(a){ return a.title; }).join(' | ');
-  return {
-    'Facture': I ? I.num : '', 'Fichier': r.file, 'Ligne Excel': r.line, 'Agence': r.eff ? r.eff.agLabel : 'Non rattaché', 'Contremaître': r.eff ? r.eff.cm : '', 'Code CM': r.eff ? r.eff.cmCode : r.cmCode,
-    'N° BR': r.br, 'N° commande Odoo': r.cmdRaw, 'Affaire': r.affaire || '', 'Source affaire': r.affSrc || '', 'Appareil': r.apLabel || '', 'N° colis': r.colis, 'Produit': r.produit,
-    'Famille': r.kind==='manut' ? (r.op==='E'?'Entrée':'Sortie') : 'Stockage', 'Date mouvement': r.date ? E.frDate(r.date) : '',
-    'Début période': r.pStart ? E.frDate(r.pStart) : '', 'Fin période': r.pEnd ? E.frDate(r.pEnd) : '', 'Jours retenus': r.kind==='stock' ? r.days : '', 'Source jours': r.daysSrc || '', 'Jours Odoo': isNaN(r.odooJours) ? '' : r.odooJours,
-    'Longueur mm': r.L, 'Largeur mm': r.l, 'Hauteur mm': r.h, 'Poids kg': r.kg, 'Volume m3': r.vol, 'Surface m2': r.surf,
-    'Unité payante': r.kind==='manut' ? r.up : '', 'Coefficient': r.kind==='stock' ? r.coef : '', 'Surface facturée m2': r.kind==='stock' ? r.surfFact : '', 'Tranche': r.kind==='stock' ? E.TIER_LABEL[r.tier] : (r.applied||''),
-    'Prix unitaire': r.kind==='stock' ? r.pu : r.rate, 'Calcul': r.formula, 'Montant HT': r.billable ? r.amount : 0, 'Facturé': r.billable ? 'Oui' : 'Non', 'Exclusion ADV': ST.ov.exclude[r.key] || '', 'Prix Odoo': isNaN(r.odooPrix) ? '' : r.odooPrix, 'Contrôles': fl
-  };
-}
-function invSheet(I){
-  var R = ST.R, rows = [['Facture', I.num], ['Période', monthLabel(R.month)], ['Client', 'OTIS CN · '+I.agLabel], [({affaire:'Affaire',cm:'Contremaître',appareil:'Appareil',ag:'Périmètre'})[I.split], I.sub], ['Contremaître(s)', Object.keys(I.cms).join(', ')], ['Appareils', Object.keys(I.appareils).sort().join(' · ')], ['Grille', ST.cfg.grids[I.grid].label], ['Process', (I.cas===1?'Cas 1 · devis à valider':'Cas 2 · sans commande client')+(I.annexe?' · avec annexe':' · sans annexe')], [], ['Désignation','Nb colis','Quantité','Unité','Montant HT']];
-  FAM3.forEach(function(f){ var g = famAgg(I, f); rows.push([f.label + (g.minAmt ? ' (dont minimum 30 m² : '+n2(g.minAmt)+' €)' : ''), g.n, Math.round(g.qty*1000)/1000, f.unit, g.amount]); });
-  rows.push([], ['Total HT','','','',I.totals.HT], ['TVA 20 %','','','',E.r2(I.totals.HT*0.2)], ['Total TTC','','','',E.r2(I.totals.HT*1.2)]);
-  return XLSX.utils.aoa_to_sheet(rows);
-}
-function detailRows(I){
-  var out = [];
-  I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r.kind==='min30') out.push({ 'Facture':I.num, 'Famille':'Complément 30 m²', 'N° commande':r.cmd, 'Surface facturée m2':r.surf, 'Calcul':r.formula, 'Montant HT':r.amount }); else out.push(recRow(r, I)); }); });
+  var tiers = {}; I.lineList.forEach(function(l){ if (l.fam === 'STK') l.keys.forEach(function(k){ var r = ST.R.byKey[k], t = tiers[r.tier+'|'+r.pu] = tiers[r.tier+'|'+r.pu] || { tier:r.tier, pu:r.pu, n:0, qty:0, amount:0 }; t.n++; t.qty += r.surfFact; t.amount += r.amount; }); });
+  Object.keys(tiers).forEach(function(k){ var t = tiers[k]; out.push({ fam:'STK', label:'Stockage · tarif '+E.TIER_LABEL[t.tier].toLowerCase()+' · '+t.n+' colis', qty:t.qty, unit:'m²', pu:t.pu, pud:t.pu % 0.01 ? 3 : 2, amount:E.r2(t.amount) }); });
+  I.lineList.forEach(function(l){ if (l.fam === 'MIN') l.keys.forEach(function(k){ var m = ST.R.byKey[k]; out.push({ fam:'STK', label:'Stockage · complément minimum 30 m² · appareil '+m.apLabel, qty:m.comp, unit:'m²', pu:m.pu, pud:2, amount:m.amount }); }); });
   return out;
 }
-function canSave(){ return STORE.mode !== 'demo' || !!dl; }
-function saveXlsx(wb, name){
-  var buf = XLSX.write(wb, { bookType:'xlsx', type:'array' }), blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  STORE.log('export', name, ST.month);
-  if (dl){ dl.save({ filename:name, data:blob }).then(function(){ toast('Fichier enregistré'); }, function(e){ if (e && e.code !== 'declined') toast('Export impossible : '+(e.message||e.code)); }); return; }
-  if (STORE.mode === 'demo'){ toast('Téléchargement indisponible dans cette vue.'); return; }
-  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-}
-function exportOne(key){
-  var I = ST.R.invoices.filter(function(x){ return x.key===key; })[0]; if (!I) return;
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, invSheet(I), 'Facture');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows(I)), I.annexe ? 'Annexe détail colis' : 'Justificatif interne');
-  saveXlsx(wb, I.num+' '+I.sub.replace(/[^\w\- ]+/g,'')+'.xlsx');
-}
-function exportAll(ag){
-  var R = ST.R, wb = XLSX.utils.book_new(), INV = R.invoices.filter(function(I){ return !ag || I.ag === ag; });
-  var sum = INV.map(function(I){ return { 'Facture':I.num, 'Agence':I.agLabel, 'Affaire / périmètre':I.sub, 'Contremaître(s)':Object.keys(I.cms).join(', '), 'Appareils':Object.keys(I.appareils).sort().join(' · '), 'Entrées':I.totals.E, 'Sorties':I.totals.S, 'Stockage':E.r2(I.totals.STK+I.totals.MIN), 'dont minimum 30 m²':I.totals.MIN, 'Total HT':I.totals.HT, 'Statut':ST.done[I.key]?'Éditée':'À éditer', 'Manutention Odoo':I.odoo.M, 'Stockage Odoo':I.odoo.sHas?I.odoo.S:'' }; });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sum), 'Synthèse');
-  var det = []; INV.forEach(function(I){ det = det.concat(detailRows(I)); });
-  var billedKeys = {}; det.forEach(function(d){ billedKeys[d['Fichier']+'#'+d['Ligne Excel']] = 1; });
-  R.records.forEach(function(r){ if (!billedKeys[r.key] && (!ag || (r.eff ? r.eff.ag === ag : true))) det.push(recRow(r, null)); });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(det), 'Détail toutes lignes');
-  var an = []; R.anomalies.forEach(function(a){ a.keys.forEach(function(k){ var r = R.byKey[k]; an.push({ 'Gravité':SEV[a.sev], 'Contrôle':a.title, 'Fichier':r?r.file:'', 'Ligne Excel':r?r.line:'', 'N° colis':r?r.colis:'', 'N° BR':r?r.br:'', 'Contremaître':r&&r.eff?r.eff.cm:'' }); }); });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(an), 'Contrôles');
-  saveXlsx(wb, 'Facturation OTIS '+R.month+(ag?' AG '+ag:'')+'.xlsx');
-}
-function exportTr(){
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ST.transport.map(function(t){ return { 'Date':E.frDate(t.date), 'Agence':t.ag, 'Contremaître':t.cm, 'Appareil':t.cmd, 'Code postal':t.cp, 'Commune':t.ville, 'Zone':t.zone, 'Véhicule':t.veh, 'Calcul':t.detail, 'Montant HT':t.total }; })), 'Transports');
-  saveXlsx(wb, 'Transports OTIS '+(ST.month||'')+'.xlsx');
+function pdfTxt(s){ return String(s === null || s === undefined ? '' : s).replace(/[  ]/g, ' ').replace(/[≥]/g, '>=').replace(/[≤]/g, '<=').replace(/[−]/g, '-').replace(/[→]/g, '->').replace(/[«»]/g, '"').replace(/m³/g, 'm3').replace(/m²/g, 'm2').replace(/³/g, '3').replace(/²/g, '2'); }
+function fmtN(x, d){ return pdfTxt((x||0).toLocaleString('fr-FR', { minimumFractionDigits:d, maximumFractionDigits:d })); }
+function exportInvoicePdf(key){
+  var I = ST.R.invoices.filter(function(x){ return x.key === key; })[0]; if (!I) return;
+  if (!window.jspdf || !window.jspdf.jsPDF){ toast('Générateur PDF indisponible : vérifier la connexion.'); return; }
+  var c = (ST.cfgM || ST.cfg), co = c.company || {}, A = c.agencies[I.ag] || {}, cas1 = I.cas === 1;
+  var doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' }), W = 210, M = 16;
+  var ink = [20,22,24], mut = [100,107,114], line = [214,218,221];
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt(co.name || 'LEGAA'), M, 20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor.apply(doc, mut);
+  var y = 25; pdfTxt(co.address || '').split('\n').filter(Boolean).forEach(function(l){ doc.text(l, M, y); y += 4; });
+  if (co.siret) { doc.text('SIRET '+pdfTxt(co.siret), M, y); y += 4; } if (co.tva) { doc.text('TVA '+pdfTxt(co.tva), M, y); y += 4; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor.apply(doc, ink); doc.text(cas1 ? 'DEVIS PRO FORMA' : 'FACTURE PRO FORMA', W-M, 20, { align:'right' });
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, ink);
+  var today = new Date(), due = new Date(today.getTime() + (+co.paymentDays||30)*86400000);
+  [['N°', I.num], ['Date', today.toLocaleDateString('fr-FR')], ['Période', monthLabel(ST.month)], ['Échéance', due.toLocaleDateString('fr-FR')]].forEach(function(p, i){ doc.setTextColor.apply(doc, mut); doc.text(p[0], W-M-58, 27+i*5); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt(p[1]), W-M, 27+i*5, { align:'right' }); });
+  y = Math.max(y, 48) + 4;
+  doc.setDrawColor.apply(doc, line); doc.rect(W/2, y, W/2-M, 26);
+  doc.setFontSize(8); doc.setTextColor.apply(doc, mut); doc.text('CLIENT', W/2+4, y+5);
+  doc.setFontSize(9.5); doc.setTextColor.apply(doc, ink); doc.setFont('helvetica','bold'); doc.text(pdfTxt('OTIS CN · '+(A.label || I.agLabel)), W/2+4, y+10.5); doc.setFont('helvetica','normal');
+  pdfTxt(A.address || '').split('\n').filter(Boolean).slice(0,3).forEach(function(l, i){ doc.text(l, W/2+4, y+15.5+i*4.2); });
+  var info = [[({affaire:'Affaire',cm:'Contremaître',appareil:'Appareil',ag:'Périmètre'})[I.split], I.sub], ['Contremaître(s)', Object.keys(I.cms).join(', ')], ['Appareils', Object.keys(I.appareils).sort().join(' · ')], ['Grille', (c.grids[I.grid]||{}).label || '']];
+  doc.setFontSize(8.5); info.forEach(function(p, i){ doc.setTextColor.apply(doc, mut); doc.text(pdfTxt(p[0]), M, y+4+i*5.5); doc.setTextColor.apply(doc, ink); doc.text(doc.splitTextToSize(pdfTxt(p[1]), W/2-M-30)[0], M+28, y+4+i*5.5); });
+  y += 33;
+  var L = invLines(I), body = [];
+  FAM3.forEach(function(f){
+    var rows = L.filter(function(l){ return f.fams.indexOf(l.fam) >= 0 || (f.k==='STK' && l.fam==='STK'); }); if (!rows.length) return;
+    var tot = rows.reduce(function(s, r){ return s + r.amount; }, 0);
+    body.push([{ content:pdfTxt(f.k==='E'?'Entrées en stock':f.k==='S'?'Sorties de stock':'Stockage'), colSpan:4, styles:{ fontStyle:'bold', fillColor:[238,240,241] } }, { content:fmtN(tot,2), styles:{ fontStyle:'bold', halign:'right', fillColor:[238,240,241] } }]);
+    rows.forEach(function(r){ body.push([pdfTxt(r.label), fmtN(r.qty, r.unit === 'colis' ? 0 : 3)+' '+pdfTxt(r.unit), fmtN(r.pu, r.pud), '', fmtN(r.amount,2)]); });
+  });
+  doc.autoTable({ startY:y, head:[[pdfTxt('Désignation'), { content:pdfTxt('Quantité'), styles:{ halign:'right' } }, { content:'PU HT', styles:{ halign:'right' } }, '', { content:'Montant HT', styles:{ halign:'right' } }]], body:body, theme:'plain', margin:{ left:M, right:M },
+    styles:{ font:'helvetica', fontSize:8.5, cellPadding:1.8, textColor:ink, lineColor:line, lineWidth:{ bottom:0.1 } },
+    headStyles:{ fontStyle:'bold', textColor:mut, fontSize:7.5, lineWidth:{ bottom:0.4 }, lineColor:ink },
+    columnStyles:{ 0:{ cellWidth:92 }, 1:{ halign:'right', cellWidth:32 }, 2:{ halign:'right', cellWidth:22 }, 3:{ cellWidth:4 }, 4:{ halign:'right' } } });
+  y = doc.lastAutoTable.finalY + 6;
+  var tva = E.r2(I.totals.HT * 0.2);
+  [['Total HT', I.totals.HT], ['TVA 20 %', tva], ['Total TTC', E.r2(I.totals.HT + tva)]].forEach(function(p, i){
+    doc.setFont('helvetica', i === 2 ? 'bold' : 'normal'); doc.setFontSize(i === 2 ? 10.5 : 9); doc.text(pdfTxt(p[0]), W-M-60, y+i*6); doc.text(fmtN(p[1],2)+' EUR', W-M, y+i*6, { align:'right' });
+  });
+  doc.setDrawColor.apply(doc, ink); doc.line(W-M-62, y+8.2, W-M, y+8.2);
+  y += 24;
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor.apply(doc, mut);
+  var note = doc.splitTextToSize(pdfTxt('Document de préparation : la facture officielle est émise dans le logiciel de facturation LEGAA. Montants calculés colis par colis selon la grille contractuelle et arrondis au centime par colis ; le détail est disponible sur demande'+(A.annexe ? ' et figure en annexe.' : '.')+' Unité payante (UP) = le plus grand du volume en m³ et du poids en tonnes.'), W-2*M);
+  doc.text(note, M, y);
+  var foot = pdfTxt([co.iban ? 'IBAN '+co.iban : '', 'Paiement à '+(+co.paymentDays||30)+' jours', co.mentions || ''].filter(Boolean).join(' · '));
+  if (A.annexe){
+    var det = [];
+    FAM3.forEach(function(f){ var fk = famKeys(I, f); fk.g.keys.forEach(function(k){ var r = ST.R.byKey[k]; det.push([f.label, pdfTxt(r.colis||'-'), doc.splitTextToSize(pdfTxt(r.produit), 60)[0], pdfTxt(r.kind==='manut' ? E.frDate(r.date) : (r.days+' j')), fmtN(r.vol,3), fmtN(r.kind==='manut' ? r.up : r.surfFact,3), fmtN(r.amount,2)]); }); });
+    doc.addPage(); doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt('Annexe · détail colis · '+I.num), M, 18);
+    doc.autoTable({ startY:23, head:[['Famille','Colis','Produit','Date / jours','Vol. m³','UP / m²','Montant HT']], body:det, theme:'plain', margin:{ left:M, right:M },
+      styles:{ fontSize:7, cellPadding:1.2, textColor:ink, lineColor:line, lineWidth:{ bottom:0.1 } }, headStyles:{ fontStyle:'bold', textColor:mut, lineWidth:{ bottom:0.4 }, lineColor:ink },
+      columnStyles:{ 4:{ halign:'right' }, 5:{ halign:'right' }, 6:{ halign:'right' } } });
+  }
+  var pages = doc.getNumberOfPages();
+  for (var p = 1; p <= pages; p++){ doc.setPage(p); doc.setFontSize(7); doc.setTextColor.apply(doc, mut); doc.text(foot, M, 290); doc.text(p+' / '+pages, W-M, 290, { align:'right' }); }
+  var blob = doc.output('blob');
+  saveBlob(I.num+' '+I.sub.replace(/[^\w\- ]+/g,'')+'.pdf', blob, 'pdf');
+  if (canEdit() && ST.ov.status[I.key] !== 'editee'){ ST.ov.status[I.key] = 'editee'; render(); persist('Facture éditée '+I.num); }
 }
 
-/* ---------- 4. Contrôle des factures PDF ---------- */
+/* D · Contrôle des factures */
 var PST = { conforme:['p-ok','Conforme'], ecart:['p-bloquant','Écart'], non_rapprochee:['p-verifier','Non rapprochée'], illisible:['p-verifier','Illisible'], erreur:['p-bloquant','Erreur'] };
 function famTotals(I){ return { E:I.totals.E, S:I.totals.S, STK:E.r2(I.totals.STK + I.totals.MIN) }; }
 function pdfCtx(){
@@ -546,32 +578,66 @@ function pdfCtx(){
   ST.R.invoices.forEach(function(I){ if (I.split==='affaire') known.affaires[I.sub] = 1; Object.keys(I.appareils).forEach(function(a){ known.appareils[a] = 1; }); });
   return { known:known, invoices:ST.R.invoices, month:ST.month, famTotals:famTotals };
 }
-function vPdf(){
-  var h = '<section class="view">' + monthStrip();
-  if (!ST.R) return h + '<div class="panel empty">Importer d\'abord les exports Odoo de '+monthLabel(ST.month)+' : le contrôle compare chaque PDF à la facture calculée.</div></section>';
+function vControl(){
+  if (!ST.R) return '<div class="panel empty">Importer d\'abord les exports Odoo : le contrôle compare chaque PDF à la facture calculée.</div>';
   var P = ST.pdfs, c = { conforme:0, ecart:0, non_rapprochee:0, illisible:0, erreur:0 }, byInv = {};
   P.forEach(function(p){ var st = p.result ? p.result.status : 'erreur'; c[st] = (c[st]||0)+1; if (p.result && p.result.invKey) (byInv[p.result.invKey] = byInv[p.result.invKey] || []).push(p); });
-  var missing = ST.R.invoices.filter(function(I){ return !byInv[I.key]; });
-  var dups = Object.keys(byInv).filter(function(k){ return byInv[k].length > 1; });
-  h += '<div class="kpis">'+kpi('PDF contrôlés', P.length, '')+kpi('Conformes', c.conforme, '')+kpi('En écart', c.ecart, 'montant, affaire, appareils ou période')+kpi('Non rapprochés / illisibles', c.non_rapprochee + c.illisible + c.erreur, '')+kpi('Factures sans PDF', missing.length, 'sur '+ST.R.invoices.length+' calculées')+'</div>';
-  h += '<div class="panel"><div class="ph"><h2>Factures émises à contrôler</h2><span class="muted">Chaque PDF est comparé à la facture calculée : affaire, agence, période, n° d\'appareils, Entrées, Sorties, Stockage, total HT, TVA, TTC (tolérance 0,01 €)</span><div class="sp">'+(P.length && role()!=='lecture' ? '<button class="btn" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'</div></div><div class="pb" style="display:grid;gap:14px">';
-  if (role() !== 'lecture') h += '<label class="drop" id="pdrop"><input type="file" id="pin" multiple accept="application/pdf,.pdf"><strong>Déposer les factures PDF ici</strong><span class="muted">PDF générés par le logiciel de facturation (pas de scans). Ils sont conservés en base avec le résultat du contrôle.</span><span class="btn sm">Choisir des PDF</span></label>';
-  if (dups.length) h += '<p class="note"><span class="pill p-bloquant">Doublon</span> Plusieurs PDF pour la même facture : '+dups.map(function(k){ return esc(ST.R.invoices.filter(function(I){ return I.key===k; })[0].num); }).join(', ')+'.</p>';
-  if (!P.length) h += '<div class="empty">Aucun PDF déposé pour '+monthLabel(ST.month)+'.</div>';
-  else {
-    h += '<div class="tw"><table><thead><tr><th>Fichier</th><th>N° facture (PDF)</th><th>Affaire</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th class="n">Écart</th><th>Statut</th><th></th></tr></thead><tbody>';
-    P.forEach(function(p){
-      var r = p.result || { status:'erreur', note:'Non analysé' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null;
-      var pht = r.parsed ? r.parsed.totalHT : null, cht = I ? I.totals.HT : null, d = (pht!==null && cht!==null) ? E.r2(pht - cht) : null;
-      var stale = I && r.calcHT !== undefined && Math.abs(r.calcHT - I.totals.HT) > 0.005;
-      var open = ST.openPdf === p.id;
-      h += '<tr class="click'+(open?' open':'')+'" data-pdf="'+esc(p.id)+'"><td>'+(open?'▾ ':'▸ ')+esc(p.name)+'</td><td class="num">'+esc(r.parsed ? r.parsed.numero || '—' : '—')+'</td><td class="num">'+esc(r.parsed ? r.parsed.affaires.join(', ') || '—' : '—')+'</td><td class="num">'+esc(I ? I.num : '—')+'</td><td class="n">'+(pht===null?'—':n2(pht))+'</td><td class="n">'+(cht===null?'—':n2(cht))+'</td><td class="n">'+(d===null?'—':(d>0?'+':'')+n2(d))+'</td><td><span class="pill '+PST[r.status][0]+'">'+PST[r.status][1]+'</span>'+(stale?' <span class="pill p-verifier" title="Le calcul a changé depuis le contrôle">à relancer</span>':'')+'</td><td>'+(role()!=='lecture' ? '<button class="btn sm" data-pdfrm="'+esc(p.id)+'">Supprimer</button>' : '')+'</td></tr>';
-      if (open) h += '<tr class="det"><td colspan="9"><div class="det-w">'+pdfDetail(p, r)+'</div></td></tr>';
-    });
-    h += '</tbody></table></div>';
+  var missing = ST.R.invoices.filter(function(I){ return !byInv[I.key]; }), dups = Object.keys(byInv).filter(function(k){ return byInv[k].length > 1; });
+  var issues = [];
+  P.forEach(function(p){
+    var r = p.result || { status:'erreur', note:'Non analysé' };
+    if (r.status === 'conforme') return;
+    if (r.status !== 'ecart'){ issues.push(['PDF '+PST[r.status][1].toLowerCase(), p.name, '—', r.note || '', '', '', '', p.id]); return; }
+    r.checks.filter(function(k){ return !k.ok; }).forEach(function(k){ issues.push(['Écart', p.name, r.invNum, k.label, k.pdf, k.calc, k.note, p.id]); });
+  });
+  dups.forEach(function(k){ var I = ST.R.invoices.filter(function(x){ return x.key===k; })[0]; issues.push(['Doublon', byInv[k].map(function(p){ return p.name; }).join(', '), I.num, 'Plusieurs PDF pour la même facture', '', '', '', null]); });
+  if (P.length && missing.length) issues.push(['PDF manquant', '—', missing.length+' facture'+(missing.length>1?'s':''), 'Aucun PDF déposé', '', E.r2(missing.reduce(function(s, I){ return s + I.totals.HT; }, 0)), missing.map(function(I){ return I.num.slice(-2)+' '+I.sub; }).join(' · '), null]);
+  var ok = P.length && !issues.length;
+  var h = '<div class="ctlhead"><div class="verdict '+(P.length ? (ok ? 'v-ok' : 'v-ko') : 'v-none')+'"><span class="lbl">Résultat du contrôle</span><strong>'+(!P.length ? 'Aucune facture déposée' : ok ? 'Conforme : '+c.conforme+' facture'+(c.conforme>1?'s':'')+' sur '+ST.R.invoices.length : issues.length+' anomalie'+(issues.length>1?'s':'')+' à corriger')+'</strong></div>'+
+    '<div class="kpis">'+kpi('PDF déposés', P.length, '')+kpi('Conformes', c.conforme, '')+kpi('En écart', c.ecart, '')+kpi('Non rapprochés / illisibles', c.non_rapprochee + c.illisible + c.erreur, '')+kpi('Factures sans PDF', missing.length, 'sur '+ST.R.invoices.length)+'</div></div>';
+  h += closeBox();
+  if (role() !== 'lecture' && !monthClosed()) h += '<label class="drop" id="pdrop"><input type="file" id="pin" multiple accept="application/pdf,.pdf"><strong>Déposer toutes les factures PDF du mois</strong><span class="muted">PDF générés par le logiciel de facturation (pas de scans). Comparaison : affaire, agence, période, n° d\'appareils, Entrées, Sorties, Stockage, total HT, TVA, TTC (tolérance 0,01 €).</span></label>';
+  if (issues.length){
+    h += '<div class="panel"><div class="ph"><h2>Anomalies identifiées</h2><div class="sp">'+(P.length && canEdit() ? '<button class="btn sm" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'</div></div><div class="tw"><table><thead><tr><th>Type</th><th>Fichier</th><th>Facture</th><th>Contrôle</th><th class="n">PDF</th><th class="n">Calculé</th><th>Précision</th></tr></thead><tbody>'+
+      issues.map(function(x){ var f = function(v){ return typeof v === 'number' ? n2(v) : esc(v === null || v === undefined || v === '' ? '' : v); }; return '<tr><td><span class="pill '+(x[0]==='PDF manquant'?'p-verifier':'p-bloquant')+'">'+esc(x[0])+'</span></td><td>'+esc(x[1])+'</td><td class="num">'+esc(x[2])+'</td><td>'+esc(x[3])+'</td><td class="n">'+f(x[4])+'</td><td class="n">'+f(x[5])+'</td><td class="muted">'+esc(x[6])+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
   }
-  if (missing.length && P.length) h += '<details class="miss"><summary><span class="lbl">Factures calculées sans PDF ('+missing.length+')</span></summary><div class="tw"><table><tbody>'+missing.map(function(I){ return '<tr><td class="num">'+esc(I.num)+'</td><td>'+esc(I.agLabel)+'</td><td class="num">'+esc(I.sub)+'</td><td class="n">'+n2(I.totals.HT)+'</td></tr>'; }).join('')+'</tbody></table></div></details>';
-  return h + '</div></div></section>';
+  if (P.length){
+    h += '<details class="panel"><summary class="ph"><h3>Factures déposées ('+P.length+')</h3></summary><div class="tw"><table><thead><tr><th>Fichier</th><th>N° (PDF)</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th>Statut</th><th></th></tr></thead><tbody>';
+    P.forEach(function(p){
+      var r = p.result || { status:'erreur' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null, open = ST.openPdf === p.id;
+      h += '<tr class="click'+(open?' open':'')+'" data-pdf="'+esc(p.id)+'"><td>'+(open?'▾ ':'▸ ')+esc(p.name)+'</td><td class="num">'+esc(r.parsed ? r.parsed.numero||'—' : '—')+'</td><td class="num">'+esc(I ? I.num : '—')+'</td><td class="n">'+(r.parsed && r.parsed.totalHT!==null ? n2(r.parsed.totalHT) : '—')+'</td><td class="n">'+(I ? n2(I.totals.HT) : '—')+'</td><td><span class="pill '+PST[r.status][0]+'">'+PST[r.status][1]+'</span></td><td>'+(canEdit() ? '<button class="btn sm" data-pdfrm="'+esc(p.id)+'">Supprimer</button>' : '')+'</td></tr>';
+      if (open) h += '<tr class="det"><td colspan="7"><div class="det-w">'+pdfDetail(p, r)+'</div></td></tr>';
+    });
+    h += '</tbody></table></div></details>';
+  }
+  return h;
+}
+function closeBox(){
+  var st = ST.doc ? ST.doc.status : 'vide';
+  if (st === 'clos') return '<div class="closebar"><span class="pill p-ok">Mois clôturé</span><span class="muted">le '+esc(ST.doc.closedAt ? new Date(ST.doc.closedAt).toLocaleDateString('fr-FR') : '')+' par '+esc(ST.doc.closedBy||'')+'</span>'+(isAdmin()?'<button class="btn" data-a="reopen">Rouvrir le mois</button>':'')+'</div>';
+  if (role() === 'lecture') return '';
+  var gen = ST.doc && ST.doc.gen, blk = ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0);
+  var stop = !gen ? 'Générer d\'abord les factures' : gen.sig !== filesSig() ? 'Régénérer les factures (imports modifiés)' : blk ? 'Traiter les '+blk+' ligne(s) bloquante(s)' : '';
+  var warn = [];
+  var ne = ST.R.invoices.filter(function(I){ return (ST.ov.status[I.key]||'') !== 'editee'; }).length; if (ne) warn.push(ne+' facture(s) non éditée(s)');
+  var pk = ST.pdfs.filter(function(p){ return p.result && p.result.status !== 'conforme'; }).length; if (pk) warn.push(pk+' PDF non conforme(s)');
+  if (!ST.pdfs.length) warn.push('aucune facture PDF contrôlée');
+  var h = '<div class="closebar">';
+  if (stop) h += '<button class="btn" disabled>Clôturer le mois</button><span class="muted">'+esc(stop)+'</span>';
+  else if (ST.confirmClose) h += '<span>'+(warn.length ? '<span class="pill p-verifier">Attention</span> '+esc(warn.join(' · '))+'. ' : '')+'Clôturer fige les montants, les décisions et la grille.</span><button class="btn pri" data-a="closeOk">Confirmer la clôture</button><button class="btn" data-a="closeNo">Annuler</button>';
+  else h += '<button class="btn pri" data-a="close">Clôturer '+monthLabel(ST.month)+'</button>'+(warn.length ? '<span class="muted">'+esc(warn.join(' · '))+'</span>' : '<span class="muted">Contrôle conforme</span>');
+  return h + '</div>';
+}
+function closeMonth(){
+  var R = ST.R, id = monthId(); ST.confirmClose = false;
+  STORE.saveMonth(id, { status:'clos', cfgSnapshot: ST.cfgM || ST.cfg, summary: summarize(R), ov:ST.ov })
+    .then(function(){ return STORE.log('month_close', agLabel(ST.ag)+' · '+monthLabel(ST.month)+' · '+eur(R.totals.HT)+' HT', id); })
+    .then(function(){ toast(monthLabel(ST.month)+' clôturé'); refreshIndex(); selectMonth(ST.ag, ST.month); }, function(e){ toast('Clôture impossible : '+e.message); });
+}
+function reopenMonth(){
+  var id = monthId();
+  STORE.saveMonth(id, { status:'ouvert', cfgSnapshot:null }).then(function(){ return STORE.log('month_reopen', agLabel(ST.ag)+' · '+monthLabel(ST.month), id); })
+    .then(function(){ toast('Mois rouvert'); refreshIndex(); selectMonth(ST.ag, ST.month); }, function(e){ toast('Réouverture impossible : '+e.message); });
 }
 function pdfDetail(p, r){
   var h = '<p class="note">'+esc(r.note||'')+(p.at ? ' <span class="muted">· déposé le '+esc(new Date(p.at).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}))+' par '+esc(p.by||'')+'</span>' : '')+'</p>';
@@ -599,7 +665,7 @@ function analyseBuf(buf){
 function addPdfs(list){
   var arr = Array.prototype.slice.call(list).filter(function(f){ return /\.pdf$/i.test(f.name) || f.type === 'application/pdf'; });
   if (!arr.length){ toast('Aucun PDF dans la sélection'); return; }
-  var m = ST.month, n = 0, chain = Promise.resolve();
+  var m = monthId(), n = 0, chain = Promise.resolve();
   ST.busy = 'Contrôle de '+arr.length+' PDF…'; render();
   arr.forEach(function(file){
     chain = chain.then(function(){
@@ -611,22 +677,36 @@ function addPdfs(list){
     function(e){ ST.busy=''; toast('Contrôle interrompu : '+e.message); STORE.listPdfs(m).then(function(P){ ST.pdfs = P; render(); }); });
 }
 function rerunPdfs(){
-  var m = ST.month, P = ST.pdfs.slice(), chain = Promise.resolve(), n = 0;
+  var m = monthId(), P = ST.pdfs.slice(), chain = Promise.resolve(), n = 0;
   ST.busy = 'Nouveau contrôle de '+P.length+' PDF…'; render();
   P.forEach(function(p){ chain = chain.then(function(){ return STORE.getPdfBytes(p).then(analyseBuf).then(function(r){ n++; var meta = { id:p.id, name:p.name, path:p.path, size:p.size, at:p.at, by:p.by }; return STORE.savePdfResult(m, meta, r); }); }); });
   chain.then(function(){ return STORE.listPdfs(m); }).then(function(L){ ST.busy=''; ST.pdfs = L; renderTop(); render(); toast(n+' PDF recontrôlé(s)'); }, function(e){ ST.busy=''; toast('Échec : '+e.message); render(); });
 }
 function removePdf(id){
   var p = ST.pdfs.filter(function(x){ return x.id===id; })[0]; if (!p) return;
-  STORE.deletePdf(ST.month, p).then(function(){ return STORE.listPdfs(ST.month); }).then(function(L){ ST.pdfs = L; renderTop(); render(); toast('PDF supprimé'); }, function(e){ toast('Suppression impossible : '+e.message); });
+  STORE.deletePdf(monthId(), p).then(function(){ return STORE.listPdfs(monthId()); }).then(function(L){ ST.pdfs = L; renderTop(); render(); toast('PDF supprimé'); }, function(e){ toast('Suppression impossible : '+e.message); });
+}
+function summarize(R){
+  var out = { HT:R.totals.HT, at:new Date().toISOString(), byAg:{} };
+  R.invoices.forEach(function(I){
+    var a = out.byAg[I.ag] = out.byAg[I.ag] || { label:I.agLabel, inv:0, HT:0, E:{n:0,up:0,eur:0}, S:{n:0,up:0,eur:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0} };
+    a.inv++; a.HT = E.r2(a.HT + I.totals.HT);
+    I.lineList.forEach(function(l){
+      if (l.fam==='E' || l.fam==='S'){ a[l.fam].n += l.n; a[l.fam].up = Math.round((a[l.fam].up + l.qty)*1000)/1000; a[l.fam].eur = E.r2(a[l.fam].eur + l.amount); }
+      else if (l.fam==='STK'){ a.STK.n += l.n; a.STK.m2 = Math.round((a.STK.m2 + l.qty)*1000)/1000; a.STK.eur = E.r2(a.STK.eur + l.amount); }
+      else { a.STK.minM2 = Math.round((a.STK.minM2 + l.qty)*1000)/1000; a.STK.minEur = E.r2(a.STK.minEur + l.amount); a.STK.m2 = Math.round((a.STK.m2 + l.qty)*1000)/1000; a.STK.eur = E.r2(a.STK.eur + l.amount); }
+    });
+  });
+  return out;
 }
 
-/* ---------- 5. Synthèse mensuelle ---------- */
+/* ============ SYNTHÈSE ============ */
 function synthRows(){
-  var byId = {}; ST.months.forEach(function(m){ if (m.summary) byId[m.id] = { id:m.id, status:m.status, s:m.summary }; });
-  if (ST.R) byId[ST.month] = { id:ST.month, status:(ST.monthDoc && ST.monthDoc.status) || 'ouvert', s:summarize(ST.R) };
-  var keep = last18();
-  return keep.slice().reverse().map(function(k){ return byId[k] || { id:k, status:'vide', s:null }; });
+  var byM = {};
+  ST.monthsIndex.forEach(function(d){ if (!d.summary || !d.month) return; var m = byM[d.month] = byM[d.month] || { id:d.month, status:'clos', s:{ HT:0, byAg:{} } }; Object.keys(d.summary.byAg||{}).forEach(function(k){ m.s.byAg[k] = d.summary.byAg[k]; }); if (d.status !== 'clos') m.status = 'ouvert'; });
+  if (ST.R && ST.month){ var cur = summarize(ST.R), m = byM[ST.month] = byM[ST.month] || { id:ST.month, status:'ouvert', s:{ HT:0, byAg:{} } }; Object.keys(m.s.byAg).forEach(function(k){ if (k === ST.ag) delete m.s.byAg[k]; }); Object.keys(cur.byAg).forEach(function(k){ m.s.byAg[k] = cur.byAg[k]; }); if (!monthClosed()) m.status = 'ouvert'; }
+  Object.keys(byM).forEach(function(k){ var s = byM[k].s; s.HT = Object.keys(s.byAg).reduce(function(t, a){ return E.r2(t + s.byAg[a].HT); }, 0); });
+  return last18().slice().reverse().map(function(k){ return byM[k] || { id:k, status:'vide', s:null }; });
 }
 function pick(s, ag){
   var z = { inv:0, HT:0, E:{n:0,up:0,eur:0}, S:{n:0,up:0,eur:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0} };
@@ -694,8 +774,148 @@ function exportSynth(){
   var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'Synthèse'); saveXlsx(wb, 'Synthèse facturation OTIS.xlsx');
 }
 
-/* ---------- 8. Administration ---------- */
-var LOGT = { login:'Connexion', login_failed:'Échec de connexion', logout:'Déconnexion', import:'Import Odoo', import_delete:'Suppression import', modification:'Modification facture', month_close:'Clôture du mois', month_reopen:'Réouverture du mois', export:'Export Excel', pdf_control:'Contrôle PDF', pdf_delete:'Suppression PDF', config:'Grilles / règles', user_create:'Création utilisateur', user_update:'Modification utilisateur', password_set:'Mot de passe défini', password_self:'Mot de passe changé', purge:'Purge > 18 mois' };
+/* ============ TRANSPORT ============ */
+var VEH = [
+  { id:'break', label:'Break 500 kg', pal:1, kg:500, len:null, dims:'—', hayon:false, grue:false, p:{A:[156,277],B:[175,296],C:[194,315]}, h:41, km:0.63 },
+  { id:'f1300', label:'Fourgon 1300 kg', pal:4, kg:1300, len:null, dims:'—', hayon:false, grue:false, p:{A:[192,301],B:[217,326],C:[242,351]}, h:47, km:0.83 },
+  { id:'f700', label:'Fourgon 700 kg hayon', pal:7, kg:700, len:3900, dims:'3,9 × 2,1 × 2,1', hayon:true, grue:false, p:{A:[224,374],B:[252,402],C:[280,430]}, h:56, km:0.92 },
+  { id:'f2t', label:'Fourgon 2T hayon / débâchable', pal:12, kg:2000, len:5200, dims:'5,2 × 2,45 × 2,25', hayon:true, grue:false, p:{A:[263,429],B:[298,464],C:[333,499]}, h:65, km:1.17 },
+  { id:'f5t', label:'Fourgon / débâchable 5T hayon', pal:15, kg:5000, len:7000, dims:'7,0 × 2,45 × 2,35', hayon:true, grue:false, p:{A:[282,443],B:[320,481],C:[358,519]}, h:75, km:1.28 },
+  { id:'grue', label:'Porteur 10T bras de grue', pal:null, kg:10000, len:7800, dims:'7,8 × 2,4 × 2,4', hayon:false, grue:true, p:{A:[425,637],B:[468,680],C:[511,722]}, h:96, km:1.43 }
+];
+var KMI = { A:[70,150], B:[100,180], C:[130,210] }, MANUT = [152,272];
+function zoneOf(cp, half78){
+  var d = String(cp||'').trim().slice(0,2); if (!/^\d{2}$/.test(d)) return null;
+  if (['75','92','93','95'].indexOf(d)>=0) return 'A';
+  if (['91','77','94'].indexOf(d)>=0) return 'B';
+  if (d === '78') return half78 || null;
+  return 'C';
+}
+function vTransport(){
+  var ags = agencies(), a0 = ags[0] ? ags[0].code : '';
+  var h = '<section class="view"><div class="two"><div class="panel"><div class="ph"><h2>Nouvelle livraison chantier</h2><span class="muted">Grille transport OTIS 2023 (01/07/2023)</span></div><form class="pb" id="tform" style="display:grid;gap:14px" autocomplete="off">';
+  h += '<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Agence OTIS</label><select id="t_ag">'+ags.map(function(a){ return '<option value="'+esc(a.code)+'">'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="fld"><label class="lbl" for="t_cm">Contremaître</label><input id="t_cm" list="t_cml"><datalist id="t_cml">'+((ST.cfg.agencies[a0]||{}).cmList||[]).map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join('')+'</datalist></div>'+
+    fld('Appareil / affaire','t_cmd','text','')+fld('Date de livraison','t_date','date', new Date().toISOString().slice(0,10))+'</div>';
+  h += '<div class="grid-f">'+fld('Code postal du chantier','t_cp','text','92400')+fld('Commune','t_ville','text','Courbevoie')+
+    '<div class="fld" id="w78" hidden><span class="lbl">Yvelines (78) : zone</span><select id="t_78"><option value="">Choisir</option><option value="A">Zone A (moitié Est)</option><option value="B">Zone B (moitié Ouest)</option></select></div></div>';
+  h += '<div class="grid-f">'+fld('Palettes Europe','t_pal','number','3')+fld('Poids total (kg)','t_kg','number','850')+fld('Plus grande longueur (mm)','t_len','number','2500')+'</div>';
+  h += '<div class="grid-f">'+fld('Durée estimée (h)','t_h','number','3.5')+fld('Km estimés (aller-retour)','t_km','number','60')+'</div>';
+  h += '<div style="display:flex;flex-wrap:wrap;gap:10px 22px"><label class="chk"><input type="checkbox" id="t_hayon" checked>Livraison sans quai (hayon requis)</label><label class="chk"><input type="checkbox" id="t_grue">Levage par grue</label><label class="chk"><input type="checkbox" id="t_man">Manutentionnaire en plus</label></div>';
+  h += fld('Observations','t_obs','text','')+'</form></div><div style="display:grid;gap:16px"><div id="treco"></div></div></div></section>';
+  return h;
+}
+function fld(l,id,type,v){ return '<div class="fld"><label class="lbl" for="'+id+'">'+l+'</label><input id="'+id+'" type="'+type+'" value="'+esc(v)+'"'+(type==='number'?' step="any" min="0"':'')+'></div>'; }
+function tv(id){ var e=$(id); return e ? (e.type==='checkbox' ? e.checked : e.value) : null; }
+function quote(v, zone, hrs, km, man){
+  var half = hrs <= 4 || (hrs <= 6), base = half ? v.p[zone][0] : v.p[zone][1];
+  var xh = half ? Math.max(0, hrs-4) : Math.max(0, hrs-7), kmi = KMI[zone][half?0:1], xk = Math.max(0, km-kmi);
+  var m = man ? MANUT[half?0:1] : 0;
+  var tot = E.r2(base + xh*v.h + xk*v.km + m);
+  var det = (half?'½ journée':'Journée')+' '+base+' + '+nx(xh)+' h × '+v.h+' + '+nx(xk)+' km × '+String(v.km).replace('.',',')+(m?' + manut. '+m:'')+' = '+n2(tot);
+  return { half:half, base:base, xh:xh, xk:xk, kmi:kmi, man:m, total:tot, detail:det };
+}
+var LAST_Q = null;
+function calcTransport(){
+  var box = $('treco'); if (!box) return;
+  var cp = tv('t_cp'); $('w78').hidden = String(cp).slice(0,2) !== '78';
+  var zone = zoneOf(cp, tv('t_78')), pal = +tv('t_pal')||0, kg = +tv('t_kg')||0, len = +tv('t_len')||0, hrs = +tv('t_h')||0, km = +tv('t_km')||0;
+  var hay = tv('t_hayon'), grue = tv('t_grue'), man = tv('t_man');
+  if (!zone){ box.innerHTML = '<div class="panel pb note">'+(String(cp).slice(0,2)==='78'?'Yvelines : choisir la zone A ou B (la grille partage le 78 en deux moitiés).':'Saisir un code postal valide pour déterminer la zone.')+'</div>'; LAST_Q=null; return; }
+  var rows = VEH.map(function(v){
+    var why = [];
+    if (grue && !v.grue) why.push('pas de grue');
+    if (!grue && v.grue && false) why.push('');
+    if (v.pal !== null && pal > v.pal) why.push(pal+' pal. > '+v.pal);
+    if (kg > v.kg) why.push(kg+' kg > '+v.kg);
+    if (v.len === null ? len > 1200 : len > v.len) why.push(v.len===null ? 'dimensions non garanties > 1 200 mm' : 'longueur > '+v.len+' mm');
+    if (hay && !v.hayon && !v.grue) why.push('pas de hayon');
+    var q = quote(v, zone, hrs, km, man);
+    return { v:v, ok:!why.length, why:why, q:q };
+  });
+  var ok = rows.filter(function(r){ return r.ok; }).sort(function(a,b){ return a.q.total-b.q.total; });
+  var best = ok[0];
+  var h = '<div class="panel"><div class="ph"><h2>Recommandation</h2><span class="pill p-info">Zone '+zone+'</span></div><div class="pb" style="display:grid;gap:12px">';
+  if (!best){ h += '<p class="note"><span class="pill p-bloquant">Hors grille</span> Aucun véhicule de la grille ne convient : transport sur devis.</p>'; LAST_Q=null; }
+  else {
+    LAST_Q = { zone:zone, veh:best.v.label, detail:best.q.detail, total:best.q.total };
+    h += '<div class="reco"><span class="lbl">Véhicule recommandé</span><strong style="font-size:17px">'+esc(best.v.label)+'</strong><span class="muted">'+(best.v.dims!=='—'?'Caisse '+best.v.dims+' m · ':'')+(best.v.pal?best.v.pal+' pal. max · ':'')+best.v.kg+' kg max'+(best.v.hayon?' · transpalette comprise':'')+'</span><span class="price">'+eur(best.q.total)+' HT</span><span class="formula">'+esc(best.q.detail)+'</span><span class="muted" style="font-size:12.5px">'+(best.q.half?'½ journée : 4 h et '+best.q.kmi+' km inclus ; dépassement facturé à l\'heure jusqu\'à 2 h.':'Journée : 7 h et '+best.q.kmi+' km inclus.')+'</span><div><button class="btn pri" data-a="addTr"'+(role()==='lecture'?' disabled':'')+'>Valider le transport</button></div></div>';
+  }
+  h += '<div class="tw"><table><thead><tr><th>Véhicule</th><th>Compatibilité</th><th class="n">Montant HT</th></tr></thead><tbody>';
+  rows.forEach(function(r){ h += '<tr'+(best&&r.v===best.v?' class="open"':'')+'><td>'+esc(r.v.label)+'</td><td>'+(r.ok?'<span class="pill p-ok">OK</span>':'<span class="muted">'+esc(r.why.join(' · '))+'</span>')+'</td><td class="n">'+n2(r.q.total)+'</td></tr>'; });
+  h += '</tbody></table></div><p class="muted" style="font-size:12.5px;margin:0">Au-delà de 6 h, bascule en journée (dépassement ½ journée limité à 2 h). Véhicules sans dimensions dans la grille (Break, Fourgon 1300) : retenus seulement si la plus grande longueur ≤ 1 200 mm. Annotations manuscrites de la grille (semi, 26T…) non intégrées.</p></div></div>';
+  box.innerHTML = h;
+}
+function validateTransport(){
+  if (role() === 'lecture' || !LAST_Q) return;
+  var t = { date:tv('t_date'), ag:tv('t_ag'), agLabel:agLabel(tv('t_ag')), cm:tv('t_cm'), cmd:tv('t_cmd'), cp:tv('t_cp'), ville:tv('t_ville'), pal:+tv('t_pal')||0, kg:+tv('t_kg')||0, len:+tv('t_len')||0, h:+tv('t_h')||0, km:+tv('t_km')||0, obs:tv('t_obs'), zone:LAST_Q.zone, veh:LAST_Q.veh, detail:LAST_Q.detail, total:LAST_Q.total, status:'valide' };
+  if (!t.date){ toast('Renseigner la date de livraison'); return; }
+  STORE.addTransport(t).then(function(){ toast('Transport validé : '+eur(t.total)+' HT'); ST.transports = null; loadTransports(); }, function(e){ toast('Validation impossible : '+e.message); });
+}
+function loadTransports(){ return STORE.listTransports().then(function(L){ ST.transports = L; if (ST.module !== 'log') render(); }, function(e){ toast('Historique inaccessible : '+e.message); }); }
+var TRST = { valide:'Validé', facture:'Facturé', annule:'Annulé' };
+function vTrHistory(){
+  if (!ST.transports){ loadTransports(); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
+  var L = ST.transports, months = uniqA(L.map(function(t){ return (t.date||'').slice(0,7); }).filter(Boolean)).sort().reverse();
+  var F = L.filter(function(t){ return (!ST.trF.month || (t.date||'').slice(0,7) === ST.trF.month) && (!ST.trF.ag || t.ag === ST.trF.ag); });
+  var tot = F.filter(function(t){ return t.status !== 'annule'; }).reduce(function(s, t){ return E.r2(s + t.total); }, 0);
+  var h = '<section class="view"><div class="kpis">'+kpi('Transports', F.filter(function(t){ return t.status !== 'annule'; }).length, 'hors annulés')+kpi('Montant HT', eur(tot), '')+kpi('À facturer', F.filter(function(t){ return t.status === 'valide'; }).length, 'validés, non facturés')+kpi('Facturés', F.filter(function(t){ return t.status === 'facture'; }).length, '')+'</div>';
+  h += '<div class="panel"><div class="ph"><h2>Transports validés</h2><span class="muted">Cas 1 : un devis par livraison, facturé après validation OTIS</span><div class="sp"><select id="trf_m"><option value="">Tous les mois</option>'+months.map(function(m){ return '<option value="'+m+'"'+(ST.trF.month===m?' selected':'')+'>'+monthLabel(m)+'</option>'; }).join('')+'</select><select id="trf_a"><option value="">Toutes les agences</option>'+agencies(true).map(function(a){ return '<option value="'+esc(a.code)+'"'+(ST.trF.ag===a.code?' selected':'')+'>'+esc(a.label)+'</option>'; }).join('')+'</select><button class="btn" data-a="xlsTr"'+(F.length&&canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
+  if (!F.length) h += '<div class="empty">Aucun transport validé'+(ST.trF.month||ST.trF.ag?' pour ce filtre':'')+'.</div>';
+  else {
+    h += '<div class="tw"><table><thead><tr><th>Date</th><th>Agence</th><th>Contremaître</th><th>Appareil</th><th>Chantier</th><th>Zone</th><th>Véhicule</th><th>Calcul</th><th class="n">Montant HT</th><th>Statut</th><th>Validé par</th><th></th></tr></thead><tbody>'+
+      F.map(function(t){ return '<tr'+(t.status==='annule'?' class="excl"':'')+'><td class="num">'+esc(E.frDate(t.date))+'</td><td>'+esc(t.agLabel||t.ag)+'</td><td>'+esc(t.cm)+'</td><td class="num">'+esc(t.cmd)+'</td><td>'+esc(t.cp+' '+t.ville)+'</td><td>'+esc(t.zone)+'</td><td>'+esc(t.veh)+'</td><td class="formula">'+esc(t.detail)+'</td><td class="n">'+n2(t.total)+'</td><td><select data-trs="'+esc(t.id)+'"'+(role()==='lecture'?' disabled':'')+'>'+Object.keys(TRST).map(function(k){ return '<option value="'+k+'"'+(t.status===k?' selected':'')+'>'+TRST[k]+'</option>'; }).join('')+'</select></td><td class="muted">'+esc(t.createdBy||'')+'<br>'+dt(t.createdAt)+'</td><td>'+(isAdmin()?'<button class="btn sm" data-trdel="'+esc(t.id)+'">Supprimer</button>':'')+'</td></tr>'; }).join('')+
+      '<tr class="tot"><td colspan="8">Total (hors annulés)</td><td class="n">'+n2(tot)+'</td><td colspan="3"></td></tr></tbody></table></div>';
+  }
+  return h + '</div></section>';
+}
+function exportTr(){
+  var F = (ST.transports||[]).filter(function(t){ return (!ST.trF.month || (t.date||'').slice(0,7) === ST.trF.month) && (!ST.trF.ag || t.ag === ST.trF.ag); });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(F.map(function(t){ return { 'Date':E.frDate(t.date), 'Agence':t.agLabel||t.ag, 'Contremaître':t.cm, 'Appareil':t.cmd, 'Code postal':t.cp, 'Commune':t.ville, 'Zone':t.zone, 'Véhicule':t.veh, 'Palettes':t.pal, 'Poids kg':t.kg, 'Calcul':t.detail, 'Montant HT':t.total, 'Statut':TRST[t.status]||t.status, 'Validé par':t.createdBy, 'Le':t.createdAt, 'Observations':t.obs||'' }; })), 'Transports');
+  saveXlsx(wb, 'Transports OTIS'+(ST.trF.month?' '+ST.trF.month:'')+'.xlsx');
+}
+
+/* ============ EXPORTS ============ */
+function recRow(r, I){
+  var fl = (ST.flags[r.key]||[]).map(function(a){ return a.title; }).join(' | ');
+  return {
+    'Facture': I ? I.num : '', 'Fichier': r.file, 'Ligne Excel': r.line, 'Agence': r.eff ? r.eff.agLabel : 'Non rattaché', 'Contremaître': r.eff ? r.eff.cm : '', 'Code CM': r.eff ? r.eff.cmCode : r.cmCode,
+    'N° BR': r.br, 'N° commande Odoo': r.cmdRaw, 'Affaire': r.affaire || '', 'Source affaire': r.affSrc || '', 'Appareil': r.apLabel || '', 'N° colis': r.colis, 'Produit': r.produit,
+    'Famille': r.kind==='manut' ? (r.op==='E'?'Entrée':'Sortie') : 'Stockage', 'Date mouvement': r.date ? E.frDate(r.date) : '',
+    'Début période': r.pStart ? E.frDate(r.pStart) : '', 'Fin période': r.pEnd ? E.frDate(r.pEnd) : '', 'Jours retenus': r.kind==='stock' ? r.days : '', 'Source jours': r.daysSrc || '', 'Jours Odoo': isNaN(r.odooJours) ? '' : r.odooJours,
+    'Longueur mm': r.L, 'Largeur mm': r.l, 'Hauteur mm': r.h, 'Poids kg': r.kg, 'Volume m3': r.vol, 'Surface m2': r.surf,
+    'Unité payante': r.kind==='manut' ? r.up : '', 'Coefficient': r.kind==='stock' ? r.coef : '', 'Surface facturée m2': r.kind==='stock' ? r.surfFact : '', 'Tranche': r.kind==='stock' ? E.TIER_LABEL[r.tier] : (r.applied||''),
+    'Prix unitaire': r.kind==='stock' ? r.pu : r.rate, 'Calcul': r.formula, 'Montant HT': r.billable ? r.amount : 0, 'Facturé': r.billable ? 'Oui' : 'Non', 'Exclusion ADV': ST.ov.exclude[r.key] || '', 'Prix Odoo': isNaN(r.odooPrix) ? '' : r.odooPrix, 'Contrôles': fl
+  };
+}
+function detailRows(I){
+  var out = [];
+  I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r.kind==='min30') out.push({ 'Facture':I.num, 'Famille':'Complément 30 m²', 'N° commande':r.cmd, 'Surface facturée m2':r.surf, 'Calcul':r.formula, 'Montant HT':r.amount }); else out.push(recRow(r, I)); }); });
+  return out;
+}
+function canSave(){ return STORE.mode !== 'demo' || !!dl; }
+function saveBlob(name, blob, kind){
+  STORE.log('export', name, ST.ag && ST.month ? monthId() : null);
+  if (dl){ dl.save({ filename:name, data:blob }).then(function(){ toast('Fichier enregistré'); }, function(e){ if (e && e.code !== 'declined') toast('Export impossible : '+(e.message||e.code)); }); return; }
+  if (STORE.mode === 'demo'){ toast('Téléchargement indisponible dans cette vue.'); return; }
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function saveXlsx(wb, name){ var buf = XLSX.write(wb, { bookType:'xlsx', type:'array' }); saveBlob(name, new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'xlsx'); }
+function exportAg(){
+  var R = ST.R, wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.invoices.map(function(I){ return { 'Facture':I.num, 'Agence':I.agLabel, 'Affaire / périmètre':I.sub, 'Contremaître(s)':Object.keys(I.cms).join(', '), 'Appareils':Object.keys(I.appareils).sort().join(' · '), 'Entrées':I.totals.E, 'Sorties':I.totals.S, 'Stockage':E.r2(I.totals.STK+I.totals.MIN), 'dont minimum 30 m²':I.totals.MIN, 'Total HT':I.totals.HT, 'Statut':INVST[ST.ov.status[I.key]||'verifier'], 'Manutention Odoo':I.odoo.M }; })), 'Factures');
+  var det = []; R.invoices.forEach(function(I){ det = det.concat(detailRows(I)); });
+  var seen = {}; det.forEach(function(d){ seen[d['Fichier']+'#'+d['Ligne Excel']] = 1; });
+  R.records.forEach(function(r){ if (!seen[r.key]) det.push(recRow(r, null)); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(det), 'Détail toutes lignes');
+  var an = []; R.anomalies.forEach(function(a){ a.keys.forEach(function(k){ var r = R.byKey[k]; an.push({ 'Gravité':SEV[a.sev], 'Contrôle':a.title, 'Fichier':r?r.file:'', 'Ligne Excel':r?r.line:'', 'N° colis':r?r.colis:'', 'N° BR':r?r.br:'', 'Contremaître':r&&r.eff?r.eff.cm:'' }); }); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(an), 'Anomalies');
+  saveXlsx(wb, 'Facturation '+agLabel(ST.ag)+' '+ST.month+'.xlsx');
+}
+
+/* ============ ADMINISTRATION · COMPTE ============ */
+var LOGT = { login:'Connexion', login_failed:'Échec de connexion', logout:'Déconnexion', import:'Import Odoo', import_delete:'Suppression import', modification:'Modification facture', month_close:'Clôture du mois', month_reopen:'Réouverture du mois', export:'Export Excel', pdf_control:'Contrôle PDF', pdf_delete:'Suppression PDF', config:'Grilles / règles', user_create:'Création utilisateur', user_update:'Modification utilisateur', password_set:'Mot de passe défini', password_self:'Mot de passe changé', purge:'Purge > 18 mois', generation:'Génération des factures', transport:'Transport' };
 function loadAdmin(){
   if (!isAdmin()) return;
   if (ST.admTab === 'users' && !ST.users) STORE.listUsers().then(function(u){ ST.users = u.sort(function(a,b){ return (a.name||a.email).localeCompare(b.name||b.email); }); render(); }, function(e){ toast('Utilisateurs inaccessibles : '+e.message); });
@@ -704,36 +924,36 @@ function loadAdmin(){
 function adminAct(p, msg){ p.then(function(){ toast(msg); ST.users = null; loadAdmin(); }, function(e){ toast('Échec : '+(e.message||e)); }); }
 function genPassword(){ var c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789-_!?', a = new Uint32Array(16), o = ''; crypto.getRandomValues(a); for (var i=0;i<16;i++) o += c[a[i] % c.length]; return o; }
 function createUserFromForm(){
-  var u = { name:$('nu_name').value.trim(), email:$('nu_email').value.trim().toLowerCase(), role:$('nu_role').value, password:$('nu_pw').value };
+  var u = { name:$('nu_name').value.trim(), email:$('nu_email').value.trim().toLowerCase(), role:$('nu_role').value };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(u.email)){ toast('E-mail invalide'); return; }
-  if (u.password.length < 12){ toast('Mot de passe : 12 caractères minimum'); return; }
-  adminAct(STORE.createUser(u), 'Compte créé : '+u.email+' · communiquer le mot de passe par un autre canal que l\'e-mail');
+  adminAct(STORE.createUser(u), 'Invitation enregistrée : créer maintenant le compte '+u.email+' dans la console Firebase');
 }
 function vAdmin(){
   if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
   var h = '<section class="view"><nav class="subnav" role="tablist">'+[['users','Utilisateurs'],['logs','Journal de connexion et d\'activité'],['data','Données et conservation']].map(function(p){ return '<button class="subtab" role="tab" data-adm="'+p[0]+'" aria-selected="'+(ST.admTab===p[0])+'"><span class="st-l">'+p[1]+'</span></button>'; }).join('')+'</nav>';
   if (ST.admTab === 'users'){
-    h += '<div class="panel"><div class="ph"><h2>Créer un compte</h2><span class="muted">Le compte est actif immédiatement. Mot de passe : 12 caractères minimum.</span></div><form class="pb" id="uform" autocomplete="off"><div class="grid-f">'+
+    h += '<div class="panel"><div class="ph"><h2>Créer un compte</h2><span class="muted">1. Déclarer ici l\'e-mail et le rôle. 2. Console Firebase → Authentication → Ajouter un utilisateur, même e-mail, mot de passe de 12 caractères min. (bouton Générer). 3. Communiquer le mot de passe par un autre canal que l\'e-mail. À sa première connexion, le compte prend le rôle déclaré.</span></div><form class="pb" id="uform" autocomplete="off"><div class="grid-f">'+
       '<div class="fld"><label class="lbl" for="nu_name">Nom</label><input id="nu_name" type="text"></div>'+
       '<div class="fld"><label class="lbl" for="nu_email">E-mail</label><input id="nu_email" type="email"></div>'+
       '<div class="fld"><label class="lbl" for="nu_role">Rôle</label><select id="nu_role"><option value="adv">ADV : import, contrôles, factures</option><option value="lecture">Lecture seule</option><option value="admin">Administrateur</option></select></div>'+
-      '<div class="fld"><label class="lbl" for="nu_pw">Mot de passe initial</label><div class="row"><input id="nu_pw" type="password" autocomplete="new-password"><button class="btn sm" type="button" data-a="genpw">Générer</button></div></div>'+
-      '</div><div class="row" style="margin-top:12px"><button class="btn pri" type="button" data-a="ucreate">Créer le compte</button></div></form></div>';
+      '<div class="fld"><label class="lbl" for="nu_pw">Mot de passe à saisir dans la console (non enregistré ici)</label><div class="row"><input id="nu_pw" type="password" autocomplete="new-password"><button class="btn sm" type="button" data-a="genpw">Générer</button></div></div>'+
+      '</div><div class="row" style="margin-top:12px"><button class="btn pri" type="button" data-a="ucreate">Enregistrer l\'invitation</button><a class="btn" href="https://console.firebase.google.com/project/'+esc((window.FIREBASE_CONFIG||{}).projectId||'')+'/authentication/users" target="_blank" rel="noopener">Ouvrir la console Firebase</a></div></form></div>';
     h += '<div class="panel"><div class="ph"><h2>Comptes</h2><div class="sp"><button class="btn sm" data-a="admReload">Actualiser</button></div></div>';
     if (!ST.users) h += '<div class="empty">Chargement…</div>';
     else {
       h += '<div class="tw"><table><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Statut</th><th>Dernière connexion</th><th>Créé le</th><th></th></tr></thead><tbody>';
       ST.users.forEach(function(u){
         var me = ST.user && u.uid === ST.user.uid;
-        h += '<tr'+(u.active?'':' class="zero"')+'><td>'+esc(u.name||'')+(me?' <span class="muted">(vous)</span>':'')+'</td><td>'+esc(u.email)+'</td><td><select data-urole="'+esc(u.uid)+'"'+(me?' disabled':'')+'>'+['admin','adv','lecture'].map(function(r){ return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+({admin:'Administrateur',adv:'ADV',lecture:'Lecture seule'})[r]+'</option>'; }).join('')+'</select></td><td><span class="pill '+(u.active?'p-ok':'p-info')+'">'+(u.active?'Actif':'Désactivé')+'</span></td><td class="muted">'+(u.lastLogin?esc(new Date(u.lastLogin).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})):'jamais')+'</td><td class="muted">'+(u.createdAt?esc(new Date(u.createdAt).toLocaleDateString('fr-FR')):'')+'</td><td class="row">'+
-          (me ? '' : '<button class="btn sm" data-uact="'+esc(u.uid)+'">'+(u.active?'Désactiver':'Réactiver')+'</button>')+'<button class="btn sm" data-upw="'+esc(u.uid)+'">Mot de passe</button></td></tr>';
-        if (ST.pwFor === u.uid) h += '<tr class="det"><td colspan="7"><div class="row"><label class="lbl" for="pw_'+esc(u.uid)+'">Nouveau mot de passe pour '+esc(u.email)+'</label><input id="pw_'+esc(u.uid)+'" type="text" value="'+esc(genPassword())+'" style="font-family:var(--f-num);min-width:220px"><button class="btn pri sm" data-upwok="'+esc(u.uid)+'">Définir</button><span class="muted">Ses sessions ouvertes sont fermées.</span></div></td></tr>';
+        h += '<tr'+(u.active?'':' class="zero"')+'><td>'+esc(u.name||'')+(me?' <span class="muted">(vous)</span>':'')+'</td><td>'+esc(u.email)+'</td><td><select data-urole="'+esc(u.uid)+'"'+(me?' disabled':'')+'>'+['admin','adv','lecture'].map(function(r){ return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+({admin:'Administrateur',adv:'ADV',lecture:'Lecture seule'})[r]+'</option>'; }).join('')+'</select></td><td><span class="pill '+(u.active?'p-ok':u.invite||u.pending?'p-verifier':'p-info')+'">'+(u.active?'Actif':u.invite?'Invitation · compte à créer dans la console':u.pending?'En attente de validation':'Désactivé')+'</span></td><td class="muted">'+(u.lastLogin?esc(new Date(u.lastLogin).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})):'jamais')+'</td><td class="muted">'+(u.createdAt?esc(new Date(u.createdAt).toLocaleDateString('fr-FR')):'')+'</td><td class="row">'+
+          (u.invite ? '<button class="btn sm" data-uinvrm="'+esc(u.uid)+'">Supprimer l\'invitation</button>' :
+            (me ? '' : '<button class="btn sm" data-uact="'+esc(u.uid)+'">'+(u.active?'Désactiver':u.pending?'Activer':'Réactiver')+'</button>')+'<button class="btn sm" data-upw="'+esc(u.uid)+'">Réinitialiser le mot de passe</button>')+'</td></tr>';
+        if (ST.pwFor === u.uid) h += '<tr class="det"><td colspan="7"><div class="row"><span>Envoyer à '+esc(u.email)+' l\'e-mail Firebase de réinitialisation du mot de passe ?</span><button class="btn pri sm" data-upwok="'+esc(u.uid)+'">Envoyer</button></div></td></tr>';
       });
       h += '</tbody></table></div>';
     }
     h += '</div>';
   } else if (ST.admTab === 'logs'){
-    h += '<div class="panel"><div class="ph"><h2>Journal</h2><span class="muted">Écrit côté serveur : horodatage, adresse IP et navigateur non modifiables · 500 derniers événements</span><div class="sp"><button class="btn sm" data-a="admReload">Actualiser</button><button class="btn sm" data-a="xlsLog"'+(canSave()&&ST.logs?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
+    h += '<div class="panel"><div class="ph"><h2>Journal</h2><span class="muted">Horodatage serveur et identité imposés par les règles Firestore · entrées non modifiables · IP relevée par le navigateur · 500 derniers événements</span><div class="sp"><button class="btn sm" data-a="admReload">Actualiser</button><button class="btn sm" data-a="xlsLog"'+(canSave()&&ST.logs?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
     h += '<div class="pb row"><select id="lf_type"><option value="">Tous les événements</option>'+Object.keys(LOGT).map(function(k){ return '<option value="'+k+'"'+(ST.logF.type===k?' selected':'')+'>'+LOGT[k]+'</option>'; }).join('')+'</select><input id="lf_q" type="search" placeholder="Filtrer par utilisateur ou détail" value="'+esc(ST.logF.q)+'" style="min-width:240px"></div>';
     if (!ST.logs) h += '<div class="empty">Chargement…</div>';
     else {
@@ -744,17 +964,15 @@ function vAdmin(){
     }
     h += '</div>';
   } else {
-    var ms = ST.months.slice().sort(function(a,b){ return b.id.localeCompare(a.id); }), keep = last18();
-    h += '<div class="panel"><div class="ph"><h2>Mois enregistrés</h2><span class="muted">Conservation : 18 mois glissants. Les mois plus anciens (exports, PDF, décisions) sont supprimés automatiquement le 1er de chaque mois à 3 h.</span></div><div class="tw"><table><thead><tr><th>Mois</th><th>Statut</th><th class="n">Exports</th><th class="n">Total HT</th><th>Dernière modification</th><th>Conservation</th></tr></thead><tbody>'+
-      ms.map(function(m){ return '<tr><td>'+monthLabel(m.id)+'</td><td>'+STATUS[m.status||'ouvert']+'</td><td class="n">'+((m.files||[]).length)+'</td><td class="n">'+(m.summary?n2(m.summary.HT):'—')+'</td><td class="muted">'+esc(m.updatedAt?new Date(m.updatedAt).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'')+' '+esc(m.updatedBy||'')+'</td><td>'+(keep.indexOf(m.id)>=0?'<span class="pill p-ok">conservé</span>':'<span class="pill p-verifier">purge au prochain passage</span>')+'</td></tr>'; }).join('')+
+    var ms = ST.monthsIndex.slice().sort(function(a,b){ return b.id.localeCompare(a.id); }), keep = last18();
+    h += '<div class="panel"><div class="ph"><h2>Mois enregistrés</h2><span class="muted">Conservation : 18 mois glissants. Les mois plus anciens (exports, PDF, décisions) sont supprimés automatiquement à la première connexion d\'un administrateur (au plus une fois par jour).</span></div><div class="tw"><table><thead><tr><th>Agence · mois</th><th>Statut</th><th class="n">Exports</th><th class="n">Total HT</th><th>Dernière modification</th><th>Conservation</th></tr></thead><tbody>'+
+      ms.map(function(m){ return '<tr><td>'+esc(agLabel(m.ag||String(m.id).split('_')[0]))+' · '+monthLabel(m.month||String(m.id).split('_')[1])+'</td><td>'+STATUS[m.status||'ouvert']+'</td><td class="n">'+((m.files||[]).length)+'</td><td class="n">'+(m.summary?n2(m.summary.HT):'—')+'</td><td class="muted">'+esc(m.updatedAt?new Date(m.updatedAt).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'')+' '+esc(m.updatedBy||'')+'</td><td>'+(keep.indexOf(m.month||String(m.id).split('_')[1])>=0?'<span class="pill p-ok">conservé</span>':'<span class="pill p-verifier">purge au prochain passage</span>')+'</td></tr>'; }).join('')+
       (ms.length?'':'<tr><td colspan="6" class="empty">Aucun mois enregistré.</td></tr>')+'</tbody></table></div></div>';
-    h += '<div class="panel pb note">Stockage : exports Odoo et PDF dans Cloud Storage (Europe), décisions de l\'ADV, clôtures, grilles et journal dans Firestore (Europe). Rien n\'est conservé dans le navigateur.</div>';
+    h += '<div class="panel pb note">Stockage : tout est dans Firestore (Europe) : exports Odoo et PDF conservés à l\'identique avec leur empreinte SHA-256, décisions de l\'ADV, clôtures, grilles et journal. Rien n\'est conservé dans le navigateur.</div>';
   }
   return h + '</section>';
 }
 function exportLogs(){ var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((ST.logs||[]).map(function(l){ return { 'Date':l.at, 'Utilisateur':l.email, 'Événement':LOGT[l.type]||l.type, 'Détail':l.detail, 'Mois':l.month||'', 'IP':l.ip||'', 'Navigateur':l.ua||'' }; })), 'Journal'); saveXlsx(wb, 'Journal plateforme OTIS.xlsx'); }
-
-/* ---------- Mon compte ---------- */
 function vAccount(){
   return '<section class="view"><div class="panel"><div class="ph"><h2>Mon compte</h2><span class="muted">'+esc(ST.user.email)+' · '+({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role]+'</span></div><form class="pb" autocomplete="off"><div class="grid-f">'+
     '<div class="fld"><label class="lbl" for="my_old">Mot de passe actuel</label><input id="my_old" type="password" autocomplete="current-password"></div>'+
@@ -768,77 +986,106 @@ function changeMyPassword(){
   STORE.changeOwnPassword(o, a).then(function(){ toast('Mot de passe changé'); render(); }, function(e){ toast(/wrong-password|invalid-credential/.test(e.code||'') ? 'Mot de passe actuel incorrect' : 'Échec : '+e.message); });
 }
 
-/* ---------- événements ---------- */
+/* ============ ÉVÉNEMENTS ============ */
 document.addEventListener('click', function(e){
-  var t = e.target.closest('[data-v],[data-go],[data-a],[data-inv],[data-line],[data-anom],[data-more],[data-sugg],[data-i],[data-trm],[data-merge],[data-ag],[data-done],[data-xinv],[data-pdf],[data-pdfrm],[data-adm],[data-urole],[data-uact],[data-upw],[data-upwok],[data-synag]');
+  if (e.target.id === 'modal'){ ST.modal = null; renderModal(); return; }
+  var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
   if (!t || t.disabled) return;
-  if (t.dataset.v || t.dataset.go){ ST.view = t.dataset.v || t.dataset.go; if (ST.view==='adm' && !isAdmin()) ST.view = 'fac'; renderTop(); render(); window.scrollTo(0,0); if (ST.view==='adm') loadAdmin(); return; }
-  if (t.dataset.ag){ ST.ag = t.dataset.ag; ST.openLine = null; render(); return; }
-  if (t.dataset.synag){ ST.synAg = t.dataset.synag; render(); return; }
-  if (t.dataset.adm){ ST.admTab = t.dataset.adm; render(); loadAdmin(); return; }
-  if (t.dataset.xinv){ exportOne(t.dataset.xinv); return; }
-  if (t.dataset.inv){ ST.inv = t.dataset.inv; ST.openLine = null; render(); return; }
-  if (t.dataset.line){ ST.openLine = ST.openLine === t.dataset.line ? null : t.dataset.line; render(); return; }
-  if (t.dataset.anom){ ST.openAnom[t.dataset.anom] = !ST.openAnom[t.dataset.anom]; render(); return; }
-  if (t.dataset.more){ ST.lim[t.dataset.more] = (ST.lim[t.dataset.more]||150) + 500; render(); return; }
-  if (t.dataset.pdf){ ST.openPdf = ST.openPdf === t.dataset.pdf ? null : t.dataset.pdf; render(); return; }
-  if (t.dataset.pdfrm){ removePdf(t.dataset.pdfrm); return; }
-  if (t.dataset.urole !== undefined && t.tagName === 'BUTTON'){ return; }
-  if (t.dataset.uact){ var u = (ST.users||[]).filter(function(x){ return x.uid === t.dataset.uact; })[0]; if (u) adminAct(STORE.updateUser(u.uid, { active: !u.active }), (u.active?'Compte désactivé : ':'Compte réactivé : ')+u.email); return; }
-  if (t.dataset.upw){ ST.pwFor = ST.pwFor === t.dataset.upw ? null : t.dataset.upw; render(); return; }
-  if (t.dataset.upwok){ var pw = ($('pw_'+t.dataset.upwok)||{}).value || ''; adminAct(STORE.setPassword(t.dataset.upwok, pw), 'Mot de passe défini'); ST.pwFor = null; return; }
-  if (!canEdit() && (t.dataset.done || t.dataset.sugg || t.dataset.merge || t.dataset.trm)) return;
-  if (t.dataset.done){ var dk = t.dataset.done, on = !ST.done[dk]; if (on) ST.done[dk] = 1; else delete ST.done[dk]; render(); persist((on?'Facture éditée ':'Facture à rééditer ')+(ST.R.invoices.filter(function(I){ return I.key===dk; })[0]||{}).num); return; }
-  if (t.dataset.sugg){ var r = ST.R.byKey[t.dataset.sugg]; if (r && r.suggest){ var s = r.suggest.t; ST.ov.assign[r.key] = { ag:s.ag, agLabel:s.agLabel, cm:s.cm, cmCode:s.cmCode }; delete ST.ov.exclude[r.key]; rebuild(); persist('Rattachement '+r.file+' l.'+r.line+' → '+s.cm); toast('Ligne rattachée à '+s.cm); } return; }
-  if (t.dataset.merge){ var mp = t.dataset.merge.split('|'); if (ST.ov.affMap[mp[0]]===mp[1]) delete ST.ov.affMap[mp[0]]; else { ST.ov.affMap[mp[0]] = mp[1]; delete ST.ov.affMap[mp[1]]; } rebuild(); persist('Affaire '+mp[0]+' facturée sur '+mp[1]); toast('Correction d\'affaire appliquée'); return; }
-  if (t.dataset.trm){ ST.transport.splice(+t.dataset.trm,1); render(); persist('Transport retiré'); return; }
-  var a = t.dataset.a;
-  if (a === 'rm' && canEdit()){ var f = ST.files[+t.dataset.i]; if (f && f.meta){ ST.busy = 'Suppression…'; render(); STORE.deleteImport(ST.month, f.meta).then(function(){ ST.busy=''; refreshMonths(); loadMonth(ST.month); }, function(e){ ST.busy=''; toast('Suppression impossible : '+e.message); render(); }); } }
-  else if (a === 'pendGo'){ var items = ST.pending, m = t.dataset.m; upload(items, m); }
-  else if (a === 'pendHere'){ upload(ST.pending, ST.month); }
+  var d = t.dataset;
+  if (d.home !== undefined){ ST.module = 'home'; ST.modal = null; if (!ST.transports) loadTransports(); render(); return; }
+  if (d.acc !== undefined){ ST.module = 'acc'; render(); return; }
+  if (d.mod){ ST.module = d.mod; if (d.ltabgo) ST.ltab = d.ltabgo; render(); window.scrollTo(0,0); if (ST.module==='log' && ST.ltab==='adm') loadAdmin(); return; }
+  if (d.ltab){ ST.ltab = d.ltab; ST.modal = null; render(); window.scrollTo(0,0); if (d.ltab==='adm') loadAdmin(); return; }
+  if (d.ttab){ ST.ttab = d.ttab; render(); return; }
+  if (d.agsel){ selectMonth(d.agsel, ST.month || defaultMonth()); return; }
+  if (d.mon){ selectMonth(ST.ag, d.mon); return; }
+  if (d.sub){ ST.sub = d.sub; ST.modal = null; render(); return; }
+  if (d.par){ ST.parAg = d.par; ST.newAg = false; render(); return; }
+  if (d.newag !== undefined){ ST.newAg = true; render(); return; }
+  if (d.amt){ var p = d.amt.split('|'); ST.modal = { inv:p.slice(0,-1).join('|'), fam:p[p.length-1] }; renderModal(); return; }
+  if (d.mclose !== undefined){ ST.modal = null; renderModal(); return; }
+  if (d.pinv){ exportInvoicePdf(d.pinv); return; }
+  if (d.anom){ ST.openAnom[d.anom] = !ST.openAnom[d.anom]; render(); return; }
+  if (d.more){ ST.lim[d.more] = (ST.lim[d.more]||150) + 500; render(); return; }
+  if (d.pdf){ ST.openPdf = ST.openPdf === d.pdf ? null : d.pdf; render(); return; }
+  if (d.pdfrm){ removePdf(d.pdfrm); return; }
+  if (d.rmfile){ var f = ST.files.filter(function(x){ return x.meta && x.meta.id === d.rmfile; })[0]; if (f && canEdit()){ ST.busy = 'Suppression…'; render(); STORE.deleteImport(monthId(), f.meta).then(function(){ ST.busy=''; refreshIndex(); selectMonth(ST.ag, ST.month); }, function(e){ ST.busy=''; toast('Suppression impossible : '+e.message); render(); }); } return; }
+  if (d.docdl){ var a0 = ST.cfg.agencies[ST.parAg], m0 = a0 && a0.docs && a0.docs[d.docdl]; if (m0) STORE.getFileBytes(m0).then(function(b){ saveBlob(m0.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
+  if (d.docrm && isAdmin()){ var a1 = ST.cfg.agencies[ST.parAg], m1 = a1.docs[d.docrm]; STORE.deleteFile(m1); delete a1.docs[d.docrm]; if (d.docrm === 'cm') a1.cmList = []; saveCfg(a1.label+' : document supprimé'); render(); return; }
+  if (d.trdel && isAdmin()){ STORE.deleteTransport(d.trdel).then(loadTransports); return; }
+  if (d.adm){ ST.admTab = d.adm; render(); loadAdmin(); return; }
+  if (d.synag){ ST.synAg = d.synag; render(); return; }
+  if (d.uact){ var u = (ST.users||[]).filter(function(x){ return x.uid === d.uact; })[0]; if (u) adminAct(STORE.updateUser(u.uid, { active: !u.active }), (u.active?'Compte désactivé : ':'Compte réactivé : ')+u.email); return; }
+  if (d.upw){ ST.pwFor = ST.pwFor === d.upw ? null : d.upw; render(); return; }
+  if (d.upwok){ adminAct(STORE.setPassword(d.upwok), 'E-mail de réinitialisation envoyé'); ST.pwFor = null; return; }
+  if (d.uinvrm){ adminAct(STORE.updateUser(d.uinvrm, { remove:true }), 'Invitation supprimée'); return; }
+  if (!canEdit() && (d.sugg || d.merge)) return;
+  if (d.sugg){ var r = ST.R.byKey[d.sugg]; if (r && r.suggest){ var s = r.suggest.t; ST.ov.assign[r.key] = { ag:s.ag, agLabel:s.agLabel, cm:s.cm, cmCode:s.cmCode }; delete ST.ov.exclude[r.key]; rebuild(); persist('Rattachement '+r.file+' l.'+r.line+' → '+s.cm); } return; }
+  if (d.merge){ var mp = d.merge.split('|'); if (ST.ov.affMap[mp[0]]===mp[1]) delete ST.ov.affMap[mp[0]]; else { ST.ov.affMap[mp[0]] = mp[1]; delete ST.ov.affMap[mp[1]]; } rebuild(); persist('Affaire '+mp[0]+' facturée sur '+mp[1]); return; }
+  var a = d.a;
+  if (a === 'gen') generate();
+  else if (a === 'pendGo'){ var P = ST.pending; doUpload(P.file, P.parsed, ST.ag, P.month); }
+  else if (a === 'pendAg'){ var P2 = ST.pending; doUpload(P2.file, P2.parsed, P2.ag, ST.month); }
+  else if (a === 'pendHere'){ var P3 = ST.pending; doUpload(P3.file, P3.parsed, ST.ag, ST.month); }
   else if (a === 'pendNo'){ ST.pending = null; render(); }
   else if (a === 'close'){ ST.confirmClose = true; render(); }
   else if (a === 'closeNo'){ ST.confirmClose = false; render(); }
-  else if (a === 'closeOk'){ closeMonth(); }
-  else if (a === 'reopen' && isAdmin()){ reopenMonth(); }
-  else if (a === 'xlsAll') exportAll();
-  else if (a === 'xlsAg') exportAll(ST.ag);
+  else if (a === 'closeOk') closeMonth();
+  else if (a === 'reopen' && isAdmin()) reopenMonth();
+  else if (a === 'xlsAg') exportAg();
   else if (a === 'xlsTr') exportTr();
   else if (a === 'xlsSyn') exportSynth();
   else if (a === 'xlsLog') exportLogs();
   else if (a === 'pdfRerun') rerunPdfs();
-  else if (a === 'reset' && isAdmin()){ ST.cfg = clone(E.DEFAULT_CONFIG); saveCfg('Retour aux valeurs contractuelles'); }
-  else if (a === 'addTr' && LAST_Q && canEdit()){ ST.transport.push({ date:tv('t_date'), ag:tv('t_ag'), cm:tv('t_cm'), cmd:tv('t_cmd'), cp:tv('t_cp'), ville:tv('t_ville'), zone:LAST_Q.zone, veh:LAST_Q.veh, detail:LAST_Q.detail, total:LAST_Q.total }); render(); persist('Transport ajouté '+tv('t_cp')+' '+LAST_Q.veh); toast('Transport ajouté'); }
+  else if (a === 'addTr') validateTransport();
+  else if (a === 'agcreate') createAgency();
+  else if (a === 'agcancel'){ ST.newAg = false; render(); }
+  else if (a === 'gridreset' && isAdmin()){ var ag = ST.cfg.agencies[ST.parAg], tpl = $('tplsel').value; ST.cfg.grids[ag.grid] = clone(E.DEFAULT_CONFIG.grids[tpl]); ST.cfg.grids[ag.grid].label = 'Grille '+ag.label+' (base '+(tpl==='STD'?'OTIS 2022':'Tours')+')'; ag.template = tpl; saveCfg(ag.label+' : grille réinitialisée ('+tpl+')'); render(); }
   else if (a === 'ucreate') createUserFromForm();
   else if (a === 'genpw'){ var g = genPassword(), inp = $('nu_pw'); if (inp){ inp.value = g; inp.type = 'text'; } }
-  else if (a === 'admReload') { ST.users = null; ST.logs = null; loadAdmin(); }
+  else if (a === 'admReload'){ ST.users = null; ST.logs = null; loadAdmin(); }
   else if (a === 'logout') logout('Déconnexion');
   else if (a === 'mypw') changeMyPassword();
 });
 document.addEventListener('change', function(e){
-  var t = e.target;
-  if (t.id === 'month'){ loadMonth(t.value); return; }
+  var t = e.target, d = t.dataset;
+  if (d.cf !== undefined){
+    if (!isAdmin()){ render(); return; }
+    var v = t.type === 'number' ? parseFloat(t.value) : t.value; if (t.type === 'number' && isNaN(v)) return;
+    if (v === 'true') v = true; else if (v === 'false') v = false; else if (/\.cas$/.test(d.cf)) v = +v;
+    setPath(ST.cfg, d.cf, v); saveCfg(d.cf.replace(/^agencies\./,'agence ').replace(/^grids\./,'grille ')+' = '+v); if (/\.(label|active)$/.test(d.cf)) render(); return;
+  }
+  if (d.docup){ if (t.files[0]) agDocUpload(d.docup, t.files[0]); t.value = ''; return; }
+  if (d.slotin){ if (t.files[0]) importFile(t.files[0], d.slotin); t.value = ''; return; }
+  if (t.id === 'trf_m' || t.id === 'trf_a'){ ST.trF = { month:$('trf_m').value, ag:$('trf_a').value }; render(); return; }
+  if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
-  if (t.dataset.urole){ adminAct(STORE.updateUser(t.dataset.urole, { role: t.value }), 'Rôle modifié'); return; }
-  if (t.dataset.aff || t.dataset.excl || t.dataset.assign){ if (!canEdit()){ render(); return; } }
-  if (t.dataset.aff){ var ka = t.dataset.aff; delete ST.ov.affaire[ka]; delete ST.ov.exclude[ka]; if (t.value==='__EXCL__') ST.ov.exclude[ka]='Affaire inconnue : non facturée'; else if (t.value) ST.ov.affaire[ka]=t.value; rebuild(); persist('Affaire '+(t.value||'retirée')+' pour '+ka); return; }
-  if (t.dataset.excl){ if (t.checked) ST.ov.exclude[t.dataset.excl] = 'Exclu par l\'ADV ('+(ST.user?ST.user.email:'')+')'; else delete ST.ov.exclude[t.dataset.excl]; rebuild(); persist((t.checked?'Exclusion ':'Réintégration ')+t.dataset.excl); return; }
-  if (t.dataset.assign){ var k = t.dataset.assign, v = t.value; delete ST.ov.assign[k]; delete ST.ov.exclude[k];
-    if (v === '__EXCL__') ST.ov.exclude[k] = 'Non rattachée : non facturée';
-    else if (v){ var p = v.split('|'), ref = ST.R.records.filter(function(r){ return r.ag===p[0] && r.cm===p[1]; })[0]; ST.ov.assign[k] = { ag:p[0], agLabel:ref.agLabel, cm:p[1], cmCode:ref.cmCode }; }
-    rebuild(); persist('Rattachement '+k+' → '+(v||'aucun')); return; }
-  if (!isAdmin() || monthClosed()){ if (t.dataset.agcfg || t.dataset.g || t.dataset.gp || t.dataset.gc || t.dataset.rule){ render(); return; } }
-  if (t.dataset.agcfg){ var ac = ST.cfg.agencies[t.dataset.agcfg] = ST.cfg.agencies[t.dataset.agcfg] || { grid:'STD', split:'cm' }; ac[t.dataset.f] = t.dataset.f==='cas' ? +t.value : t.dataset.f==='annexe' ? t.value==='1' : t.value; saveCfg('AG '+t.dataset.agcfg+' : '+t.dataset.f+' = '+t.value); return; }
-  if (t.dataset.g){ var q = t.dataset.g.split('|'), x = parseFloat(t.value); if (!isNaN(x)){ ST.cfg.grids[q[0]][q[1]] = x; saveCfg(q[0]+' '+q[1]+' = '+x); } return; }
-  if (t.dataset.gp){ var q2 = t.dataset.gp.split('|'), y = parseFloat(t.value); if (!isNaN(y)){ ST.cfg.grids[q2[0]].prices[q2[1]][q2[2]] = y; saveCfg(q2.join(' ')+' = '+y); } return; }
-  if (t.dataset.gc){ var q3 = t.dataset.gc.split('|'), z = parseFloat(t.value); if (!isNaN(z)){ ST.cfg.grids[q3[0]].coefs[+q3[1]].coef = z; saveCfg('Coefficient '+q3.join(' ')+' = '+z); } return; }
-  if (t.dataset.rule){ ST.cfg.rules[t.dataset.rule] = t.type==='checkbox' ? t.checked : t.value; saveCfg('Règle '+t.dataset.rule+' = '+(t.type==='checkbox' ? t.checked : t.value)); return; }
-  if (t.closest('#tform')) calcTransport();
+  if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
+  if (d.st){ if (!canEdit()){ render(); return; } ST.ov.status[d.st] = t.value; render(); persist('Statut '+(ST.R.invoices.filter(function(I){ return I.key===d.st; })[0]||{}).num+' : '+INVST[t.value]); return; }
+  if ((d.aff || d.excl || d.assign) && !canEdit()){ render(); return; }
+  if (d.aff){ var ka = d.aff; delete ST.ov.affaire[ka]; delete ST.ov.exclude[ka]; if (t.value==='__EXCL__') ST.ov.exclude[ka]='Affaire inconnue : non facturée'; else if (t.value) ST.ov.affaire[ka]=t.value; rebuild(); persist('Affaire '+(t.value||'retirée')+' pour '+ka); return; }
+  if (d.excl){ if (t.checked) ST.ov.exclude[d.excl] = 'Exclu par '+(ST.user?ST.user.email:''); else delete ST.ov.exclude[d.excl]; rebuild(); persist((t.checked?'Exclusion ':'Réintégration ')+d.excl); return; }
+  if (d.assign){ var k = d.assign, v2 = t.value; delete ST.ov.assign[k]; delete ST.ov.exclude[k];
+    if (v2 === '__EXCL__') ST.ov.exclude[k] = 'Non rattachée : non facturée';
+    else if (v2){ var q = v2.split('|'), ref = ST.R.records.filter(function(r){ return r.ag===q[0] && r.cm===q[1]; })[0]; ST.ov.assign[k] = { ag:q[0], agLabel:ref.agLabel, cm:q[1], cmCode:ref.cmCode }; }
+    rebuild(); persist('Rattachement '+k+' → '+(v2||'aucun')); return; }
+  if (t.id === 't_ag'){ var dlst = $('t_cml'); if (dlst) dlst.innerHTML = ((ST.cfg.agencies[t.value]||{}).cmList||[]).map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join(''); }
+  if (t.closest && t.closest('#tform')) calcTransport();
 });
 document.addEventListener('input', function(e){ if (e.target.closest && e.target.closest('#tform')) calcTransport(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && ST.modal){ ST.modal = null; renderModal(); } });
 document.addEventListener('submit', function(e){ e.preventDefault(); if (e.target.id === 'loginForm') doLogin(); });
+function createAgency(){
+  var code = ($('na_code').value||'').trim().toUpperCase().replace(/\s+/g,''), label = ($('na_label').value||'').trim(), match = ($('na_match').value||'').trim(), tpl = $('na_tpl').value;
+  if (!/^[0-9A-Z_-]{1,12}$/.test(code)){ toast('Code agence : lettres et chiffres, 12 caractères max.'); return; }
+  if (ST.cfg.agencies[code]){ toast('Ce code existe déjà'); return; }
+  if (!label || !match){ toast('Renseigner le libellé et le client Odoo'); return; }
+  var gk = 'G'+code; ST.cfg.grids[gk] = clone(E.DEFAULT_CONFIG.grids[tpl]); ST.cfg.grids[gk].label = 'Grille '+label+' (base '+(tpl==='STD'?'OTIS 2022':'Tours')+')';
+  ST.cfg.agencies[code] = { code:code, label:label, match:match, address:'', grid:gk, template:tpl, split:'affaire', cas:2, annexe:false, active:true, docs:{}, cmList:[] };
+  ST.newAg = false; ST.parAg = code; saveCfg('Agence créée : '+label); render();
+}
 
-/* ---------- session : connexion, inactivité ---------- */
+/* ============ SESSION ============ */
 var IDLE_MIN = 30, idleT = null, warnT = null;
 function armIdle(){ clearTimeout(idleT); clearTimeout(warnT); if (!ST.user || STORE.mode === 'demo') return; warnT = setTimeout(function(){ toast('Déconnexion automatique dans 2 minutes sans activité'); }, (IDLE_MIN-2)*60000); idleT = setTimeout(function(){ logout('Déconnexion automatique (inactivité '+IDLE_MIN+' min)'); }, IDLE_MIN*60000); }
 ['click','keydown','scroll','mousemove','touchstart'].forEach(function(ev){ document.addEventListener(ev, function(){ if (ST.user && !armIdle._t){ armIdle._t = setTimeout(function(){ armIdle._t = null; armIdle(); }, 1000); } }, { passive:true }); });
@@ -851,15 +1098,10 @@ function doLogin(){
 }
 function start(profile){
   ST.user = profile; $('login').hidden = true; $('app').hidden = false; armIdle();
-  STORE.getConfig().then(function(c){ ST.globalCfg = c ? deepMerge(E.DEFAULT_CONFIG, c) : clone(E.DEFAULT_CONFIG); ST.cfg = ST.globalCfg; return STORE.listMonths(); })
-    .then(function(L){
-      ST.months = L;
-      var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.id; }).sort();
-      var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);
-      var prev = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-      loadMonth(withData.indexOf(prev) >= 0 ? prev : (withData[withData.length-1] || prev));
-    }, function(e){ toast('Base de données inaccessible : '+e.message); });
+  STORE.getConfig().then(function(c){ ST.cfg = c ? deepMerge(E.DEFAULT_CONFIG, c) : clone(E.DEFAULT_CONFIG); if (c && c.agencies) Object.keys(E.DEFAULT_CONFIG.agencies).forEach(function(k){ if (!c.agencies[k]) delete ST.cfg.agencies[k]; }); ST.cfgM = ST.cfg; return STORE.listMonths(); })
+    .then(function(L){ ST.monthsIndex = L; var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); },
+      function(e){ toast('Base de données inaccessible : '+e.message); });
 }
 STORE.onAuth(function(profile, msg){ if (profile) start(profile); else { ST.user = null; showLogin(msg); } });
-if (window.claude && window.claude.use) window.claude.use('downloads').then(function(d){ dl = d; if (ST.view==='fac'||ST.view==='trp'||ST.view==='syn') render(); }, function(){ dl = null; });
+if (window.claude && window.claude.use) window.claude.use('downloads').then(function(x){ dl = x; render(); }, function(){ dl = null; });
 })();

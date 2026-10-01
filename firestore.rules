@@ -1,37 +1,109 @@
 rules_version = '2';
-// Plateforme de facturation OTIS — accès réservé aux comptes actifs, écritures selon le rôle.
+// Plateforme de facturation OTIS (LEGAA) — site statique, sans serveur : toute la sécurité est ici.
+// À coller dans Console Firebase → Firestore → Règles → Publier.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
-    function active() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && me().active == true; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function me() { return get(userPath(request.auth.uid)).data; }
+    function active() { return signedIn() && exists(userPath(request.auth.uid)) && me().active == true; }
     function hasRole(roles) { return active() && me().role in roles; }
-
-    // Profils : lecture de son propre profil ; l'admin voit tout. Écritures uniquement par Cloud Functions.
-    match /users/{uid} {
-      allow read: if active() && (uid == request.auth.uid || hasRole(['admin']));
-      allow write: if false;
+    function isAdmin() { return hasRole(['admin']); }
+    function validRole(r) { return r in ['admin', 'adv', 'lecture']; }
+    function monthPath(id) { return /databases/$(database)/documents/months/$(id); }
+    // ADV : mois inexistant ou non clôturé ; admin : toujours
+    function canWriteMonth(id) {
+      return isAdmin() || (hasRole(['adv']) && (!exists(monthPath(id)) || get(monthPath(id)).data.status != 'clos'));
     }
-    // Grilles, agences et règles : lecture par tous les comptes actifs, modification par l'admin.
+
+    // Comptes
+    match /users/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || isAdmin());
+      // Premier accès d'un compte créé dans la console : avec invitation → rôle de l'invitation ; sans → en attente
+      allow create: if signedIn() && uid == request.auth.uid
+        && request.resource.data.email == myEmail()
+        && request.resource.data.keys().hasOnly(['email', 'name', 'role', 'active', 'pending', 'createdAt', 'createdBy', 'lastLogin'])
+        && (
+          (exists(/databases/$(database)/documents/invites/$(myEmail()))
+            && request.resource.data.role == get(/databases/$(database)/documents/invites/$(myEmail())).data.role
+            && request.resource.data.active == true)
+          || (request.resource.data.role == 'lecture' && request.resource.data.active == false && request.resource.data.pending == true)
+        );
+      // Admin : rôle, nom, activation — jamais son propre rôle ni sa propre activation
+      allow update: if (isAdmin() && validRole(request.resource.data.role)
+          && request.resource.data.email == resource.data.email
+          && (uid != request.auth.uid || (request.resource.data.role == resource.data.role && request.resource.data.active == resource.data.active)))
+        // Utilisateur : seulement sa date de dernière connexion
+        || (active() && uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin'])
+          && request.resource.data.lastLogin == request.time);
+      allow delete: if isAdmin() && uid != request.auth.uid;
+    }
+
+    // Invitations (identifiant = e-mail en minuscules)
+    match /invites/{email} {
+      allow read, delete: if isAdmin() || (signedIn() && email == myEmail());
+      allow create, update: if isAdmin() && validRole(request.resource.data.role);
+    }
+
+    // Paramètres (agences, grilles, règles, émetteur) et date de dernière purge
     match /config/{doc} {
       allow read: if active();
-      allow write: if hasRole(['admin']);
+      allow write: if isAdmin();
     }
-    // Mois de facturation : l'ADV modifie un mois ouvert ; seul l'admin touche un mois clôturé (réouverture).
-    match /months/{month} {
+
+    // Documents de référence des agences
+    match /agencyFiles/{fid} {
       allow read: if active();
-      allow create: if hasRole(['admin', 'adv']) && month.matches('^[0-9]{4}-[0-9]{2}$');
-      allow update: if hasRole(['admin']) || (hasRole(['adv']) && resource.data.status != 'clos');
-      allow delete: if false;
-      match /pdfs/{pdf} {
+      allow create, delete: if isAdmin();
+      match /chunks/{n} {
         allow read: if active();
-        allow write: if hasRole(['admin']) || (hasRole(['adv']) && get(/databases/$(database)/documents/months/$(month)).data.status != 'clos');
+        allow create, delete: if isAdmin();
       }
     }
-    // Journal : lecture admin, écriture uniquement par Cloud Functions, jamais modifiable.
+
+    // Mois de facturation d'une agence ({agence}_{AAAA-MM})
+    match /months/{id} {
+      allow read: if active();
+      allow create: if hasRole(['admin', 'adv']) && id.matches('^[0-9A-Za-z_-]{1,13}_[0-9]{4}-[0-9]{2}$');
+      allow update: if isAdmin() || (hasRole(['adv']) && resource.data.status != 'clos');
+      allow delete: if isAdmin();
+      match /pdfs/{pdf} {
+        allow read: if active();
+        allow write: if canWriteMonth(id);
+      }
+      // Fichiers déposés (exports Odoo, PDF) : jamais modifiés, seulement créés ou supprimés
+      match /files/{fid} {
+        allow read: if active();
+        allow create, delete: if canWriteMonth(id);
+        match /chunks/{n} {
+          allow read: if active();
+          allow create, delete: if canWriteMonth(id);
+        }
+      }
+    }
+
+    // Transports : ADV et admin créent et changent le statut ; seul l'admin supprime
+    match /transports/{id} {
+      allow read: if active();
+      allow create, update: if hasRole(['admin', 'adv']);
+      allow delete: if isAdmin();
+    }
+
+    // Journal : création par l'utilisateur connecté (identité et horodatage serveur imposés), jamais modifiable.
+    // Suppression uniquement des entrées de plus de 18 mois (purge).
     match /logs/{id} {
-      allow read: if hasRole(['admin']);
-      allow write: if false;
+      allow read: if isAdmin();
+      allow create: if active()
+        && request.resource.data.keys().hasOnly(['at', 'uid', 'email', 'type', 'detail', 'month', 'ip', 'ua'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.at == request.time
+        && request.resource.data.type is string && request.resource.data.type.size() <= 32
+        && request.resource.data.detail is string && request.resource.data.detail.size() <= 500;
+      allow update: if false;
+      allow delete: if isAdmin() && resource.data.at < request.time - duration.value(548, 'd');
     }
   }
 }

@@ -25,16 +25,20 @@ var ENGINE = (function () {
       }
     },
     agencies: {
-      '495': { grid: 'STD', split: 'affaire', cas: 2, annexe: false },
-      '496': { grid: 'STD', split: 'affaire', cas: 2, annexe: false },
-      '58':  { grid: 'STD', split: 'cm', cas: 1, annexe: false }
+      '495': { code: '495', label: 'AG 495 Résidentiel', match: 'OTIS CN AG 495', address: '', grid: 'G495', template: 'STD', split: 'affaire', cas: 2, annexe: false, active: true, docs: {}, cmList: [] },
+      '496': { code: '496', label: 'AG 496 Major Project', match: 'OTIS CN AG 496', address: '', grid: 'G496', template: 'STD', split: 'affaire', cas: 2, annexe: false, active: true, docs: {}, cmList: [] }
     },
+    company: { name: 'LEGAA', address: '', siret: '', tva: '', iban: '', paymentDays: 30, mentions: '' },
     rules: {
       upMode: 'max',       // unité payante manutention : 'max' = max(m³, tonnes) | 'vol' = m³
       min30: true,         // minimum 30 m² / appareil / mois
       tiers: { mois: 22, quinzSem: 15, quinz: 8 } // J≥22 mois ; 15–21 quinzaine+semaine ; 8–14 quinzaine ; 1–7 semaine
     }
   };
+
+  DEFAULT_CONFIG.grids.G495 = JSON.parse(JSON.stringify(DEFAULT_CONFIG.grids.STD)); DEFAULT_CONFIG.grids.G495.label = 'Grille AG 495 (base OTIS 2022)';
+  DEFAULT_CONFIG.grids.G496 = JSON.parse(JSON.stringify(DEFAULT_CONFIG.grids.STD)); DEFAULT_CONFIG.grids.G496.label = 'Grille AG 496 (base OTIS 2022)';
+  function normU(s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
 
   function r2(x) { return Math.round((x + (x >= 0 ? 1e-9 : -1e-9)) * 100) / 100; }
   function num(v) { if (v === null || v === undefined || v === '') return NaN; if (typeof v === 'number') return v; return parseFloat(String(v).replace(',', '.')); }
@@ -129,13 +133,40 @@ var ENGINE = (function () {
   function r4(x) { return Math.round(x * 10000) / 10000; }
 
   /* ---- Calcul complet d'un mois ---- */
-  function build(files, cfg, ov, month) {
+  function build(files, cfg, ov, month, onlyAg) {
     ov = ov || { assign: {}, exclude: {} };
     var mb = monthBounds(month), m0 = dayNum(mb.start), m1 = dayNum(mb.end);
     var all = [], anomalies = [], A = {};
     function anom(code, sev, title, explain) { if (!A[code]) { A[code] = { code: code, sev: sev, title: title, explain: explain, keys: [], note: '' }; anomalies.push(A[code]); } return A[code]; }
 
     files.forEach(function (f) { if (f.records) f.records.forEach(function (r) { all.push(r); }); });
+
+    // Agences paramétrées : la correspondance sur la colonne « Client » d'Odoo prime sur la lecture « AG nnn »
+    var AG = cfg.agencies || {};
+    var agList = Object.keys(AG).map(function (k) { return AG[k]; }).filter(function (a) { return a.match; })
+      .sort(function (a, b) { return b.match.length - a.match.length; });
+    all.forEach(function (r) {
+      var raw = normU(r.clientRaw);
+      for (var i = 0; i < agList.length; i++) {
+        if (raw.indexOf(normU(agList[i].match)) === 0) {
+          var c = r.clientRaw.indexOf(','); r.ag = agList[i].code; r.agLabel = agList[i].label || r.agLabel;
+          r.cm = c >= 0 ? r.clientRaw.slice(c + 1).trim() : (r.cm || r.clientRaw); break;
+        }
+      }
+      if (r.ag && AG[r.ag] && AG[r.ag].label) r.agLabel = AG[r.ag].label;
+    });
+    var allRaw = all.slice();
+    if (onlyAg) {
+      var other = all.filter(function (r) { return r.ag && r.ag !== onlyAg; });
+      if (other.length) {
+        var cnt = {}; other.forEach(function (r) { cnt[r.agLabel] = (cnt[r.agLabel] || 0) + 1; });
+        var ao = anom('AUTRE_AGENCE', 'info', 'Lignes d\'une autre agence ignorées', 'Le fichier contient des lignes d\'autres clients : elles sont facturées dans leur propre agence, pas ici.');
+        ao.note = Object.keys(cnt).map(function (k) { return k + ' : ' + cnt[k] + ' l.'; }).join(' · '); other.forEach(function (r) { ao.keys.push(r.key); });
+      }
+      all = all.filter(function (r) { return !r.ag || r.ag === onlyAg; });
+    } else {
+      all.forEach(function (r) { if (r.ag && !AG[r.ag]) { var an = anom('AGENCE_NON_PARAM', 'bloquant', 'Agence non paramétrée', 'Client présent dans Odoo mais absent des agences paramétrées : créer l\'agence dans Paramètres.'); an.keys.push(r.key); if (an.note.indexOf(r.agLabel) < 0) an.note += (an.note ? ' · ' : '') + r.agLabel; } });
+    }
 
     // Référentiel contremaîtres (code -> agence/nom) et BR -> contremaître
     var byCode = {}, byBR = {}, nameCodes = {};
@@ -159,6 +190,14 @@ var ENGINE = (function () {
         anom('NON_RATTACHE', 'bloquant', 'Lignes sans client (Client = « False » dans Odoo)',
           'Odoo n\'a pas renseigné le client. Ces lignes sont exclues des factures tant qu\'elles ne sont pas rattachées à une agence et un contremaître.').keys.push(r.key);
       }
+    });
+
+    // Liste des contremaîtres paramétrée pour l'agence
+    all.forEach(function (r) {
+      if (!r.eff || r.assigned) return; var A = AG[r.eff.ag]; if (!A || !A.cmList || !A.cmList.length) return;
+      var byC = A._byC; if (!byC) { byC = {}; A.cmList.forEach(function (c) { byC[String(c.code)] = normU(c.nom); }); Object.defineProperty(A, '_byC', { value: byC, enumerable: false }); }
+      if (!r.eff.cmCode || byC[r.eff.cmCode] === undefined) { var a1 = anom('CM_INCONNU', 'verifier', 'Contremaître absent de la liste paramétrée', 'Le code contremaître Odoo ne figure pas dans la liste des contremaîtres de l\'agence (Paramètres). Vérifier la fiche Odoo ou mettre la liste à jour.'); a1.keys.push(r.key); var t1 = (r.eff.cmCode || 'sans code') + ' ' + r.eff.cm; if (a1.note.indexOf(t1) < 0 && a1.note.length < 300) a1.note += (a1.note ? ' · ' : '') + t1; }
+      else if (byC[r.eff.cmCode] && byC[r.eff.cmCode] !== normU(r.eff.cm)) { var a2 = anom('CM_NOM', 'info', 'Nom du contremaître différent de la liste', 'Même code, nom différent entre Odoo et la liste paramétrée.'); a2.keys.push(r.key); var t2 = r.eff.cmCode + ' : ' + r.eff.cm; if (a2.note.indexOf(t2) < 0 && a2.note.length < 300) a2.note += (a2.note ? ' · ' : '') + t2; }
     });
 
     // Code contremaître incohérent : même nom, plusieurs codes
@@ -355,7 +394,7 @@ var ENGINE = (function () {
     var sevOrder = { bloquant: 0, verifier: 1, info: 2 };
     anomalies.forEach(function (a) { a.keys = uniq(a.keys); });
     anomalies.sort(function (a, b) { return sevOrder[a.sev] - sevOrder[b.sev] || b.keys.length - a.keys.length; });
-    var byKey = {}; all.forEach(function (r) { byKey[r.key] = r; }); mins.forEach(function (m) { byKey[m.key] = m; });
+    var byKey = {}; allRaw.forEach(function (r) { byKey[r.key] = r; }); mins.forEach(function (m) { byKey[m.key] = m; });
     var tot = { E: 0, S: 0, STK: 0, MIN: 0, HT: 0 }; invoices.forEach(function (I) { Object.keys(tot).forEach(function (k) { tot[k] = r2(tot[k] + I.totals[k]); }); });
     return { month: month, mb: mb, records: all, M: M, S: S, mins: mins, anomalies: anomalies, invoices: invoices, byKey: byKey, totals: tot, byCode: byCode };
   }
