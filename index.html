@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.5 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.6 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -316,6 +316,11 @@ iframe.pdfv{width:100%;height:100%;border:1px solid var(--line);background:#fff}
 tr.hl td{background:#e9ebed;box-shadow:inset 0 1px 0 var(--ink),inset 0 -1px 0 var(--ink)}
 tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--ink),inset 0 1px 0 var(--ink),inset 0 -1px 0 var(--ink)}
 .lnk.num{font-family:var(--f-num);padding:0}
+/* ---- v3.6 : filtres du tableau des factures ---- */
+tr.frow th{padding-top:4px;padding-bottom:6px;font-weight:400;text-transform:none;letter-spacing:0;vertical-align:top}
+select.fsel{width:100%;max-width:190px;font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink)}
+select.fsel.on{border-color:var(--ink);font-weight:600}
+.toolbar .sp{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -1439,6 +1444,7 @@ function openCount(a){ if (a.code !== 'NON_RATTACHE' && a.code !== 'AFFAIRE_INCO
 
 /* chargement d'un mois d'une agence */
 function selectMonth(ag, m){
+  if (ST.ag !== ag || ST.month !== m) ST.invF = {};
   ST.ag = ag; ST.month = m; ST.busy = 'Chargement de '+agLabel(ag)+' · '+monthLabel(m)+'…'; ST.R = null; ST.files = []; ST.pdfs = []; ST.modal = null; ST.pending = null; ST.confirmClose = false; render();
   var id = monthId();
   return STORE.getMonth(id).then(function(doc){
@@ -1665,6 +1671,53 @@ function generate(){
   STORE.saveMonth(monthId(), { gen:ST.doc.gen, ov:ST.ov, summary:summarize(ST.R) }).then(function(){ STORE.log('generation', ST.R.invoices.length+' factures · '+eur(ST.R.totals.HT)+' HT', monthId()); refreshIndex(); });
   toast(ST.R.invoices.length+' factures générées'); render();
 }
+/* Filtres du tableau des factures (contremaître, code, affaire, appareil) */
+function invVals(I){
+  return { cm:Object.keys(I.cms), code:Object.keys(I.cmCodes), aff:invAffaires(I), ap:Object.keys(I.appareils) };
+}
+function invPass(I, skip){
+  var F = ST.invF || {}, v = invVals(I);
+  return Object.keys(F).every(function(k){ return k === skip || !F[k] || v[k].indexOf(F[k]) >= 0; });
+}
+function fileBase(){ return 'OTIS '+noAcc(agLabel(ST.ag)).replace(/[^\w\- ]+/g,'')+' '+ST.month; }
+function exportInvTable(){
+  var R = ST.R, F = ST.invF || {}, rows = R.invoices.filter(invPass).map(function(I){
+    var v = invVals(I), stk = E.r2(I.totals.STK + I.totals.MIN);
+    return { 'Facture':I.num, 'Contremaître(s)':v.cm.join(', '), 'Code contremaître':v.code.join(', '), 'Affaire(s)':v.aff.join(', '), 'Appareil(s)':v.ap.sort().join(', '),
+      'Entrées':I.totals.E, 'Sorties':I.totals.S, 'Stockage':stk, 'Total HT':I.totals.HT, 'Statut':INVST[ST.ov.status[I.key] || autoStatus(I)] };
+  });
+  var wb = XLSX.utils.book_new(), ws = XLSX.utils.json_to_sheet(rows);
+  var flt = Object.keys(F).filter(function(k){ return F[k]; }).map(function(k){ return ({cm:'Contremaître',code:'Code contremaître',aff:'Affaire',ap:'Appareil'})[k]+' = '+F[k]; });
+  XLSX.utils.sheet_add_aoa(ws, [[], ['Total', '', '', '', '', sumK(rows,'Entrées'), sumK(rows,'Sorties'), sumK(rows,'Stockage'), sumK(rows,'Total HT')], [], ['Agence', agLabel(ST.ag)], ['Période', monthLabel(ST.month)], ['Filtres', flt.join(' ; ') || 'aucun'], ['Extraction', new Date().toLocaleString('fr-FR')+' · '+(STORE.profile.email||'')]], { origin:-1 });
+  XLSX.utils.book_append_sheet(wb, ws, 'Factures');
+  saveXlsx(wb, fileBase()+' factures'+(flt.length ? ' (filtré)' : '')+'.xlsx');
+}
+function sumK(rows, k){ return E.r2(rows.reduce(function(s, r){ return s + (+r[k] || 0); }, 0)); }
+function exportFamDetail(){
+  var I = ST.R.invoices.filter(function(x){ return x.key === ST.modal.inv; })[0]; if (!I) return;
+  var f = FAM3.filter(function(x){ return x.k === ST.modal.fam; })[0], fk = famKeys(I, f);
+  var rows = fk.keys.map(function(k){ return recRow(ST.R.byKey[k], I); });
+  fk.g.minKeys.forEach(function(k){ var m = ST.R.byKey[k]; rows.push({ 'Facture':I.num, 'Famille':'Complément 30 m²', 'Appareil':m.apLabel, 'Surface facturée m2':m.comp, 'Prix unitaire':m.pu, 'Calcul':m.formula, 'Montant HT':m.amount, 'Facturé':'Oui' }); });
+  var wb = XLSX.utils.book_new(), ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.sheet_add_aoa(ws, [[], ['Total facturé (lignes non exclues)', sumK(rows,'Montant HT')], ['Facture', I.num+' · '+I.sub], ['Famille', f.label], ['Lignes exclues par l\'ADV', fk.excluded.length]], { origin:-1 });
+  XLSX.utils.book_append_sheet(wb, ws, f.label.slice(0,31));
+  saveXlsx(wb, I.num+' '+f.label.replace(/[^\w\- ]+/g,'')+'.xlsx');
+}
+function exportCtl(){
+  var rows = [];
+  ST.pdfs.forEach(function(p){
+    var r = p.result || { status:'erreur' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null, fam = I ? famTotals(I) : {}, pf = (r.parsed && r.parsed.fam) || {};
+    var htP = r.parsed && r.parsed.totalHT !== null && r.parsed.totalHT !== undefined ? r.parsed.totalHT : '';
+    rows.push({ 'Fichier':p.name, 'N° Odoo':r.parsed ? r.parsed.numero || '' : '', 'Facture calculée':I ? I.num : '', 'Affaire / périmètre':I ? I.sub : '',
+      'Entrées PDF':pf.E === null || pf.E === undefined ? '' : pf.E, 'Entrées calculé':I ? fam.E : '', 'Sorties PDF':pf.S === null || pf.S === undefined ? '' : pf.S, 'Sorties calculé':I ? fam.S : '',
+      'Stockage PDF':pf.STK === null || pf.STK === undefined ? '' : pf.STK, 'Stockage calculé':I ? fam.STK : '', 'HT PDF':htP, 'HT calculé':I ? I.totals.HT : '', 'Delta HT':htP !== '' && I ? E.r2(htP - I.totals.HT) : '',
+      'Résultat':PST[r.status][1], 'Check':PCHK[(ST.ov.pchk||{})[p.id] || 'verifier'], 'Écarts':(r.checks||[]).filter(function(c){ return !c.ok && !/^TVA|TTC|Cohérence/.test(c.label); }).map(function(c){ return c.label + (c.note ? ' ('+c.note+')' : ''); }).join(' | ') });
+  });
+  var byInv = {}; ST.pdfs.forEach(function(p){ if (p.result && p.result.invKey) byInv[p.result.invKey] = 1; });
+  ST.R.invoices.filter(function(I){ return !byInv[I.key]; }).forEach(function(I){ var fam = famTotals(I); rows.push({ 'Fichier':'', 'N° Odoo':'', 'Facture calculée':I.num, 'Affaire / périmètre':I.sub, 'Entrées PDF':'', 'Entrées calculé':fam.E, 'Sorties PDF':'', 'Sorties calculé':fam.S, 'Stockage PDF':'', 'Stockage calculé':fam.STK, 'HT PDF':'', 'HT calculé':I.totals.HT, 'Delta HT':'', 'Résultat':'Sans PDF', 'Check':'', 'Écarts':'' }); });
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Contrôle factures');
+  saveXlsx(wb, fileBase()+' contrôle factures.xlsx');
+}
 function vInvoices(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les deux exports Odoo.</div>';
   var R = ST.R, gen = ST.doc && ST.doc.gen, stale = gen && gen.sig !== filesSig();
@@ -1673,11 +1726,15 @@ function vInvoices(){
     '<span class="muted">'+(gen ? 'Générées le '+dt(gen.at)+' par '+esc(gen.by) : 'Factures non générées')+'</span>'+
     (stale ? '<span class="pill p-verifier">Les imports ont changé depuis la génération : régénérer</span>' : '')+
     (blk ? '<span class="pill p-bloquant">'+blk+' ligne(s) bloquante(s) non facturée(s)</span>' : '')+
-    '<span class="sp">'+(gen ? '<button class="btn" data-a="xlsAg"'+(canSave()?'':' disabled')+'>Exporter le détail (.xlsx)</button>' : '')+'</span></div>';
+    '<span class="sp">'+(gen ? '<button class="btn" data-a="xlsInv"'+(canSave()?'':' disabled')+'>Exporter le tableau (.xlsx)</button><button class="btn" data-a="xlsAg"'+(canSave()?'':' disabled')+'>Exporter le détail colis (.xlsx)</button>' : '')+'</span></div>';
   if (!gen) return h + '<div class="panel empty">'+R.invoices.length+' factures prêtes à être générées pour '+esc(agLabel(ST.ag))+' · '+monthLabel(ST.month)+' ('+eur(R.totals.HT)+' HT).'+(blk ? '<br>Traiter d\'abord les '+blk+' ligne(s) bloquante(s) dans Anomalies, sinon elles ne seront pas facturées.' : '')+'</div>';
-  var t = { E:0, S:0, STK:0, HT:0 }, cnt = { verifier:0, editer:0, editee:0 };
-  var body = R.invoices.map(function(I){
-    var st = ST.ov.status[I.key] || autoStatus(I); cnt[st]++;
+  var t = { E:0, S:0, STK:0, HT:0 }, cnt = { verifier:0, editer:0, editee:0 }, F = ST.invF = ST.invF || {}, opts = { cm:{}, code:{}, aff:{}, ap:{} };
+  // Filtres en cascade : chaque liste ne propose que les valeurs des factures qui passent les autres filtres
+  R.invoices.forEach(function(I){ var v = invVals(I); cnt[ST.ov.status[I.key] || autoStatus(I)]++; Object.keys(opts).forEach(function(k){ if (invPass(I, k)) v[k].forEach(function(x){ opts[k][x] = 1; }); }); });
+  Object.keys(opts).forEach(function(k){ if (F[k]) opts[k][F[k]] = 1; });
+  var shown = R.invoices.filter(invPass);
+  var body = shown.map(function(I){
+    var st = ST.ov.status[I.key] || autoStatus(I);
     var stk = E.r2(I.totals.STK + I.totals.MIN); t.E = E.r2(t.E + I.totals.E); t.S = E.r2(t.S + I.totals.S); t.STK = E.r2(t.STK + stk); t.HT = E.r2(t.HT + I.totals.HT);
     var aps = Object.keys(I.appareils).sort();
     function amt(f, v){ var fk = famKeys(I, FAM3.filter(function(x){ return x.k===f; })[0]); return fk.keys.length ? '<button class="amt" data-amt="'+esc(I.key)+'|'+f+'">'+n2(v)+(fk.excluded.length ? '<span class="xn" title="lignes exclues">−'+fk.excluded.length+'</span>' : '')+'</button>' : '<span class="muted">—</span>'; }
@@ -1687,11 +1744,13 @@ function vInvoices(){
       '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
       '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
   }).join('');
-  var nI = R.invoices.length, pct = nI ? Math.round(cnt.editee / nI * 100) : 0;
+  var nI = R.invoices.length, pct = nI ? Math.round(cnt.editee / nI * 100) : 0, nF = Object.keys(F).filter(function(k){ return F[k]; }).length;
+  function fsel(k){ return '<select class="fsel'+(F[k]?' on':'')+'" data-invf="'+k+'" aria-label="Filtrer"><option value="">Tous</option>'+Object.keys(opts[k]).sort().map(function(x){ return '<option'+(F[k]===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+'</select>'; }
   h += principles();
-  h += '<div class="kpis">'+kpi('Total HT', eur(t.HT), nI+' factures')+'<div class="kpi"><span class="lbl">Complétude</span><span class="v">'+pct+' %</span><span class="s">'+cnt.editee+' / '+nI+' factures éditées dans Odoo</span><span class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></span></div>'+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées / Odoo', cnt.editee, '')+'</div>';
-  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th>Contremaître(s)</th><th>Code contremaître</th><th>Affaire(s)</th><th>Appareil(s)</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr></thead><tbody>'+body+
-    '</tbody><tfoot><tr class="tot"><td colspan="5">Total '+esc(agLabel(ST.ag))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
+  h += '<div class="kpis">'+kpi('Total HT', eur(E.r2(R.invoices.reduce(function(x, I){ return x + I.totals.HT; }, 0))), nI+' factures')+'<div class="kpi"><span class="lbl">Complétude</span><span class="v">'+pct+' %</span><span class="s">'+cnt.editee+' / '+nI+' factures éditées dans Odoo</span><span class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></span></div>'+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées / Odoo', cnt.editee, '')+'</div>';
+  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th>Contremaître(s)</th><th>Code contremaître</th><th>Affaire(s)</th><th>Appareil(s)</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr>'+
+    '<tr class="frow"><th>'+(nF ? '<button class="lnk" data-a="invfReset">Effacer les filtres</button>' : '<span class="muted">Filtrer</span>')+'</th><th>'+fsel('cm')+'</th><th>'+fsel('code')+'</th><th>'+fsel('aff')+'</th><th>'+fsel('ap')+'</th><th colspan="6" class="muted">'+(nF ? shown.length+' / '+nI+' factures affichées' : '')+'</th></tr></thead><tbody>'+(body || '<tr><td colspan="11" class="muted">Aucune facture ne correspond aux filtres.</td></tr>')+
+    '</tbody><tfoot><tr class="tot"><td colspan="5">'+(nF ? 'Total filtré ('+shown.length+' facture'+(shown.length>1?'s':'')+')' : 'Total '+esc(agLabel(ST.ag)))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
     '<p class="pb note muted" style="margin:0">Cliquer un montant pour voir le détail colis par colis et exclure des lignes. Le statut « Éditée / Odoo » se règle à la main, une fois la facture saisie dans Odoo  ; l\'export PDF ne le change pas.</p></div>';
   return h;
 }
@@ -1737,7 +1796,7 @@ function renderModal(){
   var I = ST.R.invoices.filter(function(x){ return x.key === ST.modal.inv; })[0];
   if (!I){ ST.modal = null; box.hidden = true; return; }
   var f = FAM3.filter(function(x){ return x.k === ST.modal.fam; })[0], fk = famKeys(I, f), g = fk.g;
-  var h = '<div class="mbox" role="dialog" aria-modal="true" aria-label="Détail '+esc(f.label)+'"><div class="mhead"><div><span class="lbl">'+esc(I.num)+' · '+esc(I.sub)+'</span><h2>'+f.label+'</h2></div><button class="btn" data-mclose>Fermer</button></div>';
+  var h = '<div class="mbox" role="dialog" aria-modal="true" aria-label="Détail '+esc(f.label)+'"><div class="mhead"><div><span class="lbl">'+esc(I.num)+' · '+esc(I.sub)+'</span><h2>'+f.label+'</h2></div><div class="row"><button class="btn" data-a="xlsFam"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button><button class="btn" data-mclose>Fermer</button></div></div>';
   h += '<div class="kpis">'+kpi('Colis facturés', g.n, fk.excluded.length ? fk.excluded.length+' ligne(s) exclue(s), grisée(s)' : 'aucune exclusion')+kpi('Quantité', n3(g.qty), f.unit)+kpi('Montant HT', eur(g.amount), g.minAmt ? 'dont minimum 30 m² : '+eur(g.minAmt) : '')+'</div>';
   h += '<div class="mbody">'+famDetail(I, f, { keys:fk.keys, minKeys:g.minKeys }, 'm-'+I.key+f.k)+'</div></div>';
   box.innerHTML = h; box.hidden = false; document.body.classList.add('noscroll');
@@ -1856,7 +1915,7 @@ function vControl(){
   autoRerun();
   var h = closeBox();
   if (!ro) h += '<label class="drop" id="pdrop"><input type="file" id="pin" multiple accept="application/pdf,.pdf"><strong>Déposer les factures PDF du mois (Odoo)</strong><span class="muted">PDF générés par Odoo, pas de scans. Contrôle des lignes Entrées, Sorties, Stockage et du total HT (tolérance 0,01 €), puis affaire, agence, période et appareils.</span></label>';
-  h += '<div class="panel"><div class="ph"><h2>Factures déposées</h2><span class="muted">'+P.length+' PDF · '+c.conforme+' conforme(s) · '+c.ecart+' en écart'+(c.autre ? ' · '+c.autre+' non rapproché(s)' : '')+' · '+missing.length+' facture(s) sans PDF</span><div class="sp">'+(P.length && !ro ? '<button class="btn sm" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'</div></div>';
+  h += '<div class="panel"><div class="ph"><h2>Factures déposées</h2><span class="muted">'+P.length+' PDF · '+c.conforme+' conforme(s) · '+c.ecart+' en écart'+(c.autre ? ' · '+c.autre+' non rapproché(s)' : '')+' · '+missing.length+' facture(s) sans PDF</span><div class="sp">'+(P.length && !ro ? '<button class="btn sm" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'<button class="btn sm" data-a="xlsCtl"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
   h += '<div class="tw"><table class="ctlt"><thead><tr><th>Fichier</th><th>N° Odoo</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th class="n">Delta</th><th>Résultat</th><th>Check</th><th>PDF</th><th></th></tr></thead><tbody>';
   P.forEach(function(p){
     var r = p.result || { status:'erreur' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null, open = ST.openPdf === p.id;
@@ -2337,6 +2396,10 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsSyn') exportSynth();
   else if (a === 'xlsLog') exportLogs();
   else if (a === 'pdfRerun') rerunPdfs();
+  else if (a === 'xlsInv') exportInvTable();
+  else if (a === 'xlsFam') exportFamDetail();
+  else if (a === 'xlsCtl') exportCtl();
+  else if (a === 'invfReset'){ ST.invF = {}; render(); }
   else if (a === 'addTr') validateTransport();
   else if (a === 'agcreate') createAgency();
   else if (a === 'agcancel'){ ST.newAg = false; render(); }
@@ -2363,6 +2426,7 @@ document.addEventListener('change', function(e){
   if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
+  if (d.invf){ ST.invF = ST.invF || {}; ST.invF[d.invf] = t.value; render(); return; }
   if (d.pchk){ if (!canEdit() || monthClosed()){ render(); return; } ST.ov.pchk = ST.ov.pchk || {}; ST.ov.pchk[d.pchk] = t.value; var pp = ST.pdfs.filter(function(x){ return x.id === d.pchk; })[0]; render(); persist('Check '+(pp ? pp.name : d.pchk)+' : '+PCHK[t.value]); return; }
   if (d.st){ if (!canEdit()){ render(); return; } ST.ov.status[d.st] = t.value; render(); persist('Statut '+(ST.R.invoices.filter(function(I){ return I.key===d.st; })[0]||{}).num+' : '+INVST[t.value]); return; }
   if ((d.aff || d.excl || d.assign) && !canEdit()){ render(); return; }
