@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.4 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -296,6 +296,22 @@ table.invt2 td:nth-child(9){vertical-align:middle}
 .gridbtn:hover{border-color:var(--ink)}
 .princ dl{grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}
 .mbox.mbox-s{width:min(640px,100%);grid-template-rows:auto minmax(0,1fr)}
+
+/* ---- v3.4 : contrôle factures (Delta, Check, aperçu PDF) ---- */
+.dko{color:var(--bad,#b3261e);font-weight:600}
+table.ctlt td{vertical-align:middle}
+td.pdfl{white-space:nowrap}
+.lnk{background:none;border:0;padding:0 8px 0 0;font:inherit;font-size:12.5px;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.lnk:hover{color:var(--muted)}
+tr.nopdf td{color:var(--muted)}
+tr.tot td{font-weight:600;border-top:1px solid var(--ink)}
+select.chk{font:inherit;font-size:12.5px;padding:2px 4px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink)}
+select.chk-ok{border-color:#2e7d32}
+select.chk-anomalie{border-color:#b3261e}
+select.chk-encours{border-color:#8a6d1a}
+.mbox.mbox-pdf{width:min(1000px,100%);height:calc(100vh - 48px);grid-template-rows:auto minmax(0,1fr)}
+iframe.pdfv{width:100%;height:100%;border:1px solid var(--line);background:#fff}
+.mhead a.btn{color:var(--ink);text-decoration:none}
 </style>
 </head>
 <body>
@@ -1110,23 +1126,32 @@ var PDFCHECK = (function () {
 
   /* Lecture structurée. known = { affaires:{code:1}, appareils:{code:1} } issus du mois calculé */
   function parse(lines, known) {
-    var txt = lines.join('\n'), n = norm(txt), out = { numero: '', agence: '', affaires: [], appareils: [], periodes: [], fam: { E: null, S: null, STK: null }, famLines: { E: [], S: [], STK: [] }, totalHT: null, tva: null, ttc: null, warnings: [] };
+    var txt = lines.join('\n'), n = norm(txt), out = { v: 2, numero: '', agence: '', affaires: [], appareils: [], cmCodes: [], periodes: [], fam: { E: null, S: null, STK: null }, famLines: { E: [], S: [], STK: [] }, totalHT: null, tva: null, ttc: null, warnings: [] };
     var m = txt.match(/(?:facture|invoice)\s*(?:n[°o]\.?|num[ée]ro)?\s*[:#]?\s*([A-Z]{2,5}[\/\-]?\d{2,4}[\/\-]?\d{2,6}[A-Z0-9\/\-]*)/i);
     if (m) out.numero = m[1];
     m = txt.match(/\bAG\s*(\d{2,3})\b/i); if (m) out.agence = m[1];
-    var codes = uniq(txt.toUpperCase().match(/\b[0-9A-Z]{7,10}\b/g) || []);
+    // Notation abrégée d'Odoo : « 45K1CUT5 & T6 » = 45K1CUT5 et 45K1CUT6 (le suffixe remplace la fin du code précédent)
+    var abbr = [];
+    (txt.toUpperCase().match(/\b[0-9A-Z]{7,10}(?:\s*&\s*[0-9A-Z]{1,4}\b)+/g) || []).forEach(function (g) {
+      var parts = g.split(/\s*&\s*/), base = parts[0];
+      parts.slice(1).forEach(function (sfx) { abbr.push(base.slice(0, base.length - sfx.length) + sfx); });
+    });
+    var codes = uniq((txt.toUpperCase().match(/\b[0-9A-Z]{7,10}\b/g) || []).concat(abbr));
     codes.forEach(function (c) { if (known.affaires[c]) out.affaires.push(c); else if (known.appareils[c]) out.appareils.push(c); });
+    uniq(txt.match(/\b\d{4,6}\b/g) || []).forEach(function (c) { if (known.cm && known.cm[c]) out.cmCodes.push(c); });
     if (!out.affaires.length) codes.forEach(function (c) { if (/^45[KN](RX|F4|A2)[0-9A-Z]{2,4}$/.test(c)) out.affaires.push(c); });
-    MOIS.forEach(function (mo, i) { var re = new RegExp(mo + '\\s+(20\\d{2})', 'g'), r; while ((r = re.exec(n))) out.periodes.push(r[1] + '-' + String(i + 1).padStart(2, '0')); });
-    (n.match(/\b(0[1-9]|1[0-2])[\/.](20\d{2})\b/g) || []).forEach(function (p) { var q = p.split(/[\/.]/); out.periodes.push(q[1] + '-' + q[0]); });
+    // Période : « AOUT 2026 » (objet) ou mm/aaaa ; années antérieures à 2020 ignorées (mentions légales : « loi n° 2014-626 du 18 juin 2014 »)
+    MOIS.forEach(function (mo, i) { var re = new RegExp(mo + '\\s+(20[2-9]\\d)', 'g'), r; while ((r = re.exec(n))) out.periodes.push(r[1] + '-' + String(i + 1).padStart(2, '0')); });
+    (n.match(/\b(0[1-9]|1[0-2])[\/.](20[2-9]\d)\b/g) || []).forEach(function (p) { var q = p.split(/[\/.]/); out.periodes.push(q[1] + '-' + q[0]); });
     out.periodes = uniq(out.periodes);
     lines.forEach(function (l) {
-      var nl = norm(l), a = amounts(l); if (!a.length) return;
+      // Ligne de facture : le libellé est en tête de ligne (Odoo : « Gestion Entrée  1,00 Unité(s)  385,70  TVA 20%  385,70 € ») ; montant = dernier nombre de la ligne
+      var nl = norm(l).trim(), a = amounts(l); if (!a.length) return;
       var last = a[a.length - 1];
-      if (/total\s*h\.?\s*t|montant\s*h\.?\s*t|total\s*hors\s*tax/.test(nl)) { out.totalHT = last; return; }
-      if (/\btva\b/.test(nl) && !/total\s*ttc/.test(nl)) { out.tva = last; return; }
-      if (/total\s*t\.?\s*t\.?\s*c|net\s*a\s*payer|montant\s*ttc/.test(nl)) { out.ttc = last; return; }
-      var f = /\bentree/.test(nl) ? 'E' : /\bsortie/.test(nl) ? 'S' : /stockage|minimum\s*30/.test(nl) ? 'STK' : null;
+      var f = /^(gestion\s+)?entree/.test(nl) ? 'E' : /^(gestion\s+)?sortie/.test(nl) ? 'S' : /^(gestion\s+)?stockage|^minimum\s*30/.test(nl) ? 'STK' : null;
+      if (!f && /total\s*h\.?\s*t\b|montant\s*h\.?\s*t\b|(total|montant)\s*hors\s*tax/.test(nl)) { out.totalHT = last; return; }
+      if (!f && /^t\.?v\.?a\b/.test(nl)) { out.tva = last; return; }
+      if (!f && /total\s*t\.?\s*t\.?\s*c|net\s*a\s*payer|montant\s*ttc|^total\b/.test(nl)) { out.ttc = last; return; }
       if (f) { out.famLines[f].push({ line: l, amount: last }); out.fam[f] = r2((out.fam[f] || 0) + last); }
     });
     if (out.totalHT === null && (out.fam.E !== null || out.fam.S !== null || out.fam.STK !== null)) out.warnings.push('Total HT introuvable dans le PDF');
@@ -1137,7 +1162,12 @@ var PDFCHECK = (function () {
 
   /* Rapprochement avec les factures calculées */
   function match(parsed, invoices) {
-    var cands = invoices.filter(function (I) { return I.split === 'affaire' ? parsed.affaires.indexOf(I.sub) >= 0 : false; });
+    var cands = invoices.filter(function (I) {
+      if (I.split === 'affaire') return parsed.affaires.indexOf(I.sub) >= 0;
+      if (I.split === 'appareil') return parsed.appareils.indexOf(I.sub) >= 0;
+      if (I.split === 'cm') return Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; });
+      return false;
+    });
     if (cands.length > 1 && parsed.agence) cands = cands.filter(function (I) { return I.ag === parsed.agence; }).length ? cands.filter(function (I) { return I.ag === parsed.agence; }) : cands;
     if (cands.length > 1 && parsed.totalHT !== null) { var x = cands.filter(function (I) { return Math.abs(I.totals.HT - parsed.totalHT) <= TOL; }); if (x.length) cands = x; }
     if (!cands.length && parsed.totalHT !== null) cands = invoices.filter(function (I) { return Math.abs(I.totals.HT - parsed.totalHT) <= TOL; }).length === 1 ? invoices.filter(function (I) { return Math.abs(I.totals.HT - parsed.totalHT) <= TOL; }) : [];
@@ -1148,7 +1178,15 @@ var PDFCHECK = (function () {
     var checks = [];
     function chk(label, pdfV, calcV, ok, note) { checks.push({ label: label, pdf: pdfV, calc: calcV, ok: ok, note: note || '' }); }
     var fam = famTotals(I);
-    chk('Affaire', parsed.affaires.join(', ') || '—', I.sub, parsed.affaires.indexOf(I.sub) >= 0);
+    // Montants : les 3 lignes et le total HT sont toujours présentés (delta = PDF − calculé)
+    [['E', 'Entrées'], ['S', 'Sorties'], ['STK', 'Stockage']].forEach(function (p) {
+      var v = parsed.fam[p[0]], c = fam[p[0]];
+      checks.push({ label: p[1], pdf: v, calc: c, amt: true, ok: v !== null ? Math.abs(v - c) <= TOL : c === 0, note: v === null ? (c === 0 ? 'Ligne absente du PDF ; rien à facturer' : 'Ligne absente du PDF') : '' });
+    });
+    checks.push({ label: 'Total HT', pdf: parsed.totalHT, calc: I.totals.HT, amt: true, total: true, ok: parsed.totalHT !== null && Math.abs(parsed.totalHT - I.totals.HT) <= TOL, note: parsed.totalHT === null ? 'Total HT introuvable dans le PDF' : '' });
+    // Identification
+    if (I.split === 'affaire') chk('Affaire', parsed.affaires.join(', ') || '—', I.sub, parsed.affaires.indexOf(I.sub) >= 0);
+    else if (I.split === 'cm') chk('Code contremaître', parsed.cmCodes.join(', ') || '—', Object.keys(I.cmCodes).join(', '), Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; }));
     if (parsed.agence) chk('Agence', 'AG ' + parsed.agence, I.agLabel, parsed.agence === I.ag);
     else chk('Agence', '—', I.agLabel, false, 'Agence non trouvée dans le PDF');
     chk('Période', parsed.periodes.join(', ') || '—', month, parsed.periodes.indexOf(month) >= 0, parsed.periodes.length ? '' : 'Mois de facturation non trouvé dans le PDF');
@@ -1157,31 +1195,19 @@ var PDFCHECK = (function () {
     var extra = parsed.appareils.filter(function (a) { return apsCalc.indexOf(a) < 0; });
     chk('N° d\'appareils', parsed.appareils.length + ' trouvé(s)', apsCalc.length + ' attendu(s)', !miss.length && !extra.length,
       (miss.length ? 'Absents du PDF : ' + miss.join(', ') + '. ' : '') + (extra.length ? 'En trop : ' + extra.join(', ') : ''));
-    [['E', 'Entrées'], ['S', 'Sorties'], ['STK', 'Stockage']].forEach(function (p) {
-      var v = parsed.fam[p[0]], c = fam[p[0]];
-      if (v === null && c === 0) return;
-      chk(p[1], v, c, v !== null && Math.abs(v - c) <= TOL, v === null ? 'Ligne absente du PDF' : '');
-    });
-    chk('Total HT', parsed.totalHT, I.totals.HT, parsed.totalHT !== null && Math.abs(parsed.totalHT - I.totals.HT) <= TOL);
-    if (parsed.tva !== null) chk('TVA 20 %', parsed.tva, r2(I.totals.HT * 0.2), Math.abs(parsed.tva - r2(I.totals.HT * 0.2)) <= TOL);
-    if (parsed.ttc !== null) chk('Total TTC', parsed.ttc, r2(I.totals.HT * 1.2), Math.abs(parsed.ttc - r2(I.totals.HT * 1.2)) <= TOL);
-    if (parsed.totalHT !== null && (parsed.fam.E !== null || parsed.fam.S !== null || parsed.fam.STK !== null)) {
-      var s = r2((parsed.fam.E || 0) + (parsed.fam.S || 0) + (parsed.fam.STK || 0));
-      chk('Cohérence interne du PDF (Σ lignes = total HT)', s, parsed.totalHT, Math.abs(s - parsed.totalHT) <= TOL);
-    }
     return checks;
   }
 
   /* Analyse complète d'un PDF */
   function analyse(buffer, ctx) {
     return extractLines(buffer).then(function (ex) {
-      if (!ex.lines.length) return { status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
+      if (!ex.lines.length) return { v: 2, status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
       var parsed = parse(ex.lines, ctx.known);
       var I = match(parsed, ctx.invoices);
-      if (!I) return { status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
+      if (!I) return { v: 2, status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
       var checks = compare(parsed, I, ctx.month, ctx.famTotals);
       var bad = checks.filter(function (c) { return !c.ok; });
-      return { status: bad.length ? 'ecart' : 'conforme', invKey: I.key, invNum: I.num, lines: ex.lines, parsed: parsed, checks: checks, note: bad.length ? bad.length + ' point(s) en écart' : 'Tous les contrôles sont conformes' };
+      return { v: 2, status: bad.length ? 'ecart' : 'conforme', invKey: I.key, invNum: I.num, lines: ex.lines, parsed: parsed, checks: checks, note: bad.length ? bad.length + ' point(s) en écart' : 'Tous les contrôles sont conformes' };
     });
   }
 
@@ -1227,7 +1253,7 @@ function canEdit(){ return role() !== 'lecture' && !monthClosed(); }
 function RO(){ return canEdit() ? '' : ' disabled'; }
 function ADM(){ return isAdmin() ? '' : ' disabled'; }
 function monthId(){ return ST.ag + '_' + ST.month; }
-function blankOv(){ return { assign:{}, exclude:{}, affaire:{}, affMap:{}, status:{} }; }
+function blankOv(){ return { assign:{}, exclude:{}, affaire:{}, affMap:{}, status:{}, pchk:{} }; }
 function deepMerge(base, over){ if (!over || typeof over !== 'object' || Array.isArray(over)) return over === undefined ? base : over; var o = clone(base || {}); Object.keys(over).forEach(function(k){ o[k] = (base && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) ? deepMerge(base[k], over[k]) : over[k]; }); return o; }
 function last18(){ var o = [], d = new Date(); d.setDate(1); for (var i=0;i<18;i++){ o.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); d.setMonth(d.getMonth()-1); } return o; }
 function agencies(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.code).localeCompare(String(b.code), 'fr', { numeric:true }); }); }
@@ -1701,7 +1727,8 @@ function invHeader(I){
 /* fenêtre de détail */
 function renderModal(){
   var box = $('modal'); if (!box) return;
-  if (!ST.modal || !ST.R){ box.hidden = true; box.innerHTML = ''; document.body.classList.remove('noscroll'); return; }
+  if (!ST.modal || !ST.R){ box.hidden = true; box.innerHTML = ''; document.body.classList.remove('noscroll'); if (ST.pdfUrl && !ST.modal){ URL.revokeObjectURL(ST.pdfUrl); ST.pdfUrl = null; } return; }
+  if (ST.modal.pdf){ box.innerHTML = pdfModal(); box.hidden = false; document.body.classList.add('noscroll'); return; }
   if (ST.modal.grid){ box.innerHTML = gridModal(); box.hidden = false; document.body.classList.add('noscroll'); return; }
   var I = ST.R.invoices.filter(function(x){ return x.key === ST.modal.inv; })[0];
   if (!I){ ST.modal = null; box.hidden = true; return; }
@@ -1803,6 +1830,7 @@ function exportInvoicePdf(key, preview){
   }
   var pages = doc.getNumberOfPages(), fy = T ? bottomY - 1 : 290;
   for (var p = 1; p <= pages; p++){ doc.setPage(p); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, mut); if (foot) doc.text(foot, M, fy); doc.text(p+' / '+pages, W-M, fy, { align:'right' }); }
+  if (preview === 'blob') return doc.output('blob');
   saveBlob(I.num+' '+I.sub.replace(/[^\w\- ]+/g,'')+'.pdf', doc.output('blob'), 'pdf');
   if (!preview && canEdit() && ST.ov.status[I.key] !== 'editee'){ ST.ov.status[I.key] = 'editee'; render(); persist('Facture éditée '+I.num); }
 }
@@ -1811,43 +1839,61 @@ function exportInvoicePdf(key, preview){
 var PST = { conforme:['p-ok','Conforme'], ecart:['p-bloquant','Écart'], non_rapprochee:['p-verifier','Non rapprochée'], illisible:['p-verifier','Illisible'], erreur:['p-bloquant','Erreur'] };
 function famTotals(I){ return { E:I.totals.E, S:I.totals.S, STK:E.r2(I.totals.STK + I.totals.MIN) }; }
 function pdfCtx(){
-  var known = { affaires:{}, appareils:{} };
-  ST.R.invoices.forEach(function(I){ if (I.split==='affaire') known.affaires[I.sub] = 1; Object.keys(I.appareils).forEach(function(a){ known.appareils[a] = 1; }); });
+  var known = { affaires:{}, appareils:{}, cm:{} };
+  ST.R.invoices.forEach(function(I){ if (I.split==='affaire') known.affaires[I.sub] = 1; Object.keys(I.appareils).forEach(function(a){ known.appareils[a] = 1; }); Object.keys(I.cmCodes).forEach(function(c){ known.cm[c] = 1; }); });
   return { known:known, invoices:ST.R.invoices, month:ST.month, famTotals:famTotals };
 }
+var PCHK = { verifier:'À vérifier', encours:'En cours', ok:'OK', anomalie:'Anomalie(s)' };
+function dlt(v){ if (v === null || v === undefined) return '<span class="muted">—</span>'; var z = Math.abs(v) <= PDFCHECK.TOL; return '<span class="'+(z ? 'muted' : 'dko')+'">'+(v > 0 && !z ? '+' : '')+n2(z ? 0 : v)+'</span>'; }
 function vControl(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les exports Odoo : le contrôle compare chaque PDF à la facture calculée.</div>';
-  var P = ST.pdfs, c = { conforme:0, ecart:0, non_rapprochee:0, illisible:0, erreur:0 }, byInv = {};
-  P.forEach(function(p){ var st = p.result ? p.result.status : 'erreur'; c[st] = (c[st]||0)+1; if (p.result && p.result.invKey) (byInv[p.result.invKey] = byInv[p.result.invKey] || []).push(p); });
-  var missing = ST.R.invoices.filter(function(I){ return !byInv[I.key]; }), dups = Object.keys(byInv).filter(function(k){ return byInv[k].length > 1; });
-  var issues = [];
+  var P = ST.pdfs, byInv = {}, c = { conforme:0, ecart:0, autre:0 }, chk = ST.ov.pchk || {}, ro = !canEdit() || monthClosed();
+  P.forEach(function(p){ var st = p.result ? p.result.status : 'erreur'; if (st === 'conforme' || st === 'ecart') c[st]++; else c.autre++; if (p.result && p.result.invKey) (byInv[p.result.invKey] = byInv[p.result.invKey] || []).push(p); });
+  var missing = ST.R.invoices.filter(function(I){ return !byInv[I.key]; });
+  autoRerun();
+  var h = closeBox();
+  if (!ro) h += '<label class="drop" id="pdrop"><input type="file" id="pin" multiple accept="application/pdf,.pdf"><strong>Déposer les factures PDF du mois (Odoo)</strong><span class="muted">PDF générés par Odoo, pas de scans. Contrôle des lignes Entrées, Sorties, Stockage et du total HT (tolérance 0,01 €), puis affaire, agence, période et appareils.</span></label>';
+  h += '<div class="panel"><div class="ph"><h2>Factures déposées</h2><span class="muted">'+P.length+' PDF · '+c.conforme+' conforme(s) · '+c.ecart+' en écart'+(c.autre ? ' · '+c.autre+' non rapproché(s)' : '')+' · '+missing.length+' facture(s) sans PDF</span><div class="sp">'+(P.length && !ro ? '<button class="btn sm" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'</div></div>';
+  h += '<div class="tw"><table class="ctlt"><thead><tr><th>Fichier</th><th>N° Odoo</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th class="n">Delta</th><th>Résultat</th><th>Check</th><th>PDF</th><th></th></tr></thead><tbody>';
   P.forEach(function(p){
-    var r = p.result || { status:'erreur', note:'Non analysé' };
-    if (r.status === 'conforme') return;
-    if (r.status !== 'ecart'){ issues.push(['PDF '+PST[r.status][1].toLowerCase(), p.name, '—', r.note || '', '', '', '', p.id]); return; }
-    r.checks.filter(function(k){ return !k.ok; }).forEach(function(k){ issues.push(['Écart', p.name, r.invNum, k.label, k.pdf, k.calc, k.note, p.id]); });
+    var r = p.result || { status:'erreur' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null, open = ST.openPdf === p.id;
+    var htP = r.parsed && r.parsed.totalHT !== null && r.parsed.totalHT !== undefined ? r.parsed.totalHT : null, cv = chk[p.id] || 'verifier';
+    h += '<tr class="click'+(open?' open':'')+'" data-pdf="'+esc(p.id)+'"><td>'+(open?'▾ ':'▸ ')+esc(p.name)+'</td><td class="num">'+esc(r.parsed ? r.parsed.numero||'—' : '—')+'</td><td class="num">'+esc(I ? I.num : '—')+'</td>'+
+      '<td class="n">'+(htP !== null ? n2(htP) : '—')+'</td><td class="n">'+(I ? n2(I.totals.HT) : '—')+'</td><td class="n">'+dlt(htP !== null && I ? E.r2(htP - I.totals.HT) : null)+'</td>'+
+      '<td><span class="pill '+PST[r.status][0]+'">'+PST[r.status][1]+'</span></td>'+
+      '<td><select class="chk chk-'+cv+'" data-pchk="'+esc(p.id)+'"'+(ro?' disabled':'')+'>'+Object.keys(PCHK).map(function(k){ return '<option value="'+k+'"'+(k===cv?' selected':'')+'>'+PCHK[k]+'</option>'; }).join('')+'</select></td>'+
+      '<td class="pdfl"><button class="lnk" data-pvo="'+esc(p.id)+'">Odoo</button>'+(I ? '<button class="lnk" data-pvt="'+esc(I.key)+'">Calculée</button>' : '')+'</td>'+
+      '<td>'+(!ro ? '<button class="btn sm" data-pdfrm="'+esc(p.id)+'">Supprimer</button>' : '')+'</td></tr>';
+    if (open) h += '<tr class="det"><td colspan="10"><div class="det-w">'+pdfDetail(p, r, I)+'</div></td></tr>';
   });
-  dups.forEach(function(k){ var I = ST.R.invoices.filter(function(x){ return x.key===k; })[0]; issues.push(['Doublon', byInv[k].map(function(p){ return p.name; }).join(', '), I.num, 'Plusieurs PDF pour la même facture', '', '', '', null]); });
-  if (P.length && missing.length) issues.push(['PDF manquant', '—', missing.length+' facture'+(missing.length>1?'s':''), 'Aucun PDF déposé', '', E.r2(missing.reduce(function(s, I){ return s + I.totals.HT; }, 0)), missing.map(function(I){ return I.num.slice(-2)+' '+I.sub; }).join(' · '), null]);
-  var ok = P.length && !issues.length;
-  var h = '<div class="ctlhead"><div class="verdict '+(P.length ? (ok ? 'v-ok' : 'v-ko') : 'v-none')+'"><span class="lbl">Résultat du contrôle</span><strong>'+(!P.length ? 'Aucune facture déposée' : ok ? 'Conforme : '+c.conforme+' facture'+(c.conforme>1?'s':'')+' sur '+ST.R.invoices.length : issues.length+' anomalie'+(issues.length>1?'s':'')+' à corriger')+'</strong></div>'+
-    '<div class="kpis">'+kpi('PDF déposés', P.length, '')+kpi('Conformes', c.conforme, '')+kpi('En écart', c.ecart, '')+kpi('Non rapprochés / illisibles', c.non_rapprochee + c.illisible + c.erreur, '')+kpi('Factures sans PDF', missing.length, 'sur '+ST.R.invoices.length)+'</div></div>';
-  h += closeBox();
-  if (role() !== 'lecture' && !monthClosed()) h += '<label class="drop" id="pdrop"><input type="file" id="pin" multiple accept="application/pdf,.pdf"><strong>Déposer toutes les factures PDF du mois</strong><span class="muted">PDF générés par le logiciel de facturation (pas de scans). Comparaison : affaire, agence, période, n° d\'appareils, Entrées, Sorties, Stockage, total HT, TVA, TTC (tolérance 0,01 €).</span></label>';
-  if (issues.length){
-    h += '<div class="panel"><div class="ph"><h2>Anomalies identifiées</h2><div class="sp">'+(P.length && canEdit() ? '<button class="btn sm" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'</div></div><div class="tw"><table><thead><tr><th>Type</th><th>Fichier</th><th>Facture</th><th>Contrôle</th><th class="n">PDF</th><th class="n">Calculé</th><th>Précision</th></tr></thead><tbody>'+
-      issues.map(function(x){ var f = function(v){ return typeof v === 'number' ? n2(v) : esc(v === null || v === undefined || v === '' ? '' : v); }; return '<tr><td><span class="pill '+(x[0]==='PDF manquant'?'p-verifier':'p-bloquant')+'">'+esc(x[0])+'</span></td><td>'+esc(x[1])+'</td><td class="num">'+esc(x[2])+'</td><td>'+esc(x[3])+'</td><td class="n">'+f(x[4])+'</td><td class="n">'+f(x[5])+'</td><td class="muted">'+esc(x[6])+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
-  }
-  if (P.length){
-    h += '<details class="panel"><summary class="ph"><h3>Factures déposées ('+P.length+')</h3></summary><div class="tw"><table><thead><tr><th>Fichier</th><th>N° (PDF)</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th>Statut</th><th></th></tr></thead><tbody>';
-    P.forEach(function(p){
-      var r = p.result || { status:'erreur' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null, open = ST.openPdf === p.id;
-      h += '<tr class="click'+(open?' open':'')+'" data-pdf="'+esc(p.id)+'"><td>'+(open?'▾ ':'▸ ')+esc(p.name)+'</td><td class="num">'+esc(r.parsed ? r.parsed.numero||'—' : '—')+'</td><td class="num">'+esc(I ? I.num : '—')+'</td><td class="n">'+(r.parsed && r.parsed.totalHT!==null ? n2(r.parsed.totalHT) : '—')+'</td><td class="n">'+(I ? n2(I.totals.HT) : '—')+'</td><td><span class="pill '+PST[r.status][0]+'">'+PST[r.status][1]+'</span></td><td>'+(canEdit() ? '<button class="btn sm" data-pdfrm="'+esc(p.id)+'">Supprimer</button>' : '')+'</td></tr>';
-      if (open) h += '<tr class="det"><td colspan="7"><div class="det-w">'+pdfDetail(p, r)+'</div></td></tr>';
-    });
-    h += '</tbody></table></div></details>';
-  }
-  return h;
+  missing.forEach(function(I){
+    h += '<tr class="nopdf"><td class="muted">Aucun PDF déposé</td><td class="num">—</td><td class="num">'+esc(I.num)+'</td><td class="n">—</td><td class="n">'+n2(I.totals.HT)+'</td><td class="n">'+dlt(null)+'</td><td><span class="pill p-verifier">Sans PDF</span></td><td></td><td class="pdfl"><button class="lnk" data-pvt="'+esc(I.key)+'">Calculée</button></td><td></td></tr>';
+  });
+  if (!P.length && !missing.length) h += '<tr><td colspan="10" class="muted">Aucune facture.</td></tr>';
+  return h + '</tbody></table></div></div>';
+}
+// Résultats enregistrés par une version antérieure du contrôle : relancés une fois à l'ouverture
+function autoRerun(){
+  var id = monthId(); ST.rerunDone = ST.rerunDone || {};
+  if (ST.busy || ST.rerunDone[id] || !canEdit() || monthClosed()) return;
+  if (!ST.pdfs.some(function(p){ return !p.result || p.result.v !== 2; })) return;
+  ST.rerunDone[id] = 1; setTimeout(rerunPdfs, 0);
+}
+function viewPdf(title, name, blob){
+  if (ST.pdfUrl) URL.revokeObjectURL(ST.pdfUrl);
+  ST.pdfUrl = URL.createObjectURL(blob); ST.modal = { pdf:{ title:title, name:name, blob:blob, url:ST.pdfUrl } }; renderModal();
+}
+function viewOdooPdf(id){
+  var p = ST.pdfs.filter(function(x){ return x.id === id; })[0]; if (!p) return;
+  STORE.getPdfBytes(p).then(function(b){ viewPdf('Facture Odoo · '+p.name, p.name, new Blob([b], { type:'application/pdf' })); }, function(e){ toast('PDF illisible : '+e.message); });
+}
+function viewCalcPdf(key){
+  var I = ST.R.invoices.filter(function(x){ return x.key === key; })[0]; if (!I) return;
+  var b = exportInvoicePdf(key, 'blob'); if (b) viewPdf('Facture calculée · '+I.num, I.num+'.pdf', b);
+}
+function pdfModal(){
+  var v = ST.modal.pdf;
+  return '<div class="mbox mbox-pdf" role="dialog" aria-modal="true" aria-label="'+esc(v.title)+'"><div class="mhead"><div><h2>'+esc(v.title)+'</h2></div><div class="row"><a class="btn" href="'+v.url+'" target="_blank" rel="noopener">Ouvrir dans un onglet</a><button class="btn" data-pvdl>Télécharger</button><button class="btn" data-mclose>Fermer</button></div></div><iframe class="pdfv" src="'+v.url+'" title="'+esc(v.title)+'"></iframe></div>';
 }
 function closeBox(){
   var st = ST.doc ? ST.doc.status : 'vide';
@@ -1876,15 +1922,16 @@ function reopenMonth(){
   STORE.saveMonth(id, { status:'ouvert', cfgSnapshot:null }).then(function(){ return STORE.log('month_reopen', agLabel(ST.ag)+' · '+monthLabel(ST.month), id); })
     .then(function(){ toast('Mois rouvert'); refreshIndex(); selectMonth(ST.ag, ST.month); }, function(e){ toast('Réouverture impossible : '+e.message); });
 }
-function pdfDetail(p, r){
+function pdfDetail(p, r, I){
   var h = '<p class="note">'+esc(r.note||'')+(p.at ? ' <span class="muted">· déposé le '+esc(new Date(p.at).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}))+' par '+esc(p.by||'')+'</span>' : '')+'</p>';
-  if (r.checks && r.checks.length){
-    h += '<div class="tw"><table><thead><tr><th>Contrôle</th><th class="n">PDF</th><th class="n">Calculé</th><th>Résultat</th><th>Précision</th></tr></thead><tbody>';
-    r.checks.forEach(function(c){ var f = function(v){ return typeof v === 'number' ? n2(v) : esc(v === null || v === undefined ? '—' : v); }; h += '<tr><td>'+esc(c.label)+'</td><td class="n">'+f(c.pdf)+'</td><td class="n">'+f(c.calc)+'</td><td><span class="pill '+(c.ok?'p-ok':'p-bloquant')+'">'+(c.ok?'OK':'Écart')+'</span></td><td class="muted">'+esc(c.note)+'</td></tr>'; });
+  var L = (r.checks || []).filter(function(c){ return !/^TVA|TTC|Cohérence/.test(c.label); });
+  if (L.length){
+    var f = function(v){ return typeof v === 'number' ? n2(v) : esc(v === null || v === undefined ? '—' : v); };
+    h += '<div class="tw"><table><thead><tr><th>Contrôle</th><th class="n">PDF Odoo</th><th class="n">Calculé</th><th class="n">Delta</th><th>Résultat</th><th>Précision</th></tr></thead><tbody>';
+    L.forEach(function(c){ h += '<tr'+(c.total?' class="tot"':'')+'><td>'+esc(c.label)+'</td><td class="n">'+f(c.pdf)+'</td><td class="n">'+f(c.calc)+'</td><td class="n">'+(c.amt ? dlt(typeof c.pdf === 'number' ? E.r2(c.pdf - c.calc) : null) : '')+'</td><td><span class="pill '+(c.ok?'p-ok':'p-bloquant')+'">'+(c.ok?'OK':'Écart')+'</span></td><td class="muted">'+esc(c.note)+'</td></tr>'; });
     h += '</tbody></table></div>';
   }
   if (r.parsed && r.parsed.warnings && r.parsed.warnings.length) h += '<p class="note"><span class="pill p-verifier">Lecture</span> '+esc(r.parsed.warnings.join(' · '))+'</p>';
-  if (r.lines && r.lines.length) h += '<details><summary class="lbl">Texte lu dans le PDF ('+r.lines.length+' lignes)</summary><pre class="pdftxt">'+esc(r.lines.join('\n'))+'</pre></details>';
   return h;
 }
 function bindPdfDrop(){
@@ -2225,6 +2272,7 @@ function changeMyPassword(){
 
 /* ============ ÉVÉNEMENTS ============ */
 document.addEventListener('click', function(e){
+  if (e.target.closest('select')) return;
   if (e.target.id === 'modal'){ ST.modal = null; renderModal(); return; }
   var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
   if (!t || t.disabled) return;
@@ -2240,6 +2288,9 @@ document.addEventListener('click', function(e){
   if (d.par){ ST.parAg = d.par; ST.newAg = false; render(); return; }
   if (d.newag !== undefined){ ST.newAg = true; render(); return; }
   if (d.amt){ var p = d.amt.split('|'); ST.modal = { inv:p.slice(0,-1).join('|'), fam:p[p.length-1] }; renderModal(); return; }
+  if (d.pvo){ viewOdooPdf(d.pvo); return; }
+  if (d.pvt){ viewCalcPdf(d.pvt); return; }
+  if (d.pvdl !== undefined && ST.modal && ST.modal.pdf){ saveBlob(ST.modal.pdf.name, ST.modal.pdf.blob, 'pdf'); return; }
   if (d.gdl !== undefined){ var gA = ST.cfg.agencies[ST.ag], gm = gA && gA.docs && gA.docs.grille; if (gm) STORE.getFileBytes(gm).then(function(b){ saveBlob(gm.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
   if (d.mclose !== undefined){ ST.modal = null; renderModal(); return; }
   if (d.pinv){ exportInvoicePdf(d.pinv); return; }
@@ -2302,6 +2353,7 @@ document.addEventListener('change', function(e){
   if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
+  if (d.pchk){ if (!canEdit() || monthClosed()){ render(); return; } ST.ov.pchk = ST.ov.pchk || {}; ST.ov.pchk[d.pchk] = t.value; var pp = ST.pdfs.filter(function(x){ return x.id === d.pchk; })[0]; render(); persist('Check '+(pp ? pp.name : d.pchk)+' : '+PCHK[t.value]); return; }
   if (d.st){ if (!canEdit()){ render(); return; } ST.ov.status[d.st] = t.value; render(); persist('Statut '+(ST.R.invoices.filter(function(I){ return I.key===d.st; })[0]||{}).num+' : '+INVST[t.value]); return; }
   if ((d.aff || d.excl || d.assign) && !canEdit()){ render(); return; }
   if (d.aff){ var ka = d.aff; delete ST.ov.affaire[ka]; delete ST.ov.exclude[ka]; if (t.value==='__EXCL__') ST.ov.exclude[ka]='Affaire inconnue : non facturée'; else if (t.value) ST.ov.affaire[ka]=t.value; rebuild(); persist('Affaire '+(t.value||'retirée')+' pour '+ka); return; }
@@ -2346,6 +2398,7 @@ function start(profile){
 STORE.onAuth(function(profile, msg){ if (profile) start(profile); else { ST.user = null; showLogin(msg); } });
 if (window.claude && window.claude.use) window.claude.use('downloads').then(function(x){ dl = x; render(); }, function(){ dl = null; });
 })();
+
 
 </script>
 </body>
