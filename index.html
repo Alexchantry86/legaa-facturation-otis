@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.2 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -289,6 +289,13 @@ table.invt2 td.n,table.invt2 td.c{vertical-align:middle}
 table.invt2 td.apcol{font-size:12px;white-space:nowrap}
 table.invt2 td:nth-child(9){vertical-align:middle}
 .princ dl div{align-content:start}
+
+/* ---- v3.3 : principes compacts, picto grille, fenêtre grille ---- */
+.princ-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.gridbtn{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:3px 8px;font:inherit;font-size:12px;color:var(--ink);cursor:pointer}
+.gridbtn:hover{border-color:var(--ink)}
+.princ dl{grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))}
+.mbox.mbox-s{width:min(640px,100%);grid-template-rows:auto minmax(0,1fr)}
 </style>
 </head>
 <body>
@@ -325,7 +332,6 @@ table.invt2 td:nth-child(9){vertical-align:middle}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <!--STORE_SCRIPTS-->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -1287,7 +1293,7 @@ function vParams(){
   if (ST.newAg) h += newAgForm();
   else if (ST.parAg && ST.cfg.agencies[ST.parAg]) h += agEditor(ST.cfg.agencies[ST.parAg]);
   else h += '<div class="panel empty">Aucune agence. Créer la première agence.</div>';
-  h += commonParams() + tplSection();
+  h += commonParams();
   return h + '</section>';
 }
 function newAgForm(){
@@ -1646,7 +1652,7 @@ function vInvoices(){
     var aps = Object.keys(I.appareils).sort();
     function amt(f, v){ var fk = famKeys(I, FAM3.filter(function(x){ return x.k===f; })[0]); return fk.keys.length ? '<button class="amt" data-amt="'+esc(I.key)+'|'+f+'">'+n2(v)+(fk.excluded.length ? '<span class="xn" title="lignes exclues">−'+fk.excluded.length+'</span>' : '')+'</button>' : '<span class="muted">—</span>'; }
     var affs = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r && r.affaire) affs[r.affaire] = 1; }); });
-    return '<tr class="st-'+st+'"><td class="num inum">'+esc(I.num)+'</td><td>'+Object.keys(I.cms).map(esc).join('<br>')+(Object.keys(I.cmCodes).length?'<br><span class="muted num">'+esc(Object.keys(I.cmCodes).join(', '))+'</span>':'')+'</td><td class="num">'+Object.keys(affs).sort().map(esc).join('<br>')+'</td><td class="num apcol">'+aps.map(esc).join('<br>')+'</td>'+
+    return '<tr class="st-'+st+'"><td class="num inum">'+esc(I.num)+'</td><td>'+Object.keys(I.cms).map(esc).join('<br>')+'</td><td class="num">'+(Object.keys(I.cmCodes).map(esc).join('<br>')||'—')+'</td><td class="num">'+Object.keys(affs).sort().map(esc).join('<br>')+'</td><td class="num apcol">'+aps.map(esc).join('<br>')+'</td>'+
       '<td class="n">'+amt('E', I.totals.E)+'</td><td class="n">'+amt('S', I.totals.S)+'</td><td class="n">'+amt('STK', stk)+'</td><td class="n"><strong>'+n2(I.totals.HT)+'</strong></td>'+
       '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
       '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
@@ -1654,28 +1660,49 @@ function vInvoices(){
   var nI = R.invoices.length, pct = nI ? Math.round(cnt.editee / nI * 100) : 0;
   h += principles();
   h += '<div class="kpis">'+kpi('Total HT', eur(t.HT), nI+' factures')+'<div class="kpi"><span class="lbl">Complétude</span><span class="v">'+pct+' %</span><span class="s">'+cnt.editee+' / '+nI+' factures éditées</span><span class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></span></div>'+kpi('À vérifier', cnt.verifier, 'lignes signalées dans Anomalies')+kpi('À éditer', cnt.editer, '')+kpi('Éditées', cnt.editee, '')+'</div>';
-  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th>Contremaître(s)</th><th>Affaire(s)</th><th>Appareil(s)</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr></thead><tbody>'+body+
-    '</tbody><tfoot><tr class="tot"><td colspan="4">Total '+esc(agLabel(ST.ag))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
+  h += '<div class="panel"><div class="tw"><table class="invt2"><thead><tr><th>Facture</th><th>Contremaître(s)</th><th>Code contremaître</th><th>Affaire(s)</th><th>Appareil(s)</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">Total HT</th><th>Statut</th><th class="c">Export</th></tr></thead><tbody>'+body+
+    '</tbody><tfoot><tr class="tot"><td colspan="5">Total '+esc(agLabel(ST.ag))+'</td><td class="n">'+n2(t.E)+'</td><td class="n">'+n2(t.S)+'</td><td class="n">'+n2(t.STK)+'</td><td class="n">'+n2(t.HT)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+
     '<p class="pb note muted" style="margin:0">Cliquer un montant pour voir le détail colis par colis et exclure des lignes. Le PDF passe la facture en « Éditée ».</p></div>';
   return h;
 }
 function principles(){
-  var A = ST.cfg.agencies[ST.ag] || {}, c = ST.cfgM || ST.cfg, g = c.grids[A.grid] || c.grids.STD || {};
+  var A = ST.cfg.agencies[ST.ag] || {};
   var split = ({affaire:'une facture par affaire',cm:'une facture par contremaître',appareil:'une facture par appareil (n° de commande)',ag:'une facture unique pour l\'agence'})[A.split||'cm'];
   var items = [
     ['Découpage', split],
     ['Process OTIS', A.cas === 1 ? 'cas 1 : devis, facturation après commande' : 'cas 2 : facturation sans commande client'],
-    ['Annexe', A.annexe ? 'détail colis joint à la facture' : 'sans annexe, n° d\'appareils sur la facture'],
-    ['Entrées / sorties', nx(g.rate)+' € par UP '+(c.rules.upMode==='max'?'(max m³ ; t)':'(m³)')+', minimum '+n2(g.minChariot)+' € (chariot) / '+n2(g.minManuel)+' € (manuel)'],
-    ['Stockage', g.storeMode==='volume' ? 'volume × coefficient, '+nx((g.prices['Intérieur']||{}).mois)+' €/m² au mois' : 'surface × '+nx(g.coefSurface)+', '+nx((g.prices['Intérieur']||{}).mois)+' €/m² au mois'],
-    ['Minimum', c.rules.min30 && g.min30 ? g.min30+' m² par appareil et par mois' : 'aucun']
+    ['Annexe', A.annexe ? 'détail colis joint à la facture' : 'sans annexe']
   ];
-  return '<div class="princ"><span class="lbl">Principes de facturation · '+esc(A.label||'')+'</span><dl>'+items.map(function(i){ return '<div><dt>'+i[0]+'</dt><dd>'+esc(i[1])+'</dd></div>'; }).join('')+'</dl></div>';
+  return '<div class="princ"><div class="princ-h"><span class="lbl">Principes de facturation · '+esc(A.label||'')+'</span><button class="gridbtn" data-a="gridview" title="Voir la grille tarifaire" aria-label="Voir la grille tarifaire">'+GRID+'<span>Grille tarifaire</span></button></div><dl>'+items.map(function(i){ return '<div><dt>'+i[0]+'</dt><dd>'+esc(i[1])+'</dd></div>'; }).join('')+'</dl></div>';
+}
+var GRID = '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M3 3h14v14H3V3zm1.5 1.5v3h4.25v-3H4.5zm5.75 0v3h5.25v-3h-5.25zM4.5 9v2.75h4.25V9H4.5zm5.75 0v2.75h5.25V9h-5.25zm-5.75 4.25v2.25h4.25v-2.25H4.5zm5.75 0v2.25h5.25v-2.25h-5.25z"/></svg>';
+function gridModal(){
+  var A = ST.cfg.agencies[ST.ag] || {}, c = ST.cfgM || ST.cfg, g = c.grids[A.grid] || c.grids.STD || {}, doc = (A.docs||{}).grille;
+  var rows = [['Entrée / sortie, € par unité payante (> 0,500)', nx(g.rate)], ['Unité payante', c.rules.upMode === 'max' ? 'max(m³ ; tonnes)' : 'm³'], ['Minimum chariot / transpalette', nx(g.minChariot)+' €'], ['Minimum manuel', nx(g.minManuel)+' €']];
+  Object.keys(g.prices||{}).forEach(function(t){ rows.push(['Stockage '+t.toLowerCase()+' · mois / quinzaine / semaine', nx(g.prices[t].mois)+' / '+nx(g.prices[t].quinz)+' / '+nx(g.prices[t].sem)+' €/m²']); });
+  if (g.storeMode === 'volume') (g.coefs||[]).forEach(function(cf){ rows.push(['Coefficient volume → m², '+cf.label, nx(cf.coef)]); });
+  else rows.push(['Coefficient sur surface au sol', nx(g.coefSurface)]);
+  rows.push(['Minimum par appareil et par mois', c.rules.min30 && g.min30 ? g.min30+' m²' : 'aucun']);
+  return '<div class="mbox mbox-s" role="dialog" aria-modal="true" aria-label="Grille tarifaire"><div class="mhead"><div><span class="lbl">'+esc(A.label||'')+'</span><h2>Grille tarifaire appliquée</h2><span class="muted">'+esc(g.label||'')+(ST.doc && ST.doc.status === 'clos' ? ' · figée à la clôture' : '')+'</span></div><button class="btn" data-mclose>Fermer</button></div>'+
+    '<div class="mbody"><div class="tw"><table><tbody>'+rows.map(function(r){ return '<tr><td>'+esc(r[0])+'</td><td class="n">'+esc(r[1])+'</td></tr>'; }).join('')+'</tbody></table></div>'+
+    '<div class="row" style="margin-top:12px">'+(doc ? '<button class="btn" data-gdl>Télécharger la grille signée ('+esc(doc.name)+')</button>' : '<span class="muted">Aucune grille signée chargée dans Paramètres.</span>')+'</div></div></div>';
+}
+/* Champs d'en-tête de la facture Odoo, selon les principes de facturation de l'agence */
+function noAcc(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function invAffaires(I){ var o = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r && r.affaire) o[r.affaire] = 1; }); }); return Object.keys(o).sort(); }
+function invHeader(I){
+  var mb = ST.R.mb, d = new Date(mb.end + 'T12:00:00'), due = new Date(d.getTime() + 30*86400000);
+  var affs = invAffaires(I), aps = Object.keys(I.appareils).filter(function(a){ return a.charAt(0) !== '('; }).sort();
+  var objet = 'LOGISTIQUE ' + noAcc(monthLabel(ST.month)).toUpperCase() + (I.split === 'cm' ? ' - ' + Object.keys(I.cms).join(', ') : '');
+  var cmd = I.split === 'appareil' ? 'Appareil : ' + I.sub + (affs.length ? ' - Affaire : ' + affs.join(', ') : '')
+    : (affs.length ? 'Affaire' + (affs.length > 1 ? 's' : '') + ' : ' + affs.join(', ') : '') + (aps.length ? (affs.length ? ' - ' : '') + 'Appareil' + (aps.length > 1 ? 's' : '') + ' : ' + aps.join(' & ') : '');
+  return { objet:objet, date:d.toLocaleDateString('fr-FR'), echeance:due.toLocaleDateString('fr-FR'), devis:'', interlocuteur:'', codeCm: I.split === 'cm' ? Object.keys(I.cmCodes).join(', ') : '', commande:cmd };
 }
 /* fenêtre de détail */
 function renderModal(){
   var box = $('modal'); if (!box) return;
   if (!ST.modal || !ST.R){ box.hidden = true; box.innerHTML = ''; document.body.classList.remove('noscroll'); return; }
+  if (ST.modal.grid){ box.innerHTML = gridModal(); box.hidden = false; document.body.classList.add('noscroll'); return; }
   var I = ST.R.invoices.filter(function(x){ return x.key === ST.modal.inv; })[0];
   if (!I){ ST.modal = null; box.hidden = true; return; }
   var f = FAM3.filter(function(x){ return x.k === ST.modal.fam; })[0], fk = famKeys(I, f), g = fk.g;
@@ -1717,31 +1744,32 @@ function exportInvoicePdf(key, preview){
   var I = ST.R.invoices.filter(function(x){ return x.key === key; })[0]; if (!I) return;
   if (!window.jspdf || !window.jspdf.jsPDF){ toast('Générateur PDF indisponible : vérifier la connexion.'); return; }
   var c = (ST.cfgM || ST.cfg), co = c.company || {}, A = c.agencies[I.ag] || {}, cas1 = I.cas === 1;
-  var T = ST.cfg.invoiceTpl && ST.cfg.invoiceTpl.file ? ST.cfg.invoiceTpl : null;
-  var doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' }), W = 210, M = 16;
+  var T = null, doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' }), W = 210, M = 16;
   var ink = [20,22,24], mut = [100,107,114], line = [214,218,221];
-  // Zone d'impression : sous l'en-tête et au-dessus du pied de page du modèle
-  var top = T ? (+T.marginTop >= 0 ? +T.marginTop : 45) : 12, bottomY = T ? 297 - (+T.marginBottom >= 0 ? +T.marginBottom : 25) : 286;
-  var showIssuer = T ? T.showIssuer === true : true, showFoot = T ? T.showFooter !== false : true;
-  var y0 = top + 8, y = y0 + 5;
-  if (showIssuer){
-    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt(co.name || 'LEGAA'), M, y0);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor.apply(doc, mut);
-    pdfTxt(co.address || '').split('\n').filter(Boolean).forEach(function(l){ doc.text(l, M, y); y += 4; });
-    if (co.siret) { doc.text('SIRET '+pdfTxt(co.siret), M, y); y += 4; } if (co.tva) { doc.text('TVA '+pdfTxt(co.tva), M, y); y += 4; }
-  }
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor.apply(doc, ink); doc.text(cas1 ? 'DEVIS PRO FORMA' : 'FACTURE PRO FORMA', W-M, y0, { align:'right' });
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, ink);
-  var today = new Date(), due = new Date(today.getTime() + (+co.paymentDays||30)*86400000);
-  [['N°', I.num], ['Date', today.toLocaleDateString('fr-FR')], ['Période', monthLabel(ST.month)], ['Échéance', due.toLocaleDateString('fr-FR')]].forEach(function(p, i){ doc.setTextColor.apply(doc, mut); doc.text(p[0], W-M-58, y0+7+i*5); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt(p[1]), W-M, y0+7+i*5, { align:'right' }); });
-  y = Math.max(y, y0+28) + 4;
-  doc.setDrawColor.apply(doc, line); doc.rect(W/2, y, W/2-M, 26);
-  doc.setFontSize(8); doc.setTextColor.apply(doc, mut); doc.text('CLIENT', W/2+4, y+5);
-  doc.setFontSize(9.5); doc.setTextColor.apply(doc, ink); doc.setFont('helvetica','bold'); doc.text(pdfTxt('OTIS CN · '+(A.label || I.agLabel)), W/2+4, y+10.5); doc.setFont('helvetica','normal');
-  pdfTxt(A.address || '').split('\n').filter(Boolean).slice(0,3).forEach(function(l, i){ doc.text(l, W/2+4, y+15.5+i*4.2); });
-  var info = [[({affaire:'Affaire',cm:'Contremaître',appareil:'Appareil',ag:'Périmètre'})[I.split], I.sub], ['Contremaître(s)', Object.keys(I.cms).join(', ')], ['Appareils', Object.keys(I.appareils).sort().join(' · ')], ['Grille', (c.grids[I.grid]||{}).label || '']];
-  doc.setFontSize(8.5); info.forEach(function(p, i){ doc.setTextColor.apply(doc, mut); doc.text(pdfTxt(p[0]), M, y+4+i*5.5); doc.setTextColor.apply(doc, ink); doc.text(doc.splitTextToSize(pdfTxt(p[1]), W/2-M-30)[0], M+28, y+4+i*5.5); });
-  y += 33;
+  var top = 12, bottomY = 286, showFoot = true;
+  var H = invHeader(I);
+  // Émetteur (gauche) et client (droite)
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt(co.name || 'LEGAA'), M, 20);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor.apply(doc, mut);
+  var y = 25; pdfTxt(co.address || '').split('\n').filter(Boolean).forEach(function(l){ doc.text(l, M, y); y += 4; });
+  if (co.siret) { doc.text('SIRET '+pdfTxt(co.siret), M, y); y += 4; } if (co.tva) { doc.text('TVA '+pdfTxt(co.tva), M, y); y += 4; }
+  var cx = 112, cy = 34; doc.setFontSize(9); doc.setTextColor.apply(doc, ink); doc.setFont('helvetica','bold'); doc.text(pdfTxt('OTIS CN '+(A.label || I.agLabel)), cx, cy); doc.setFont('helvetica','normal');
+  pdfTxt(A.address || '').split('\n').filter(Boolean).slice(0,6).forEach(function(l, i){ doc.text(doc.splitTextToSize(l, W-M-cx)[0], cx, cy+4.6*(i+1)); });
+  y = Math.max(y, cy + 4.6*Math.min(6, pdfTxt(A.address || '').split('\n').filter(Boolean).length) + 4, 54) + 8;
+  // Titre et objet
+  doc.setFontSize(17); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt((cas1 ? 'Devis pro forma ' : 'Facture pro forma ')+I.num), M, y); y += 8;
+  doc.setFontSize(8.5); doc.setFont('helvetica','bold'); doc.setTextColor.apply(doc, mut); doc.text('Objet :', M, y); doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc, ink); doc.text(pdfTxt(H.objet), M+14, y); y += 8;
+  // Champs de la facture Odoo
+  var cols = [['Date de la facture :', H.date, 27], ['Date d\'échéance :', H.echeance, 26], ['N° de devis :', H.devis, 20], ['Interlocuteur :', H.interlocuteur, 22], ['Code contremaître :', H.codeCm, 27], ['N° de commande :', H.commande, 0]];
+  var x = M, maxL = 1;
+  cols.forEach(function(c2){
+    var wd = c2[2] || (W - M - x);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.8); doc.setTextColor.apply(doc, mut); doc.text(pdfTxt(c2[0]), x, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor.apply(doc, ink);
+    var lines = doc.splitTextToSize(pdfTxt(c2[1] || ''), wd - 2); if (lines.length) doc.text(lines, x, y + 4.6); maxL = Math.max(maxL, lines.length);
+    x += wd;
+  });
+  y += 4.6 + maxL * 3.8 + 6;
   var L = invLines(I), body = [], tblMargin = { left:M, right:M, top:top+6, bottom:297-bottomY+8 };
   FAM3.forEach(function(f){
     var rows = L.filter(function(l){ return f.fams.indexOf(l.fam) >= 0 || (f.k==='STK' && l.fam==='STK'); }); if (!rows.length) return;
@@ -1775,70 +1803,8 @@ function exportInvoicePdf(key, preview){
   }
   var pages = doc.getNumberOfPages(), fy = T ? bottomY - 1 : 290;
   for (var p = 1; p <= pages; p++){ doc.setPage(p); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc, mut); if (foot) doc.text(foot, M, fy); doc.text(p+' / '+pages, W-M, fy, { align:'right' }); }
-  var name = (preview ? 'Aperçu ' : '') + I.num+' '+I.sub.replace(/[^\w\- ]+/g,'')+'.pdf';
-  applyTemplate(doc.output('arraybuffer'), T).then(function(blob){ saveBlob(name, blob, 'pdf'); }, function(e){ toast('Modèle non appliqué : '+e.message); saveBlob(name, doc.output('blob'), 'pdf'); });
+  saveBlob(I.num+' '+I.sub.replace(/[^\w\- ]+/g,'')+'.pdf', doc.output('blob'), 'pdf');
   if (!preview && canEdit() && ST.ov.status[I.key] !== 'editee'){ ST.ov.status[I.key] = 'editee'; render(); persist('Facture éditée '+I.num); }
-}
-/* Modèle de facture : la page 1 du modèle sert de fond à la 1re page, la page 2 (si elle existe) aux suivantes */
-var tplCache = {};
-function tplBytes(meta){ if (tplCache[meta.path]) return Promise.resolve(tplCache[meta.path].slice(0)); return STORE.getFileBytes(meta).then(function(b){ tplCache[meta.path] = b; return b.slice(0); }); }
-function tplIsPdf(meta){ return /pdf/i.test(meta.type || '') || /\.pdf$/i.test(meta.name || ''); }
-function applyTemplate(contentBuf, T){
-  if (!T) return Promise.resolve(new Blob([contentBuf], { type:'application/pdf' }));
-  if (!window.PDFLib) return Promise.reject(new Error('bibliothèque PDF indisponible'));
-  var P = window.PDFLib, A4 = [595.28, 841.89];
-  return Promise.all([tplBytes(T.file), P.PDFDocument.create(), P.PDFDocument.load(contentBuf)]).then(function(r){
-    var tb = r[0], out = r[1], content = r[2], isPdf = tplIsPdf(T.file);
-    var bgP = isPdf ? P.PDFDocument.load(tb).then(function(tpl){ return out.embedPdf(tpl, tpl.getPageCount() > 1 ? [0, 1] : [0]); })
-      : ((/png/i.test(T.file.type || '') || /\.png$/i.test(T.file.name)) ? out.embedPng(tb) : out.embedJpg(tb)).then(function(img){ return [img]; });
-    return Promise.all([bgP, out.embedPdf(content, content.getPageIndices())]).then(function(x){
-      var bg = x[0], pages = x[1];
-      pages.forEach(function(cp, i){
-        var pg = out.addPage(A4), b = bg[Math.min(i, bg.length - 1)], box = { x:0, y:0, width:A4[0], height:A4[1] };
-        if (isPdf) pg.drawPage(b, box); else pg.drawImage(b, box);
-        pg.drawPage(cp, box);
-      });
-      return out.save();
-    }).then(function(u8){ return new Blob([u8], { type:'application/pdf' }); });
-  });
-}
-
-/* Paramètres · Format de la facture pro forma */
-function tplSection(){
-  var T = ST.cfg.invoiceTpl || {}, f = T.file, inf = T.info || {};
-  var h = '<div class="panel"><div class="ph"><h3>Format de la facture pro forma</h3>'+(f ? '<span class="pill p-ok">Modèle actif</span>' : '<span class="pill p-info">Mise en page standard</span>')+'</div><div class="pb col-f">';
-  h += '<div class="docslot" style="padding:0"><span class="lbl">Modèle de facture</span>'+(f
-    ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+dt(f.at)+' · '+esc(f.by||'')+' · '+(inf.kind||'')+(inf.pages ? ' · '+inf.pages+' page'+(inf.pages>1?'s':'') : '')+(inf.w ? ' · '+inf.w+' × '+inf.h+' mm' : '')+'</span>'+(inf.warn ? '<span class="pill p-verifier">'+esc(inf.warn)+'</span>' : '')+
-      '<div class="row"><button class="btn sm" data-a="tpldl">Télécharger</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-tplup accept=".pdf,.png,.jpg,.jpeg"></label><button class="btn sm" data-a="tplrm">Supprimer</button>':'')+'</div>'
-    : '<span class="muted">Aucun modèle : la pro forma utilise la mise en page standard (émetteur en haut à gauche).</span>'+(isAdmin()?'<label class="btn sm pri">Charger un modèle<input type="file" hidden data-tplup accept=".pdf,.png,.jpg,.jpeg"></label>':''))+
-    '<span class="hint">PDF au format A4 portrait (papier à en-tête : logo, coordonnées, pied de page légal) ou image PNG / JPG A4. La page 1 sert de fond à la première page de chaque pro forma ; la page 2, si elle existe, aux pages suivantes. Le contenu de la facture s\'imprime entre les marges ci-dessous.</span></div>';
-  h += field('Marge haute (mm)', cfIn('invoiceTpl.marginTop', T.marginTop !== undefined ? T.marginTop : 45, 'number'), 'Hauteur de l\'en-tête du modèle : le contenu commence en dessous')+
-    field('Marge basse (mm)', cfIn('invoiceTpl.marginBottom', T.marginBottom !== undefined ? T.marginBottom : 25, 'number'), 'Hauteur du pied de page du modèle : le contenu s\'arrête au-dessus')+
-    field('Émetteur dans le contenu', cfSel('invoiceTpl.showIssuer', T.showIssuer ? 'true' : 'false', [['false','Non : le modèle porte déjà les coordonnées LEGAA'],['true','Oui : raison sociale, adresse, SIRET, TVA en haut à gauche']]))+
-    field('Conditions et mentions en bas de page', cfSel('invoiceTpl.showFooter', T.showFooter === false ? 'false' : 'true', [['true','Oui : délai de paiement, IBAN, mentions'],['false','Non : le modèle les porte déjà']]));
-  h += '<div class="row"><button class="btn" data-a="tplprev"'+(ST.R && ST.R.invoices.length && canSave() ? '' : ' disabled')+'>Télécharger un aperçu</button><span class="hint">'+(ST.R && ST.R.invoices.length ? 'Sur la facture '+esc(ST.R.invoices[0].num)+' de '+esc(agLabel(ST.ag))+' · '+monthLabel(ST.month)+', sans changer son statut.' : 'Ouvrir d\'abord un mois avec des factures dans Factures logistiques.')+'</span></div>';
-  return h + '</div></div>';
-}
-function tplUpload(file){
-  if (!isAdmin()) return;
-  var isPdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name), isImg = /^image\/(png|jpe?g)$/i.test(file.type) || /\.(png|jpe?g)$/i.test(file.name);
-  if (!isPdf && !isImg){ toast('Modèle refusé : PDF, PNG ou JPG uniquement.'); return; }
-  if (file.size > 4 * 1024 * 1024){ toast('Modèle refusé : 4 Mo maximum.'); return; }
-  file.arrayBuffer().then(function(buf){
-    if (isPdf){
-      if (!window.PDFLib) throw new Error('bibliothèque PDF indisponible');
-      return window.PDFLib.PDFDocument.load(buf).then(function(d){ var sz = d.getPage(0).getSize(); return { kind:'PDF', pages:d.getPageCount(), w:Math.round(sz.width/72*25.4), h:Math.round(sz.height/72*25.4) }; });
-    }
-    return new Promise(function(res){ var im = new Image(); im.onload = function(){ res({ kind:'Image', pages:1, px:im.naturalWidth+' × '+im.naturalHeight, ratio:im.naturalHeight/im.naturalWidth }); URL.revokeObjectURL(im.src); }; im.onerror = function(){ res({ kind:'Image', pages:1 }); }; im.src = URL.createObjectURL(file); });
-  }).then(function(info){
-    if (info.w && (Math.abs(info.w - 210) > 3 || Math.abs(info.h - 297) > 3)) info.warn = 'Format '+info.w+' × '+info.h+' mm : il sera étiré sur un A4 portrait';
-    if (info.ratio && Math.abs(info.ratio - 297/210) > 0.03) info.warn = 'Image non A4 ('+info.px+' px) : elle sera étirée sur un A4 portrait';
-    return STORE.uploadAgencyDoc('GLOBAL', 'template', file).then(function(meta){
-      var T = ST.cfg.invoiceTpl || {}; if (T.file) STORE.deleteFile(T.file);
-      ST.cfg.invoiceTpl = { file:meta, info:info, marginTop: T.marginTop !== undefined ? T.marginTop : 45, marginBottom: T.marginBottom !== undefined ? T.marginBottom : 25, showIssuer: !!T.showIssuer, showFooter: T.showFooter !== false };
-      saveCfg('Modèle de pro forma chargé : '+file.name); render();
-    });
-  }).catch(function(e){ toast('Modèle illisible : '+e.message); });
 }
 
 /* D · Contrôle des factures */
@@ -2175,7 +2141,7 @@ function saveBlob(name, blob, kind){
 function saveXlsx(wb, name){ var buf = XLSX.write(wb, { bookType:'xlsx', type:'array' }); saveBlob(name, new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'xlsx'); }
 function exportAg(){
   var R = ST.R, wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.invoices.map(function(I){ return { 'Facture':I.num, 'Agence':I.agLabel, 'Affaire / périmètre':I.sub, 'Contremaître(s)':Object.keys(I.cms).join(', '), 'Appareils':Object.keys(I.appareils).sort().join(' · '), 'Entrées':I.totals.E, 'Sorties':I.totals.S, 'Stockage':E.r2(I.totals.STK+I.totals.MIN), 'dont minimum 30 m²':I.totals.MIN, 'Total HT':I.totals.HT, 'Statut':INVST[ST.ov.status[I.key]||'verifier'], 'Manutention Odoo':I.odoo.M }; })), 'Factures');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.invoices.map(function(I){ return { 'Facture':I.num, 'Agence':I.agLabel, 'Affaire / périmètre':I.sub, 'Contremaître(s)':Object.keys(I.cms).join(', '), 'Appareils':Object.keys(I.appareils).sort().join(' · '), 'Entrées':I.totals.E, 'Sorties':I.totals.S, 'Stockage':E.r2(I.totals.STK+I.totals.MIN), 'dont minimum 30 m²':I.totals.MIN, 'Total HT':I.totals.HT, 'Statut':INVST[ST.ov.status[I.key]||'verifier'], 'Objet':invHeader(I).objet, 'Date de la facture':invHeader(I).date, 'Date d\'échéance':invHeader(I).echeance, 'Code contremaître':invHeader(I).codeCm, 'N° de commande':invHeader(I).commande, 'Manutention Odoo':I.odoo.M }; })), 'Factures');
   var det = []; R.invoices.forEach(function(I){ det = det.concat(detailRows(I)); });
   var seen = {}; det.forEach(function(d){ seen[d['Fichier']+'#'+d['Ligne Excel']] = 1; });
   R.records.forEach(function(r){ if (!seen[r.key]) det.push(recRow(r, null)); });
@@ -2274,6 +2240,7 @@ document.addEventListener('click', function(e){
   if (d.par){ ST.parAg = d.par; ST.newAg = false; render(); return; }
   if (d.newag !== undefined){ ST.newAg = true; render(); return; }
   if (d.amt){ var p = d.amt.split('|'); ST.modal = { inv:p.slice(0,-1).join('|'), fam:p[p.length-1] }; renderModal(); return; }
+  if (d.gdl !== undefined){ var gA = ST.cfg.agencies[ST.ag], gm = gA && gA.docs && gA.docs.grille; if (gm) STORE.getFileBytes(gm).then(function(b){ saveBlob(gm.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
   if (d.mclose !== undefined){ ST.modal = null; renderModal(); return; }
   if (d.pinv){ exportInvoicePdf(d.pinv); return; }
   if (d.anom){ ST.openAnom[d.anom] = !ST.openAnom[d.anom]; render(); return; }
@@ -2294,9 +2261,7 @@ document.addEventListener('click', function(e){
   if (d.sugg){ var r = ST.R.byKey[d.sugg]; if (r && r.suggest){ var s = r.suggest.t; ST.ov.assign[r.key] = { ag:s.ag, agLabel:s.agLabel, cm:s.cm, cmCode:s.cmCode }; delete ST.ov.exclude[r.key]; rebuild(); persist('Rattachement '+r.file+' l.'+r.line+' → '+s.cm); } return; }
   if (d.merge){ var mp = d.merge.split('|'); if (ST.ov.affMap[mp[0]]===mp[1]) delete ST.ov.affMap[mp[0]]; else { ST.ov.affMap[mp[0]] = mp[1]; delete ST.ov.affMap[mp[1]]; } rebuild(); persist('Affaire '+mp[0]+' facturée sur '+mp[1]); return; }
   var a = d.a;
-  if (a === 'tpldl'){ var tf = (ST.cfg.invoiceTpl||{}).file; if (tf) STORE.getFileBytes(tf).then(function(b){ saveBlob(tf.name, new Blob([b]), ''); }); }
-  else if (a === 'tplrm' && isAdmin()){ var T0 = ST.cfg.invoiceTpl || {}; if (T0.file) STORE.deleteFile(T0.file); delete T0.file; delete T0.info; ST.cfg.invoiceTpl = T0; saveCfg('Modèle de pro forma supprimé'); render(); }
-  else if (a === 'tplprev'){ if (ST.R && ST.R.invoices[0]) exportInvoicePdf(ST.R.invoices[0].key, true); }
+  if (a === 'gridview'){ ST.modal = { grid:true }; renderModal(); }
   else if (a === 'gen') generate();
   else if (a === 'pendGo'){ var P = ST.pending; doUpload(P.file, P.parsed, ST.ag, P.month); }
   else if (a === 'pendAg'){ var P2 = ST.pending; doUpload(P2.file, P2.parsed, P2.ag, ST.month); }
@@ -2329,7 +2294,6 @@ document.addEventListener('change', function(e){
     if (v === 'true') v = true; else if (v === 'false') v = false; else if (/\.cas$/.test(d.cf)) v = +v;
     setPath(ST.cfg, d.cf, v); saveCfg(d.cf.replace(/^agencies\./,'agence ').replace(/^grids\./,'grille ')+' = '+v); if (/\.(label|active)$/.test(d.cf)) render(); return;
   }
-  if (d.tplup !== undefined){ if (t.files[0]) tplUpload(t.files[0]); t.value = ''; return; }
   if (d.docup){ if (t.files[0]) agDocUpload(d.docup, t.files[0]); t.value = ''; return; }
   if (d.slotin){ if (t.files[0]) importFile(t.files[0], d.slotin); t.value = ''; return; }
   if (t.id === 'persel'){ selectMonth(ST.ag, t.value); return; }
