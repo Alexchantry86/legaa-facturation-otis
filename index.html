@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.9 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.10 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -2525,6 +2525,16 @@ function placePop(){
 }
 window.addEventListener('scroll', placePop, true); window.addEventListener('resize', placePop);
 document.addEventListener('submit', function(e){ e.preventDefault(); if (e.target.id === 'loginForm') doLogin(); });
+/* Règles d'agence validées (document « AGENCE_58.v2 ») : appliquées une fois à l'agence 58, quel que soit son code interne */
+function isAg58(a){ return /\bAG\s*0?58\b/i.test(String((a.label||'')+' '+(a.match||'')+' '+(a.code||''))) || /^0?58$/.test(String(a.code||'')); }
+function applyAgencyRules(cfg){
+  var changed = [];
+  Object.keys(cfg.agencies||{}).forEach(function(k){
+    var a = cfg.agencies[k];
+    if (isAg58(a) && a.rule58 !== 'v2'){ a.split = 'cm_fhr'; a.cas = 1; a.annexe = false; a.rule58 = 'v2'; changed.push(a.label || k); }
+  });
+  return changed;
+}
 function createAgency(){
   var code = ($('na_code').value||'').trim().toUpperCase().replace(/\s+/g,''), label = ($('na_label').value||'').trim(), match = ($('na_match').value||'').trim(), tpl = $('na_tpl').value;
   if (!/^[0-9A-Z_-]{1,12}$/.test(code)){ toast('Code agence : lettres et chiffres, 12 caractères max.'); return; }
@@ -2532,6 +2542,7 @@ function createAgency(){
   if (!label || !match){ toast('Renseigner le libellé et le client Odoo'); return; }
   var gk = 'G'+code; ST.cfg.grids[gk] = clone(E.DEFAULT_CONFIG.grids[tpl]); ST.cfg.grids[gk].label = 'Grille '+label+' (base '+(tpl==='STD'?'OTIS 2022':'Tours')+')';
   ST.cfg.agencies[code] = { code:code, label:label, match:match, address:'', grid:gk, template:tpl, split:'affaire', cas:2, annexe:false, active:true, docs:{}, cmList:[] };
+  applyAgencyRules(ST.cfg);
   ST.newAg = false; ST.parAg = code; saveCfg('Agence créée : '+label); render();
 }
 
@@ -2548,7 +2559,9 @@ function doLogin(){
 }
 function start(profile){
   ST.user = profile; $('login').hidden = true; $('app').hidden = false; armIdle();
-  STORE.getConfig().then(function(c){ ST.cfg = c ? deepMerge(E.DEFAULT_CONFIG, c) : clone(E.DEFAULT_CONFIG); if (c && c.agencies) Object.keys(E.DEFAULT_CONFIG.agencies).forEach(function(k){ if (!c.agencies[k]) delete ST.cfg.agencies[k]; }); ST.cfgM = ST.cfg; return STORE.listMonths(); })
+  STORE.getConfig().then(function(c){ ST.cfg = c ? deepMerge(E.DEFAULT_CONFIG, c) : clone(E.DEFAULT_CONFIG); if (c && c.agencies) Object.keys(E.DEFAULT_CONFIG.agencies).forEach(function(k){ if (!c.agencies[k]) delete ST.cfg.agencies[k]; });
+    var ch = applyAgencyRules(ST.cfg); if (ch.length && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Règle de facturation AG 58 appliquée (Contrats / FHR par contremaître, cas 1) : '+ch.join(', ')).catch(function(){});
+    ST.cfgM = ST.cfg; return STORE.listMonths(); })
     .then(function(L){ ST.monthsIndex = L; var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); },
       function(e){ toast('Base de données inaccessible : '+e.message); });
 }
