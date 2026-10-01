@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.10 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.0 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -349,6 +349,86 @@ select.fsel.on{border-color:var(--ink);font-weight:600}
 .mbox>*{min-width:0}
 .mbody .detail{overflow:visible;border:0}
 .mbody{border:1px solid var(--line);border-radius:2px}
+
+/* ==== v4 : palette bleu marine + accents, UX ==== */
+:root{
+  --bg:#edf1f5; --line:#d3dae2; --line-2:#e3e8ee; --hover:#eef3f9;
+  --acc:#1f5fa6; --acc-d:#16467d; --acc-ink:#ffffff; --acc-bg:#e8f0fa; --acc-line:#b9cfe9;
+  --sel:#1f5fa6; --sel-ink:#ffffff; --bar:#0f2a4d; --bar-ink:#eef3fa;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141a; --line:#2a333d; --line-2:#222a33; --hover:#1a222c;
+  --acc:#6fa8ee; --acc-d:#9cc4f4; --acc-ink:#0b1422; --acc-bg:#162536; --acc-line:#2c4a6e;
+  --sel:#6fa8ee; --sel-ink:#0b1422; --bar:#0b1d36; --bar-ink:#e6eef8}}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --line:#2a333d; --line-2:#222a33; --hover:#1a222c;
+  --acc:#6fa8ee; --acc-d:#9cc4f4; --acc-ink:#0b1422; --acc-bg:#162536; --acc-line:#2c4a6e;
+  --sel:#6fa8ee; --sel-ink:#0b1422; --bar:#0b1d36; --bar-ink:#e6eef8}
+.top{border-bottom:0;box-shadow:0 2px 10px rgba(15,42,77,.18)}
+.tab[aria-selected="true"]{border-bottom-color:#7fb2ee}
+:focus-visible{outline-color:var(--acc)}
+.btn{border-radius:4px}
+.btn.pri:hover{background:var(--acc-d);border-color:var(--acc-d)}
+.panel,.kpis,.charts{border-radius:6px}
+.kpis{box-shadow:0 1px 2px rgba(15,42,77,.05)}
+.kpi .bar i{background:var(--acc)}
+.stb[aria-selected="true"]{color:var(--acc);border-bottom-color:var(--acc)}
+.stb:hover{color:var(--ink)}
+.agbtn{background:var(--acc);border-color:var(--acc);border-radius:4px}
+.agbtn:hover{background:var(--acc-d)}
+.agpop{border-color:var(--acc-line);border-radius:6px}
+.agitem.cur{background:var(--acc);color:var(--acc-ink)}
+.agitem:hover{background:var(--acc-bg)}
+tr.hl td{background:var(--acc-bg);box-shadow:inset 0 1px 0 var(--acc),inset 0 -1px 0 var(--acc)}
+tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--acc),inset 0 1px 0 var(--acc),inset 0 -1px 0 var(--acc)}
+.fbtn.on,select.fsel.on{border-color:var(--acc);color:var(--acc);background:var(--acc-bg)}
+.fpop{border-color:var(--acc-line);border-radius:6px}
+.lnk{color:var(--acc)}
+.amt{color:var(--acc)}
+.gridbtn:hover{border-color:var(--acc);color:var(--acc)}
+.princ{background:var(--acc-bg);border-color:var(--acc-line);border-radius:6px}
+.chart .bar{fill:#9db8d6}
+.chart .bar.cur{fill:var(--acc)}
+.chart .bar:hover{fill:var(--acc-d)}
+
+/* Accueil : deux blocs */
+.landing{max-width:900px;margin:9vh auto 0;gap:22px;text-align:center}
+.landing h2{font-size:26px}
+.choices{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:22px}
+.choice{justify-items:center;text-align:center;gap:14px;padding:44px 24px 34px;border:1px solid var(--line);border-top:0;border-radius:10px;box-shadow:0 2px 6px rgba(15,42,77,.07);transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;overflow:hidden}
+.choice::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:var(--acc)}
+.choice.c-trp::before{background:#2f8f83}
+.choice .ico{display:grid;place-items:center;width:104px;height:104px;border-radius:50%;background:var(--acc-bg);color:var(--acc)}
+.choice.c-trp .ico{background:#e4f3f1;color:#2f8f83}
+.choice .k{font-size:28px}
+.choice .go{font-family:var(--f-label);font-size:14px;font-weight:600;color:var(--acc);opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s}
+.choice.c-trp .go{color:#2f8f83}
+.choice:hover,.choice:focus-visible{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,42,77,.14);border-color:var(--acc-line);background:var(--surface)}
+.choice:hover .go,.choice:focus-visible .go{opacity:1;transform:none}
+.adm-l{margin:0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .choice.c-trp .ico{background:#14302c;color:#6cc7b9}}
+@media (prefers-reduced-motion: reduce){.choice,.choice .go{transition:none}}
+
+/* Paramètres : les 3 documents principaux */
+.keydocs{border:2px solid var(--acc);box-shadow:0 2px 10px rgba(31,95,166,.10)}
+.keydocs>.ph{background:var(--acc-bg);border-bottom-color:var(--acc-line);border-radius:4px 4px 0 0}
+.keydocs>.ph h2{color:var(--acc-d)}
+.kd-n{font-family:var(--f-num);font-size:12px;padding:2px 8px;border-radius:10px;background:var(--warn-bg);color:var(--warn)}
+.kd-n.ok{background:var(--ok-bg);color:var(--ok)}
+.keydocs .docs{gap:12px;background:none;padding:14px}
+.keydocs .docslot{border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:6px;padding:14px 16px;gap:8px}
+.keydocs .docslot.done{border-left-color:var(--ok)}
+.ds-h{display:flex;align-items:center;gap:10px}
+.ds-n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--acc-ink);font-family:var(--f-num);font-size:13px;font-weight:600;flex:none}
+.ds-t{font-family:var(--f-label);font-weight:600;font-size:16px}
+.ds-s{margin-left:auto;font-family:var(--f-label);font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--warn-bg);color:var(--warn)}
+.docslot.done .ds-s{background:var(--ok-bg);color:var(--ok)}
+
+/* Synthèse : sélection multiple d'agences */
+.chipbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:5px 14px;font-family:var(--f-label);font-size:13.5px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.chip:hover{border-color:var(--acc);color:var(--acc)}
+.chip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
 </style>
 </head>
 <body>
@@ -1273,7 +1353,7 @@ var ST = {
   ag:null, month:null, doc:null, files:[], R:null, ov:null, flags:{}, pdfs:[],
   busy:'', pending:null, modal:null, openAnom:{}, lim:{}, openPdf:null, confirmClose:false,
   parAg:null, newAg:false, transports:null, trF:{ month:'', ag:'' },
-  users:null, logs:null, admTab:'users', synAg:'all', logF:{ type:'', q:'' }, pwFor:null
+  users:null, logs:null, admTab:'users', synAgs:[], logF:{ type:'', q:'' }, pwFor:null
 };
 var dl = null;
 function clone(x){ return JSON.parse(JSON.stringify(x)); }
@@ -1340,13 +1420,13 @@ function render(){
 }
 
 /* ============ ACCUEIL ============ */
+var ICO_LOG = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M6 26 32 12l26 14v28H6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M16 54V34h32v20" fill="none" stroke="currentColor" stroke-width="3"/><path d="M22 42h8v12h-8zM34 42h8v12h-8zM28 34h8v8h-8z" fill="currentColor" opacity=".35"/></svg>';
+var ICO_TRP = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M4 16h34v28H4zM38 26h12l10 10v8H38z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="15" cy="47" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><circle cx="49" cy="47" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><path d="M42 30h6l6 6h-12z" fill="currentColor" opacity=".35"/></svg>';
 function vLanding(){
-  var ags = agencies(), open = ST.monthsIndex.filter(function(m){ return m.status === 'ouvert'; }).length;
-  var cm = new Date().toISOString().slice(0,7), trn = (ST.transports || []).filter(function(t){ return (t.date||'').slice(0,7) === cm; }).length;
-  return '<section class="landing"><p class="lbl">'+esc(ST.user ? 'Bonjour '+ST.user.name : '')+'</p><h2>Que souhaitez-vous facturer ?</h2><div class="choices">'+
-    '<button class="choice" data-mod="log"><span class="k">Logistique</span><span class="d">Factures mensuelles des agences OTIS : imports Odoo WMS, anomalies, génération des factures, contrôle avant envoi, clôture du mois.</span><span class="m">'+ags.length+' agence'+(ags.length>1?'s':'')+' paramétrée'+(ags.length>1?'s':'')+' · '+open+' mois en cours</span></button>'+
-    '<button class="choice" data-mod="trp"><span class="k">Transport</span><span class="d">Chiffrage d\'une livraison chantier : véhicule recommandé, tarif de la grille, validation et historique des transports.</span><span class="m">'+(ST.transports ? trn+' transport'+(trn>1?'s':'')+' validé'+(trn>1?'s':'')+' ce mois-ci' : 'Grille transport OTIS 2023')+'</span></button>'+
-    '</div>'+(isAdmin() ? '<p><button class="btn" data-mod="log" data-ltabgo="adm">Administration des accès</button></p>' : '')+'</section>';
+  return '<section class="landing"><h2>'+esc(ST.user ? 'Bonjour '+ST.user.name.split(' ')[0] : 'Bonjour')+'</h2><div class="choices">'+
+    '<button class="choice c-log" data-mod="log"><span class="ico">'+ICO_LOG+'</span><span class="k">Logistique</span><span class="go">Entrer →</span></button>'+
+    '<button class="choice c-trp" data-mod="trp"><span class="ico">'+ICO_TRP+'</span><span class="k">Transport</span><span class="go">Entrer →</span></button>'+
+    '</div>'+(isAdmin() ? '<p class="adm-l"><button class="lnk" data-mod="log" data-ltabgo="adm">Administration des accès</button></p>' : '')+'</section>';
 }
 
 /* ============ LOGISTIQUE · PARAMÈTRES ============ */
@@ -1381,13 +1461,13 @@ function agEditor(a){
   var h = '<div class="panel"><div class="ph"><h2>'+esc(a.label||'AG '+a.code)+'</h2><span class="muted num">code '+esc(a.code)+'</span></div><div class="pb col-f">'+
     field('Libellé', cfIn(p+'label', a.label))+
     field('Client dans Odoo', cfIn(p+'match', a.match), 'Début de la colonne « Client » des exports Odoo')+
-    field('Adresse de facturation OTIS', '<textarea data-cf="'+p+'address" rows="3"'+ADM()+'>'+esc(a.address||'')+'</textarea>', 'Reprise sur les pro forma PDF')+
     field('Statut', cfSel(p+'active', a.active === false ? 'false' : 'true', [['true','Active'],['false','Archivée (masquée de la facturation)']]))+
     '</div></div>';
-  h += '<div class="panel"><div class="ph"><h3>Documents de référence</h3><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs docs1">';
-  DOCK.forEach(function(k){
+  var nDoc = DOCK.filter(function(k){ return (a.docs||{})[k[0]]; }).length;
+  h += '<div class="panel keydocs"><div class="ph"><h2>Documents à renseigner</h2><span class="kd-n'+(nDoc===3?' ok':'')+'">'+nDoc+' / 3 chargés</span><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs docs1">';
+  DOCK.forEach(function(k, i){
     var d = (a.docs||{})[k[0]];
-    h += '<div class="docslot"><span class="lbl">'+k[1]+'</span>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Télécharger</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
+    h += '<div class="docslot'+(d?' done':' todo')+'"><div class="ds-h"><span class="ds-n">'+(i+1)+'</span><span class="ds-t">'+k[1]+'</span><span class="ds-s">'+(d?'✓ Chargé':'À charger')+'</span></div>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Télécharger</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
       : '<span class="muted">Aucun fichier.</span>'+(isAdmin()?'<label class="btn sm pri">Charger le fichier<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label>':''))+'<span class="hint">'+k[2]+'</span></div>';
   });
   h += '</div>';
@@ -2120,7 +2200,7 @@ function synthRows(){
 function pick(s, ag){
   var z = { inv:0, HT:0, E:{n:0,up:0,eur:0}, S:{n:0,up:0,eur:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0} };
   if (!s) return null;
-  Object.keys(s.byAg).forEach(function(k){ if (ag !== 'all' && k !== ag) return; var a = s.byAg[k];
+  Object.keys(s.byAg).forEach(function(k){ if (ag && ag.length && ag.indexOf(k) < 0) return; var a = s.byAg[k];
     z.inv += a.inv; z.HT = E.r2(z.HT + a.HT);
     ['E','S'].forEach(function(f){ z[f].n += a[f].n; z[f].up += a[f].up; z[f].eur = E.r2(z[f].eur + a[f].eur); });
     z.STK.n += a.STK.n; z.STK.m2 += a.STK.m2; z.STK.eur = E.r2(z.STK.eur + a.STK.eur); z.STK.minM2 += a.STK.minM2; z.STK.minEur = E.r2(z.STK.minEur + a.STK.minEur); });
@@ -2129,8 +2209,8 @@ function pick(s, ag){
 function vSynth(){
   var rows = synthRows(), ags = {};
   rows.forEach(function(r){ if (r.s) Object.keys(r.s.byAg).forEach(function(k){ ags[k] = r.s.byAg[k].label; }); });
-  var ag = ST.synAg, data = rows.map(function(r){ return { id:r.id, status:r.status, v:pick(r.s, ag) }; });
-  var h = '<section class="view"><nav class="subnav" role="tablist">'+[['all','Toutes agences']].concat(Object.keys(ags).sort().map(function(k){ return [k, ags[k]]; })).map(function(p){ return '<button class="subtab" role="tab" data-synag="'+esc(p[0])+'" aria-selected="'+(ag===p[0])+'"><span class="st-l">'+esc(p[1])+'</span></button>'; }).join('')+'</nav>';
+  var ag = ST.synAgs = (ST.synAgs || []).filter(function(k){ return ags[k]; }), data = rows.map(function(r){ return { id:r.id, status:r.status, v:pick(r.s, ag) }; });
+  var h = '<section class="view"><div class="chipbar"><span class="lbl">Agences</span><button class="chip'+(!ag.length?' on':'')+'" data-synag="all" aria-pressed="'+(!ag.length)+'">Toutes</button>'+Object.keys(ags).sort().map(function(k){ var on = ag.indexOf(k) >= 0; return '<button class="chip'+(on?' on':'')+'" data-synag="'+esc(k)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(ags[k])+'</button>'; }).join('')+'<span class="muted">'+(ag.length ? ag.length+' agence'+(ag.length>1?'s':'')+' sélectionnée'+(ag.length>1?'s':'') : 'Cliquer pour sélectionner une ou plusieurs agences')+'</span></div>';
   var filled = data.filter(function(d){ return d.v; });
   if (!filled.length) return h + '<div class="panel empty">Aucun mois facturé sur les 18 derniers mois.</div></section>';
   var last = filled[filled.length-1];
@@ -2140,7 +2220,7 @@ function vSynth(){
     chart('Sorties', 'm³/t facturés', data, function(v){ return v.S.up; }, function(v){ return n3(v.S.up)+' m³/t · '+v.S.n+' colis · '+eur(v.S.eur); })+
     chart('Stockage', 'm² facturés', data, function(v){ return v.STK.m2; }, function(v){ return n2(v.STK.m2)+' m² (dont min. 30 m² : '+n2(v.STK.minM2)+') · '+eur(v.STK.eur); })+
     chart('Chiffre d\'affaires', '€ HT', data, function(v){ return v.HT; }, function(v){ return eur(v.HT)+' · '+v.inv+' factures'; })+'</div>';
-  h += '<div class="panel"><div class="ph"><h2>Détail mensuel</h2><span class="muted">'+(ag==='all'?'Toutes agences':esc(ags[ag]))+' · 18 derniers mois · un mois en cours est recalculé à chaque modification</span><div class="sp"><button class="btn" data-a="xlsSyn"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div><div class="tw"><table class="syn"><thead><tr><th rowspan="2">Mois</th><th rowspan="2">Statut</th><th colspan="3" class="grp">Entrées</th><th colspan="3" class="grp">Sorties</th><th colspan="3" class="grp">Stockage</th><th rowspan="2" class="n">Total HT</th><th rowspan="2" class="n">Var. M-1</th></tr><tr><th class="n">Colis</th><th class="n">m³/t</th><th class="n">€ HT</th><th class="n">Colis</th><th class="n">m³/t</th><th class="n">€ HT</th><th class="n">m² facturés</th><th class="n">dont min. 30</th><th class="n">€ HT</th></tr></thead><tbody>';
+  h += '<div class="panel"><div class="ph"><h2>Détail mensuel</h2><span class="muted">'+(!ag.length?'Toutes agences':esc(ag.map(function(k){ return ags[k]; }).join(', ')))+' · 18 derniers mois · un mois en cours est recalculé à chaque modification</span><div class="sp"><button class="btn" data-a="xlsSyn"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div><div class="tw"><table class="syn"><thead><tr><th rowspan="2">Mois</th><th rowspan="2">Statut</th><th colspan="3" class="grp">Entrées</th><th colspan="3" class="grp">Sorties</th><th colspan="3" class="grp">Stockage</th><th rowspan="2" class="n">Total HT</th><th rowspan="2" class="n">Var. M-1</th></tr><tr><th class="n">Colis</th><th class="n">m³/t</th><th class="n">€ HT</th><th class="n">Colis</th><th class="n">m³/t</th><th class="n">€ HT</th><th class="n">m² facturés</th><th class="n">dont min. 30</th><th class="n">€ HT</th></tr></thead><tbody>';
   data.slice().reverse().forEach(function(d, i, arr){
     var v = d.v, prev = arr[i+1] && arr[i+1].v;
     if (!v){ h += '<tr class="zero"><td>'+monthLabel(d.id)+'</td><td class="muted">vide</td><td colspan="11"></td></tr>'; return; }
@@ -2178,7 +2258,8 @@ function bindChartTips(){
 }
 function exportSynth(){
   var rows = synthRows(), out = [];
-  rows.forEach(function(r){ if (!r.s) return; Object.keys(r.s.byAg).sort().forEach(function(k){ var a = r.s.byAg[k];
+  var SA = ST.synAgs || [];
+  rows.forEach(function(r){ if (!r.s) return; Object.keys(r.s.byAg).sort().forEach(function(k){ if (SA.length && SA.indexOf(k) < 0) return; var a = r.s.byAg[k];
     out.push({ 'Mois':r.id, 'Statut':STATUS[r.status], 'Agence':a.label, 'Factures':a.inv, 'Entrées colis':a.E.n, 'Entrées m³/t':a.E.up, 'Entrées € HT':a.E.eur, 'Sorties colis':a.S.n, 'Sorties m³/t':a.S.up, 'Sorties € HT':a.S.eur, 'Stockage m² facturés':a.STK.m2, 'dont minimum 30 m²':a.STK.minM2, 'Stockage € HT':a.STK.eur, 'Total HT':a.HT }); }); });
   var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'Synthèse'); saveXlsx(wb, 'Synthèse facturation OTIS.xlsx');
 }
@@ -2438,7 +2519,7 @@ document.addEventListener('click', function(e){
   if (d.docrm && isAdmin()){ var a1 = ST.cfg.agencies[ST.parAg], m1 = a1.docs[d.docrm]; STORE.deleteFile(m1); delete a1.docs[d.docrm]; if (d.docrm === 'cm') a1.cmList = []; saveCfg(a1.label+' : document supprimé'); render(); return; }
   if (d.trdel && isAdmin()){ STORE.deleteTransport(d.trdel).then(loadTransports); return; }
   if (d.adm){ ST.admTab = d.adm; render(); loadAdmin(); return; }
-  if (d.synag){ ST.synAg = d.synag; render(); return; }
+  if (d.synag){ var SA = ST.synAgs || []; if (d.synag === 'all') SA = []; else if (SA.indexOf(d.synag) >= 0) SA = SA.filter(function(x){ return x !== d.synag; }); else SA = SA.concat([d.synag]); ST.synAgs = SA; render(); return; }
   if (d.uact){ var u = (ST.users||[]).filter(function(x){ return x.uid === d.uact; })[0]; if (u) adminAct(STORE.updateUser(u.uid, { active: !u.active }), (u.active?'Compte désactivé : ':'Compte réactivé : ')+u.email); return; }
   if (d.upw){ ST.pwFor = ST.pwFor === d.upw ? null : d.upw; render(); return; }
   if (d.upwok){ adminAct(STORE.setPassword(d.upwok), 'E-mail de réinitialisation envoyé'); ST.pwFor = null; return; }
