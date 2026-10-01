@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Facturation OTIS LEGAA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<!--DEMO_BANNER-->
+<section class="login" id="login" hidden>
+  <div class="login-card">
+    <div class="hd"><h1>Facturation OTIS</h1><span style="opacity:.7;font-family:var(--f-label)">LEGAA · accès réservé</span></div>
+    <form id="loginForm" autocomplete="on">
+      <div class="fld"><label class="lbl" for="lg_email">E-mail</label><input id="lg_email" type="email" autocomplete="username" required></div>
+      <div class="fld"><label class="lbl" for="lg_pw">Mot de passe</label><input id="lg_pw" type="password" autocomplete="current-password" required></div>
+      <button class="btn pri" type="submit">Se connecter</button>
+      <div class="msg" id="loginMsg" role="alert"></div>
+    </form>
+  </div>
+</section>
+<div id="app" hidden>
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><h1>Facturation OTIS</h1><span>LEGAA · logistique &amp; transport</span></div>
+    <div class="period"><label for="month">Période</label><select id="month"></select><span id="src" class="num" style="opacity:.7"></span></div>
+    <button class="who" id="who" data-v="acc" title="Mon compte"></button>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-v="imp"><b>1</b>Imports Odoo</button>
+    <button class="tab" role="tab" data-v="ctl"><b>2</b>Anomalies Odoo <span class="cnt" id="cntBlk" hidden></span></button>
+    <button class="tab" role="tab" data-v="fac"><b>3</b>Factures logistiques</button>
+    <button class="tab" role="tab" data-v="pdf"><b>4</b>Contrôle factures <span class="cnt w" id="cntPdf" hidden></span></button>
+    <button class="tab" role="tab" data-v="syn"><b>5</b>Synthèse</button>
+    <button class="tab" role="tab" data-v="trp"><b>6</b>Transport</button>
+    <button class="tab" role="tab" data-v="reg"><b>7</b>Grilles &amp; règles</button>
+    <button class="tab" role="tab" data-v="adm" hidden><b>8</b>Administration</button>
+  </nav>
+</header>
+<main id="main"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div id="ctip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<!--STORE_SCRIPTS-->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store-firebase.js"></script>
+<!--/STORE_SCRIPTS-->
+<script src="js/engine.js"></script>
+<script src="js/pdfcheck.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
