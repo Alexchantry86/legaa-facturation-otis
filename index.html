@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v1.7 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v1.8 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1072,12 +1072,16 @@ var ENGINE = (function () {
 
     // ---- FACTURES ----
     var inv = {};
+    function isFHR(r) { return /FHR/i.test(String(r.cmdRaw !== undefined ? r.cmdRaw : (r.cmd || ''))); }
     function getInv(r) {
       var eff = r.eff, agc = cfg.agencies[eff.ag] || { split: 'cm', grid: 'STD', cas: 2, annexe: true };
-      var sub = agc.split === 'affaire' ? r.affaire : agc.split === 'cm' ? eff.cm : agc.split === 'appareil' ? r.apLabel : 'Agence';
+      // cm_fhr (ex. AG 58) : 2 factures par contremaître, « Contrats » (n° de commande sans FHR) et « FHR » (n° de commande contenant FHR)
+      var fhr = isFHR(r);
+      var sub = agc.split === 'affaire' ? r.affaire : agc.split === 'cm' ? eff.cm : agc.split === 'cm_fhr' ? eff.cm + ' · ' + (fhr ? 'FHR' : 'Contrats') : agc.split === 'appareil' ? r.apLabel : 'Agence';
       var k = eff.ag + '||' + sub;
-      if (!inv[k]) inv[k] = { key: k, ag: eff.ag, agLabel: eff.agLabel, split: agc.split, grid: agc.grid || 'STD', cas: agc.cas || 2, annexe: !!agc.annexe, sub: sub, cmCodes: {}, cms: {}, appareils: {}, lines: {}, totals: { E: 0, S: 0, STK: 0, MIN: 0, HT: 0 }, odoo: { M: 0, S: 0, sHas: false }, count: 0 };
+      if (!inv[k]) inv[k] = { key: k, ag: eff.ag, agLabel: eff.agLabel, split: agc.split, grid: agc.grid || 'STD', cas: agc.cas || 2, annexe: !!agc.annexe, sub: sub, fhr: agc.split === 'cm_fhr' ? fhr : null, cmCodes: {}, cms: {}, appareils: {}, cmds: {}, lines: {}, totals: { E: 0, S: 0, STK: 0, MIN: 0, HT: 0 }, odoo: { M: 0, S: 0, sHas: false }, count: 0 };
       var I = inv[k]; if (eff.cmCode) I.cmCodes[eff.cmCode] = 1; I.cms[eff.cm] = 1; I.appareils[r.apLabel] = 1;
+      var cr = String(r.cmd || r.cmdRaw || '').trim(); if (cr) I.cmds[cr] = 1;
       return I;
     }
     function addLine(I, fam, cmd, r, qty) {
@@ -1176,6 +1180,8 @@ var PDFCHECK = (function () {
     MOIS.forEach(function (mo, i) { var re = new RegExp(mo + '\\s+(20[2-9]\\d)', 'g'), r; while ((r = re.exec(n))) out.periodes.push(r[1] + '-' + String(i + 1).padStart(2, '0')); });
     (n.match(/\b(0[1-9]|1[0-2])[\/.](20[2-9]\d)\b/g) || []).forEach(function (p) { var q = p.split(/[\/.]/); out.periodes.push(q[1] + '-' + q[0]); });
     out.periodes = uniq(out.periodes);
+    // AG 58 : facture « FHR » (objet et n° de commande « FHR ») ou « Contrats »
+    out.fhr = /\bFHR\b/.test(txt.toUpperCase()) && !/CONTRATS/.test(txt.toUpperCase());
     lines.forEach(function (l) {
       // Ligne de facture : le libellé est en tête de ligne (Odoo : « Gestion Entrée  1,00 Unité(s)  385,70  TVA 20%  385,70 € ») ; montant = dernier nombre de la ligne
       var nl = norm(l).trim(), a = amounts(l); if (!a.length) return;
@@ -1198,6 +1204,7 @@ var PDFCHECK = (function () {
       if (I.split === 'affaire') return parsed.affaires.indexOf(I.sub) >= 0;
       if (I.split === 'appareil') return parsed.appareils.indexOf(I.sub) >= 0;
       if (I.split === 'cm') return Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; });
+      if (I.split === 'cm_fhr') return parsed.fhr === I.fhr && Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; });
       return false;
     });
     if (cands.length > 1 && parsed.agence) cands = cands.filter(function (I) { return I.ag === parsed.agence; }).length ? cands.filter(function (I) { return I.ag === parsed.agence; }) : cands;
@@ -1218,7 +1225,8 @@ var PDFCHECK = (function () {
     checks.push({ label: 'Total HT', pdf: parsed.totalHT, calc: I.totals.HT, amt: true, total: true, ok: parsed.totalHT !== null && Math.abs(parsed.totalHT - I.totals.HT) <= TOL, note: parsed.totalHT === null ? 'Total HT introuvable dans le PDF' : '' });
     // Identification
     if (I.split === 'affaire') chk('Affaire', parsed.affaires.join(', ') || '—', I.sub, parsed.affaires.indexOf(I.sub) >= 0);
-    else if (I.split === 'cm') chk('Code contremaître', parsed.cmCodes.join(', ') || '—', Object.keys(I.cmCodes).join(', '), Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; }));
+    if (I.split === 'cm_fhr') chk('Type de facture', parsed.fhr ? 'FHR' : 'Contrats', I.fhr ? 'FHR' : 'Contrats', parsed.fhr === I.fhr);
+    if (I.split === 'cm' || I.split === 'cm_fhr') chk('Code contremaître', parsed.cmCodes.join(', ') || '—', Object.keys(I.cmCodes).join(', '), Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; }));
     if (parsed.agence) chk('Agence', 'AG ' + parsed.agence, I.agLabel, parsed.agence === I.ag);
     else chk('Agence', '—', I.agLabel, false, 'Agence non trouvée dans le PDF');
     chk('Période', parsed.periodes.join(', ') || '—', month, parsed.periodes.indexOf(month) >= 0, parsed.periodes.length ? '' : 'Mois de facturation non trouvé dans le PDF');
@@ -1381,7 +1389,7 @@ function agEditor(a){
   if ((a.cmList||[]).length) h += '<details class="pb"><summary class="lbl">Contremaîtres de l\'agence ('+a.cmList.length+')</summary><div class="tw"><table><thead><tr><th>Code</th><th>Nom</th></tr></thead><tbody>'+a.cmList.map(function(c){ return '<tr><td class="num">'+esc(c.code)+'</td><td>'+esc(c.nom)+'</td></tr>'; }).join('')+'</tbody></table></div></details>';
   h += '</div>';
   h += '<div class="panel"><div class="ph"><h3>Principes de facturation appliqués</h3></div><div class="pb col-f">'+
-    field('Une facture par', cfSel(p+'split', a.split, [['affaire','Affaire'],['cm','Contremaître'],['appareil','Appareil (n° de commande)'],['ag','Agence (facture unique)']]))+
+    field('Une facture par', cfSel(p+'split', a.split, [['affaire','Affaire'],['cm','Contremaître'],['cm_fhr','Contremaître × Contrats / FHR (2 factures par contremaître)'],['appareil','Appareil (n° de commande)'],['ag','Agence (facture unique)']]))+
     field('Process OTIS', cfSel(p+'cas', a.cas, [['2','Cas 2 · sans commande client'],['1','Cas 1 · devis puis commande']]))+
     field('Annexe détaillée sur la facture', cfSel(p+'annexe', a.annexe ? 'true':'false', [['false','Non'],['true','Oui : détail colis en annexe du PDF']]))+
     '</div></div>';
@@ -1681,7 +1689,8 @@ function famAgg(I, f){
   return o;
 }
 function filesSig(){ return ST.files.filter(function(f){ return f.meta; }).map(function(f){ return f.meta.id; }).sort().join(','); }
-function subOf(r, I){ return I.split === 'affaire' ? r.affaire : I.split === 'cm' ? r.eff.cm : I.split === 'appareil' ? r.apLabel : 'Agence'; }
+function isFHR(r){ return /FHR/i.test(String(r.cmdRaw !== undefined ? r.cmdRaw : (r.cmd || ''))); }
+function subOf(r, I){ return I.split === 'affaire' ? r.affaire : I.split === 'cm' ? r.eff.cm : I.split === 'cm_fhr' ? r.eff.cm + ' · ' + (isFHR(r) ? 'FHR' : 'Contrats') : I.split === 'appareil' ? r.apLabel : 'Agence'; }
 function famKeys(I, f){
   var g = famAgg(I, f), ex = [];
   ST.R.records.forEach(function(r){
@@ -1768,7 +1777,7 @@ function vInvoices(){
     var aps = Object.keys(I.appareils).sort();
     function amt(f, v){ var fk = famKeys(I, FAM3.filter(function(x){ return x.k===f; })[0]); return fk.keys.length ? '<button class="amt" data-amt="'+esc(I.key)+'|'+f+'">'+n2(v)+(fk.excluded.length ? '<span class="xn" title="lignes exclues">−'+fk.excluded.length+'</span>' : '')+'</button>' : '<span class="muted">—</span>'; }
     var affs = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r && r.affaire) affs[r.affaire] = 1; }); });
-    return '<tr class="st-'+st+(ST.hlInv===I.key?' hl':'')+'" id="inv-'+esc(I.key)+'"><td class="num inum">'+esc(I.num)+(ST.hlInv===I.key && ST.backCtl ? '<br><button class="lnk" data-backctl>← retour au contrôle</button>' : '')+'</td><td>'+Object.keys(I.cms).map(esc).join('<br>')+'</td><td class="num">'+(Object.keys(I.cmCodes).map(esc).join('<br>')||'—')+'</td><td class="num">'+Object.keys(affs).sort().map(esc).join('<br>')+'</td><td class="num apcol">'+aps.map(esc).join('<br>')+'</td>'+
+    return '<tr class="st-'+st+(ST.hlInv===I.key?' hl':'')+'" id="inv-'+esc(I.key)+'"><td class="num inum">'+esc(I.num)+(I.split === 'cm_fhr' ? '<br><span class="pill '+(I.fhr ? 'p-verifier' : 'p-info')+'">'+(I.fhr ? 'FHR' : 'Contrats')+'</span>' : '')+(ST.hlInv===I.key && ST.backCtl ? '<br><button class="lnk" data-backctl>← retour au contrôle</button>' : '')+'</td><td>'+Object.keys(I.cms).map(esc).join('<br>')+'</td><td class="num">'+(Object.keys(I.cmCodes).map(esc).join('<br>')||'—')+'</td><td class="num">'+Object.keys(affs).sort().map(esc).join('<br>')+'</td><td class="num apcol">'+aps.map(esc).join('<br>')+'</td>'+
       '<td class="n">'+amt('E', I.totals.E)+'</td><td class="n">'+amt('S', I.totals.S)+'</td><td class="n">'+amt('STK', stk)+'</td><td class="n"><strong>'+n2(I.totals.HT)+'</strong></td>'+
       '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
       '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
@@ -1792,7 +1801,7 @@ function vInvoices(){
 }
 function principles(){
   var A = ST.cfg.agencies[ST.ag] || {};
-  var split = ({affaire:'une facture par affaire',cm:'une facture par contremaître',appareil:'une facture par appareil (n° de commande)',ag:'une facture unique pour l\'agence'})[A.split||'cm'];
+  var split = ({affaire:'une facture par affaire',cm:'une facture par contremaître',cm_fhr:'2 factures par contremaître : « Contrats » (n° de commande sans FHR) et « FHR » (n° de commande contenant FHR)',appareil:'une facture par appareil (n° de commande)',ag:'une facture unique pour l\'agence'})[A.split||'cm'];
   var items = [
     ['Découpage', split],
     ['Process OTIS', A.cas === 1 ? 'cas 1 : devis, facturation après commande' : 'cas 2 : facturation sans commande client'],
@@ -1815,10 +1824,18 @@ function gridModal(){
 /* Champs d'en-tête de la facture Odoo, selon les principes de facturation de l'agence */
 function noAcc(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 function invAffaires(I){ var o = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r && r.affaire) o[r.affaire] = 1; }); }); return Object.keys(o).sort(); }
+// N° de commande Odoo (bruts) des lignes facturées, lignes exclues non comprises
+function invCmds(I){ var o = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; var c = r && String(r.cmd || r.cmdRaw || '').trim(); if (c) o[c] = 1; }); }); return Object.keys(o).sort(); }
 function invHeader(I){
   var mb = ST.R.mb, d = new Date(mb.end + 'T12:00:00'), due = new Date(d.getTime() + 30*86400000);
   var affs = invAffaires(I), aps = Object.keys(I.appareils).filter(function(a){ return a.charAt(0) !== '('; }).sort();
-  var objet = 'LOGISTIQUE ' + noAcc(monthLabel(ST.month)).toUpperCase() + (I.split === 'cm' ? ' - ' + Object.keys(I.cms).join(', ') : '');
+  var per = noAcc(monthLabel(ST.month)).toUpperCase();
+  if (I.split === 'cm_fhr'){
+    // Règle AG 58 : objet « Logistique – période – Contrats / FHR » ; n° de commande = tous les n° (Contrats) ou « FHR »
+    var cmds = invCmds(I);
+    return { objet:'LOGISTIQUE – ' + per + ' – ' + (I.fhr ? 'FHR' : 'CONTRATS'), date:d.toLocaleDateString('fr-FR'), echeance:due.toLocaleDateString('fr-FR'), devis:'', interlocuteur:'', codeCm:Object.keys(I.cmCodes).join(', '), commande: I.fhr ? 'FHR' : cmds.join(', ') };
+  }
+  var objet = 'LOGISTIQUE ' + per + (I.split === 'cm' ? ' - ' + Object.keys(I.cms).join(', ') : '');
   var cmd = I.split === 'appareil' ? 'Appareil : ' + I.sub + (affs.length ? ' - Affaire : ' + affs.join(', ') : '')
     : (affs.length ? 'Affaire' + (affs.length > 1 ? 's' : '') + ' : ' + affs.join(', ') : '') + (aps.length ? (affs.length ? ' - ' : '') + 'Appareil' + (aps.length > 1 ? 's' : '') + ' : ' + aps.join(' & ') : '');
   return { objet:objet, date:d.toLocaleDateString('fr-FR'), echeance:due.toLocaleDateString('fr-FR'), devis:'', interlocuteur:'', codeCm: I.split === 'cm' ? Object.keys(I.cmCodes).join(', ') : '', commande:cmd };
