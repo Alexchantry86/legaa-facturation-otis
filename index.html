@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.1 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -450,6 +450,12 @@ tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--acc),inset 0 1px 0 var(--acc
 .lg-b{background:#c62f22}.lg-v{background:#e0b400}.lg-i{background:#a3acb6}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .anom.sv-bloquant{background:#2e1715}:root:not([data-theme="light"]) .anom.sv-verifier{background:#2c2610}:root:not([data-theme="light"]) .anom.sv-info{background:#1b2027}}
 @media (max-width:820px){.anom-hd{display:none}.anom-h{grid-template-columns:auto 1fr auto}.anom-h .e,.anom-h .do{grid-column:1/-1}}
+/* ---- v4.2 : lignes de factures condensées ---- */
+table.invt2 td.cc{white-space:nowrap}
+table.invt2 td.cc .c1{display:inline-block;max-width:170px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.more{border:1px solid var(--acc-line);background:var(--acc-bg);color:var(--acc);border-radius:10px;padding:0 7px;font-family:var(--f-num);font-size:11px;line-height:17px;cursor:pointer;margin-left:2px}
+.more:hover{background:var(--acc);color:var(--acc-ink)}
+table.invt2 td{vertical-align:middle}
 </style>
 </head>
 <body>
@@ -1755,6 +1761,14 @@ function loadStyledXlsx(){
     document.head.appendChild(sc);
   });
 }
+var ANOM_COLS = {
+  NON_RATTACHE:['Agence','Contremaître'], AGENCE_NON_PARAM:['Agence'], AFFAIRE_INCONNUE:['Affaire','N° commande Odoo'], DIM_NULLE:['Longueur mm','Largeur mm','Hauteur mm','Volume m3'],
+  OP_INCONNUE:['Famille'], DATE_ENTREE:['Début période'], SORTIE_AVANT_ENTREE:['Début période','Fin période'], AFFAIRE_FORMAT:['Affaire','N° commande Odoo'], AFFAIRE_MULTI:['Affaire','Appareil'],
+  CM_INCONNU:['Contremaître','Code CM'], CODE_CM:['Code CM'], COLIS_VIDE:['N° colis'], DIM_INCOH:['Longueur mm','Largeur mm','Hauteur mm','Volume m3','Surface m2'], DOUBLE_MVT:['N° colis','Date mouvement'],
+  HORS_MOIS:['Date mouvement'], JOURS_SUP_MOIS:['Jours Odoo'], JOURS_TRANCHE:['Jours retenus','Jours Odoo','Tranche'], JOURS_ECART:['Jours retenus','Jours Odoo'], POIDS:['Poids kg'],
+  SORTIE_NON_MVT:['Fin période'], STOCK_MULTI:['N° colis'], AFFAIRE_DEDUITE:['Affaire','Source affaire'], AFFAIRE_MULTI_AG:['Affaire','Agence'], CMD_SUFFIXE:['N° commande Odoo'],
+  CM_NOM:['Contremaître'], MIN30_MULTI_CM:['Appareil'], TARIF_ODOO:['Prix Odoo','Montant HT'], TYPE_STOCK:['Tranche']
+};
 var SEV_FILL = { bloquant:'F8D3D0', verifier:'FFF1B8', info:'E7E9EC' }, SEV_INK = { bloquant:'8E1B12', verifier:'6B5200', info:'4A5561' };
 function exportAnomalies(){
   var A = ST.R.anomalies.filter(function(a){ return a.code !== 'AUTRE_AGENCE'; });
@@ -1766,13 +1780,13 @@ function exportAnomalies(){
     Object.keys(base).forEach(function(c){ if (c !== 'Facture' && c !== 'Contrôles') row[c] = base[c]; });
     row['Traitée (exclue)'] = ST.ov.exclude[k] ? 'Oui' : '';
     row['À faire'] = anomDo(a);
-    row.__sev = a.sev; lines.push(row);
+    row.__sev = a.sev; row.__cols = ANOM_COLS[a.code] || ['Anomalie']; lines.push(row);
   }); });
   var name = fileBase()+' anomalies.xlsx';
   function build(X, styled){
     var wb = X.utils.book_new();
     [['Synthèse', syn, A.map(function(a){ return a.sev; })], ['Lignes', lines, lines.map(function(r){ return r.__sev; })]].forEach(function(sh){
-      var rows = sh[1].map(function(r){ var o = {}; Object.keys(r).forEach(function(c){ if (c !== '__sev') o[c] = r[c]; }); return o; });
+      var rows = sh[1].map(function(r){ var o = {}; Object.keys(r).forEach(function(c){ if (c.indexOf('__') !== 0) o[c] = r[c]; }); return o; });
       var hdr = []; rows.forEach(function(r){ Object.keys(r).forEach(function(c){ if (hdr.indexOf(c) < 0) hdr.push(c); }); });
       var di = hdr.indexOf('À faire'); if (di >= 0){ hdr.splice(di, 1); hdr.push('À faire'); }
       var ws = X.utils.json_to_sheet(rows, { header:hdr });
@@ -1782,7 +1796,10 @@ function exportAnomalies(){
         var bd = { style:'thin', color:{ rgb:'D3DAE2' } };
         hdr.forEach(function(c, j){ var a = ws[X.utils.encode_cell({ r:0, c:j })]; if (a) a.s = { font:{ bold:true, color:{ rgb:'FFFFFF' } }, fill:{ fgColor:{ rgb:'0F2A4D' } }, alignment:{ vertical:'center', wrapText:true } }; });
         sh[2].forEach(function(sev, i){ hdr.forEach(function(c, j){ var ref = X.utils.encode_cell({ r:i+1, c:j }); var cell = ws[ref] || (ws[ref] = { t:'s', v:'' });
-          cell.s = { fill:{ fgColor:{ rgb:SEV_FILL[sev] } }, font:{ color:{ rgb: c === 'Gravité' ? SEV_INK[sev] : '141618' }, bold: c === 'Gravité' }, alignment:{ vertical:'top', wrapText: c === 'À faire' || c === 'Explication' }, border:{ bottom:bd } }; }); });
+          // Onglet Lignes : Gravité + cellule(s) concernée(s) par l'anomalie ; Synthèse : ligne entière
+          var paint = sh[0] !== 'Lignes' || c === 'Gravité' || sh[1][i].__cols.indexOf(c) >= 0;
+          cell.s = { fill: paint ? { fgColor:{ rgb:SEV_FILL[sev] } } : undefined, font:{ color:{ rgb: c === 'Gravité' ? SEV_INK[sev] : '141618' }, bold: c === 'Gravité' }, alignment:{ vertical:'top', wrapText: c === 'À faire' || c === 'Explication' }, border:{ bottom:bd } };
+          if (!cell.s.fill) delete cell.s.fill; }); });
       }
       X.utils.book_append_sheet(wb, ws, sh[0]);
     });
@@ -1943,6 +1960,14 @@ function exportCtl(){
   var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Contrôle factures');
   saveXlsx(wb, fileBase()+' contrôle factures.xlsx');
 }
+/* Cellule condensée : 1re valeur + « +n » ; la ligne se déplie au clic */
+function cmulti(list, key){
+  if (!list.length) return '<span class="muted">—</span>';
+  var open = (ST.invOpen||{})[key];
+  if (list.length === 1) return esc(list[0]);
+  if (open) return list.map(esc).join('<br>')+'<br><button class="more" data-invx="'+esc(key)+'" title="Replier">▴ replier</button>';
+  return '<span class="c1" title="'+esc(list.join(', '))+'">'+esc(list[0])+'</span> <button class="more" data-invx="'+esc(key)+'" title="'+esc(list.join(', '))+'">+'+(list.length-1)+'</button>';
+}
 function vInvoices(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les deux exports Odoo.</div>';
   var R = ST.R, gen = ST.doc && ST.doc.gen, stale = gen && gen.sig !== filesSig();
@@ -1964,7 +1989,7 @@ function vInvoices(){
     var aps = Object.keys(I.appareils).sort();
     function amt(f, v){ var fk = famKeys(I, FAM3.filter(function(x){ return x.k===f; })[0]); return fk.keys.length ? '<button class="amt" data-amt="'+esc(I.key)+'|'+f+'">'+n2(v)+(fk.excluded.length ? '<span class="xn" title="lignes exclues">−'+fk.excluded.length+'</span>' : '')+'</button>' : '<span class="muted">—</span>'; }
     var affs = {}; I.lineList.forEach(function(l){ l.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (r && r.affaire) affs[r.affaire] = 1; }); });
-    return '<tr class="st-'+st+(ST.hlInv===I.key?' hl':'')+'" id="inv-'+esc(I.key)+'"><td class="num inum">'+esc(I.num)+(I.split === 'cm_fhr' ? '<br><span class="pill '+(I.fhr ? 'p-verifier' : 'p-info')+'">'+(I.fhr ? 'FHR' : 'Contrats')+'</span>' : '')+(ST.hlInv===I.key && ST.backCtl ? '<br><button class="lnk" data-backctl>← retour au contrôle</button>' : '')+'</td><td>'+Object.keys(I.cms).map(esc).join('<br>')+'</td><td class="num">'+(Object.keys(I.cmCodes).map(esc).join('<br>')||'—')+'</td><td class="num">'+Object.keys(affs).sort().map(esc).join('<br>')+'</td><td class="num apcol">'+aps.map(esc).join('<br>')+'</td>'+
+    return '<tr class="st-'+st+(ST.hlInv===I.key?' hl':'')+'" id="inv-'+esc(I.key)+'"><td class="num inum">'+esc(I.num)+(I.split === 'cm_fhr' ? '<br><span class="pill '+(I.fhr ? 'p-verifier' : 'p-info')+'">'+(I.fhr ? 'FHR' : 'Contrats')+'</span>' : '')+(ST.hlInv===I.key && ST.backCtl ? '<br><button class="lnk" data-backctl>← retour au contrôle</button>' : '')+'</td><td class="cc">'+cmulti(Object.keys(I.cms), I.key)+'</td><td class="num cc">'+cmulti(Object.keys(I.cmCodes), I.key)+'</td><td class="num cc">'+cmulti(Object.keys(affs).sort(), I.key)+'</td><td class="num apcol cc">'+cmulti(aps, I.key)+'</td>'+
       '<td class="n">'+amt('E', I.totals.E)+'</td><td class="n">'+amt('S', I.totals.S)+'</td><td class="n">'+amt('STK', stk)+'</td><td class="n"><strong>'+n2(I.totals.HT)+'</strong></td>'+
       '<td><select class="stsel s-'+st+'" data-st="'+esc(I.key)+'"'+RO()+'>'+Object.keys(INVST).map(function(k){ return '<option value="'+k+'"'+(k===st?' selected':'')+'>'+INVST[k]+'</option>'; }).join('')+'</select></td>'+
       '<td class="c"><button class="gear" data-pinv="'+esc(I.key)+'" title="Exporter la facture en PDF" aria-label="Exporter '+esc(I.num)+' en PDF"'+(canSave()?'':' disabled')+'>'+GEAR+'<span>PDF</span></button></td></tr>';
@@ -2604,6 +2629,7 @@ document.addEventListener('click', function(e){
   if (d.par){ ST.parAg = d.par; ST.newAg = false; render(); return; }
   if (d.newag !== undefined){ ST.newAg = true; render(); return; }
   if (d.amt){ var p = d.amt.split('|'); ST.modal = { inv:p.slice(0,-1).join('|'), fam:p[p.length-1] }; renderModal(); return; }
+  if (d.invx){ ST.invOpen = ST.invOpen || {}; ST.invOpen[d.invx] = !ST.invOpen[d.invx]; render(); return; }
   if (d.goinv){ goInvoice(d.goinv, ST.openPdf); return; }
   if (d.backctl !== undefined){ ST.sub = 'ctl'; ST.hlInv = null; var bp = ST.backCtl; ST.backCtl = null; render(); setTimeout(function(){ var r = bp && document.querySelector('tr[data-pdf="'+bp+'"]'); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
   if (d.pvo){ viewOdooPdf(d.pvo); return; }
