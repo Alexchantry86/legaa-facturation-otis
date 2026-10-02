@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.4 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -456,6 +456,11 @@ table.invt2 td.cc .c1{display:inline-block;max-width:170px;overflow:hidden;text-
 .more{border:1px solid var(--acc-line);background:var(--acc-bg);color:var(--acc);border-radius:10px;padding:0 7px;font-family:var(--f-num);font-size:11px;line-height:17px;cursor:pointer;margin-left:2px}
 .more:hover{background:var(--acc);color:var(--acc-ink)}
 table.invt2 td{vertical-align:middle}
+/* ---- v4.3 : récapitulatif du contrôle ---- */
+table.ctlt tr.recap td{background:var(--acc-bg);border-bottom:2px solid var(--acc);vertical-align:top;padding-top:8px;padding-bottom:8px;text-transform:none;letter-spacing:0;font-weight:400}
+table.ctlt tr.recap .rv{display:block;font-family:var(--f-num);font-size:16px;font-weight:600;color:var(--ink)}
+table.ctlt tr.recap .rs{display:block;font-size:11.5px;color:var(--muted);white-space:normal;max-width:190px;margin-left:auto}
+table.ctlt tr.recap td:not(.n) .rs{margin-left:0}
 </style>
 </head>
 <body>
@@ -2172,6 +2177,20 @@ function pdfCtx(){
 }
 var PCHK = { verifier:'À vérifier', encours:'En cours', ok:'OK', anomalie:'Anomalie(s)' };
 function dlt(v){ if (v === null || v === undefined) return '<span class="muted">—</span>'; var z = Math.abs(v) <= PDFCHECK.TOL; return '<span class="'+(z ? 'muted' : 'dko')+'">'+(v > 0 && !z ? '+' : '')+n2(z ? 0 : v)+'</span>'; }
+/* Récapitulatif du contrôle, aligné sur les colonnes du tableau */
+function ctlRecap(P, missing){
+  var nO = P.length, nC = ST.R.invoices.length, htP = 0, nP = 0, htC = E.r2(ST.R.invoices.reduce(function(s, I){ return s + I.totals.HT; }, 0)), dRow = 0, nR = 0;
+  P.forEach(function(p){ var r = p.result || {}, v = r.parsed && r.parsed.totalHT; if (v !== null && v !== undefined){ htP = E.r2(htP + v); nP++;
+    var I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key === r.invKey; })[0] : null; if (I){ dRow = E.r2(dRow + v - I.totals.HT); nR++; } } });
+  var dTot = E.r2(htP - htC);
+  return '<tr class="recap"><td><span class="lbl">Récapitulatif</span></td>'+
+    '<td><span class="rv">'+nO+'</span><span class="rs">facture'+(nO>1?'s':'')+' Odoo</span></td>'+
+    '<td><span class="rv">'+nC+'</span><span class="rs">facture'+(nC>1?'s':'')+' calculée'+(nC>1?'s':'')+(missing.length ? ' · '+missing.length+' sans PDF' : '')+'</span></td>'+
+    '<td class="n"><span class="rv">'+n2(htP)+'</span><span class="rs">total HT PDF'+(nP<nO ? ' ('+(nO-nP)+' illisible'+(nO-nP>1?'s':'')+')' : '')+'</span></td>'+
+    '<td class="n"><span class="rv">'+n2(htC)+'</span><span class="rs">total HT calculé</span></td>'+
+    '<td class="n"><span class="rv">'+dlt(dTot)+'</span><span class="rs">PDF − calculé'+(nR ? ' · dont '+dlt(dRow)+' sur '+nR+' rapprochée'+(nR>1?'s':'') : '')+'</span></td>'+
+    '<td colspan="4"></td></tr>';
+}
 function vControl(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les exports Odoo : le contrôle compare chaque PDF à la facture calculée.</div>';
   var P = ST.pdfs, byInv = {}, c = { conforme:0, ecart:0, autre:0 }, chk = ST.ov.pchk || {}, ro = !canEdit() || monthClosed();
@@ -2181,7 +2200,7 @@ function vControl(){
   var h = closeBox();
   if (!ro) h += '<label class="drop" id="pdrop"><input type="file" id="pin" multiple accept="application/pdf,.pdf"><strong>Déposer les factures PDF du mois (Odoo)</strong><span class="muted">PDF générés par Odoo, pas de scans. Contrôle des lignes Entrées, Sorties, Stockage et du total HT (tolérance 0,01 €), puis affaire, agence, période et appareils.</span></label>';
   h += '<div class="panel"><div class="ph"><h2>Factures déposées</h2><span class="muted">'+P.length+' PDF · '+c.conforme+' conforme(s) · '+c.ecart+' en écart'+(c.autre ? ' · '+c.autre+' non rapproché(s)' : '')+' · '+missing.length+' facture(s) sans PDF</span><div class="sp">'+(P.length && !ro ? '<button class="btn sm" data-a="pdfRerun">Relancer le contrôle</button>' : '')+'<button class="btn sm" data-a="xlsCtl"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
-  h += '<div class="tw"><table class="ctlt"><thead><tr><th>Fichier</th><th>N° Odoo</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th class="n">Delta</th><th>Résultat</th><th>Check</th><th>PDF</th><th></th></tr></thead><tbody>';
+  h += '<div class="tw"><table class="ctlt"><thead><tr><th>Fichier</th><th>N° Odoo</th><th>Facture calculée</th><th class="n">HT PDF</th><th class="n">HT calculé</th><th class="n">Delta</th><th>Résultat</th><th>Check</th><th>PDF</th><th></th></tr>'+ctlRecap(P, missing)+'</thead><tbody>';
   P.forEach(function(p){
     var r = p.result || { status:'erreur' }, I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key===r.invKey; })[0] : null, open = ST.openPdf === p.id;
     var htP = r.parsed && r.parsed.totalHT !== null && r.parsed.totalHT !== undefined ? r.parsed.totalHT : null, cv = chk[p.id] || 'verifier';
