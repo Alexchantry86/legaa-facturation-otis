@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.4 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.5 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -456,11 +456,9 @@ table.invt2 td.cc .c1{display:inline-block;max-width:170px;overflow:hidden;text-
 .more{border:1px solid var(--acc-line);background:var(--acc-bg);color:var(--acc);border-radius:10px;padding:0 7px;font-family:var(--f-num);font-size:11px;line-height:17px;cursor:pointer;margin-left:2px}
 .more:hover{background:var(--acc);color:var(--acc-ink)}
 table.invt2 td{vertical-align:middle}
-/* ---- v4.3 : récapitulatif du contrôle ---- */
-table.ctlt tr.recap td{background:var(--acc-bg);border-bottom:2px solid var(--acc);vertical-align:top;padding-top:8px;padding-bottom:8px;text-transform:none;letter-spacing:0;font-weight:400}
-table.ctlt tr.recap .rv{display:block;font-family:var(--f-num);font-size:16px;font-weight:600;color:var(--ink)}
-table.ctlt tr.recap .rs{display:block;font-size:11.5px;color:var(--muted);white-space:normal;max-width:190px;margin-left:auto}
-table.ctlt tr.recap td:not(.n) .rs{margin-left:0}
+/* ---- v4.3 : récapitulatif du contrôle (condensé) ---- */
+table.ctlt tr.recap td{background:var(--acc-bg);border-bottom:2px solid var(--acc);padding-top:5px;padding-bottom:5px;font-weight:700;font-size:13px;text-transform:none;letter-spacing:0}
+table.ctlt tr.recap td:first-child{font-family:var(--f-label);color:var(--acc-d)}
 </style>
 </head>
 <body>
@@ -2183,12 +2181,12 @@ function ctlRecap(P, missing){
   P.forEach(function(p){ var r = p.result || {}, v = r.parsed && r.parsed.totalHT; if (v !== null && v !== undefined){ htP = E.r2(htP + v); nP++;
     var I = r.invKey ? ST.R.invoices.filter(function(x){ return x.key === r.invKey; })[0] : null; if (I){ dRow = E.r2(dRow + v - I.totals.HT); nR++; } } });
   var dTot = E.r2(htP - htC);
-  return '<tr class="recap"><td><span class="lbl">Récapitulatif</span></td>'+
-    '<td><span class="rv">'+nO+'</span><span class="rs">facture'+(nO>1?'s':'')+' Odoo</span></td>'+
-    '<td><span class="rv">'+nC+'</span><span class="rs">facture'+(nC>1?'s':'')+' calculée'+(nC>1?'s':'')+(missing.length ? ' · '+missing.length+' sans PDF' : '')+'</span></td>'+
-    '<td class="n"><span class="rv">'+n2(htP)+'</span><span class="rs">total HT PDF'+(nP<nO ? ' ('+(nO-nP)+' illisible'+(nO-nP>1?'s':'')+')' : '')+'</span></td>'+
-    '<td class="n"><span class="rv">'+n2(htC)+'</span><span class="rs">total HT calculé</span></td>'+
-    '<td class="n"><span class="rv">'+dlt(dTot)+'</span><span class="rs">PDF − calculé'+(nR ? ' · dont '+dlt(dRow)+' sur '+nR+' rapprochée'+(nR>1?'s':'') : '')+'</span></td>'+
+  return '<tr class="recap"><td>Total</td>'+
+    '<td class="num" title="Factures Odoo déposées">'+nO+'</td>'+
+    '<td class="num" title="Factures calculées'+(missing.length ? ' (dont '+missing.length+' sans PDF)' : '')+'">'+nC+'</td>'+
+    '<td class="n" title="Total HT lu dans les PDF">'+n2(htP)+'</td>'+
+    '<td class="n" title="Total HT des factures calculées">'+n2(htC)+'</td>'+
+    '<td class="n" title="Total HT PDF − total HT calculé'+(nR ? ' · écarts sur les '+nR+' factures rapprochées : '+n2(dRow) : '')+'">'+dlt(dTot)+'</td>'+
     '<td colspan="4"></td></tr>';
 }
 function vControl(){
