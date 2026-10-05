@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.6 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.7 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -494,6 +494,18 @@ table.ctlt tr.recap td:first-child{font-family:var(--f-label);color:var(--acc-d)
 .ch-pick label{display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer}
 #chtitle{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:4px}
 @media (max-width:640px){.chatbtn span{display:none}}
+/* ---- v4.5 : suivi des anomalies, agences sans données en synthèse ---- */
+table.suit tr.sv-bloquant td:first-child{box-shadow:inset 4px 0 0 #c62f22}
+table.suit tr.sv-verifier td:first-child{box-shadow:inset 4px 0 0 #e0b400}
+table.suit tr.sv-info td:first-child{box-shadow:inset 4px 0 0 #a3acb6}
+table.suit tr.sv-bloquant td.hit{background:#fdecea}
+table.suit tr.sv-verifier td.hit{background:#fff7d6}
+table.suit tr.sv-info td.hit{background:#f1f3f5}
+table.suit th.n{white-space:normal;min-width:70px;max-width:120px;vertical-align:bottom}
+.wv{color:#8a6a00;font-weight:600}
+.chip.off{opacity:.5;cursor:default;border-style:dashed}
+.chip.off:hover{border-color:var(--line);color:var(--ink-2)}
+.syn-miss{margin:0;padding:8px 12px;background:var(--warn-bg);border-radius:6px;font-size:13px}
 </style>
 </head>
 <body>
@@ -1538,6 +1550,7 @@ function renderTop(){
   if (mod === 'log'){
     tabs = [['par','Paramètres'],['fac','Factures logistiques'],['syn','Synthèse']];
     if (isAdmin()) tabs.push(['adm','Administration']);
+    tabs.push(['sui','Suivi des anomalies']);
   } else if (mod === 'trp') tabs = [['new','Nouveau transport'],['hist','Historique des transports']];
   var cur = mod === 'log' ? ST.ltab : ST.ttab;
   $('tabs').innerHTML = tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+(mod==='log'?'ltab':'ttab')+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
@@ -1555,6 +1568,7 @@ function render(){
   else if (ST.ltab === 'par') h = vParams();
   else if (ST.ltab === 'syn') h = vSynth();
   else if (ST.ltab === 'adm') h = vAdmin();
+  else if (ST.ltab === 'sui') h = vSuivi();
   else h = vFactures();
   m.innerHTML = h;
   renderModal();
@@ -1744,7 +1758,7 @@ function persist(what){
   var id = monthId();
   saveT = setTimeout(function(){
     var w = saveWhat.splice(0);
-    STORE.saveMonth(id, { ov:ST.ov, summary: ST.R ? summarize(ST.R) : null }).then(function(){
+    STORE.saveMonth(id, { ov:ST.ov, summary: ST.R ? summarize(ST.R) : null, anomSummary: ST.R ? anomSum(ST.R) : null }).then(function(){
       var s2 = $('save'); if (s2) s2.textContent = 'Enregistré à '+hhmm();
       if (w.length) STORE.log('modification', w.slice(0,6).join(' · ')+(w.length>6?' (+'+(w.length-6)+')':''), id);
       refreshIndex();
@@ -1995,7 +2009,7 @@ function generate(){
   if (!canEdit() || !ST.R) return;
   var n = 0; ST.R.invoices.forEach(function(I){ if (!ST.ov.status[I.key]){ ST.ov.status[I.key] = autoStatus(I); n++; } });
   ST.doc.gen = { at:new Date().toISOString(), by:ST.user.email, sig:filesSig(), n:ST.R.invoices.length };
-  STORE.saveMonth(monthId(), { gen:ST.doc.gen, ov:ST.ov, summary:summarize(ST.R) }).then(function(){ STORE.log('generation', ST.R.invoices.length+' factures · '+eur(ST.R.totals.HT)+' HT', monthId()); refreshIndex(); });
+  STORE.saveMonth(monthId(), { gen:ST.doc.gen, ov:ST.ov, summary:summarize(ST.R), anomSummary:anomSum(ST.R) }).then(function(){ refreshIndex(); STORE.log('generation', ST.R.invoices.length+' factures · '+eur(ST.R.totals.HT)+' HT', monthId()); refreshIndex(); });
   toast(ST.R.invoices.length+' factures générées'); render();
 }
 /* Filtres du tableau des factures (contremaître, code, affaire, appareil) */
@@ -2345,7 +2359,7 @@ function closeBox(){
 }
 function closeMonth(){
   var R = ST.R, id = monthId(); ST.confirmClose = false;
-  STORE.saveMonth(id, { status:'clos', cfgSnapshot: ST.cfgM || ST.cfg, summary: summarize(R), ov:ST.ov })
+  STORE.saveMonth(id, { status:'clos', cfgSnapshot: ST.cfgM || ST.cfg, summary: summarize(R), anomSummary: anomSum(R), ov:ST.ov })
     .then(function(){ return STORE.log('month_close', agLabel(ST.ag)+' · '+monthLabel(ST.month)+' · '+eur(R.totals.HT)+' HT', id); })
     .then(function(){ toast(monthLabel(ST.month)+' clôturé'); refreshIndex(); selectMonth(ST.ag, ST.month); }, function(e){ toast('Clôture impossible : '+e.message); });
 }
@@ -2402,6 +2416,14 @@ function removePdf(id){
   var p = ST.pdfs.filter(function(x){ return x.id===id; })[0]; if (!p) return;
   STORE.deletePdf(monthId(), p).then(function(){ return STORE.listPdfs(monthId()); }).then(function(L){ ST.pdfs = L; renderTop(); render(); toast('PDF supprimé'); }, function(e){ toast('Suppression impossible : '+e.message); });
 }
+/* Résumé des anomalies d'un mois (lignes ouvertes par nature), enregistré avec le mois pour le suivi */
+function anomSum(R, ov){
+  ov = ov || ST.ov; var o = {};
+  R.anomalies.forEach(function(a){ if (a.code === 'AUTRE_AGENCE') return;
+    var n = (a.code !== 'NON_RATTACHE' && a.code !== 'AFFAIRE_INCONNUE') ? a.keys.length : a.keys.filter(function(k){ return !(ov.assign||{})[k] && !(ov.exclude||{})[k] && !(ov.affaire||{})[k]; }).length;
+    o[a.code] = { sev:a.sev, title:a.title, n:n }; });
+  return { at:new Date().toISOString(), byCode:o };
+}
 function summarize(R){
   var out = { HT:R.totals.HT, at:new Date().toISOString(), byAg:{} };
   R.invoices.forEach(function(I){
@@ -2433,11 +2455,78 @@ function pick(s, ag){
     z.STK.n += a.STK.n; z.STK.m2 += a.STK.m2; z.STK.eur = E.r2(z.STK.eur + a.STK.eur); z.STK.minM2 += a.STK.minM2; z.STK.minEur = E.r2(z.STK.minEur + a.STK.minEur); });
   return z;
 }
+/* ============ 5 · SUIVI DES ANOMALIES ============ */
+var SUI = { month:null, live:{}, busy:'' };
+function suiMonth(){ return SUI.month || ST.month || defaultMonth(); }
+function suiStored(m){ var o = {}; ST.monthsIndex.forEach(function(d){ var mm = d.month || String(d.id).split('_')[1], ag = d.ag || String(d.id).split('_')[0]; if (mm === m && d.anomSummary) o[ag] = { byCode:d.anomSummary.byCode, at:d.anomSummary.at, status:d.status||'ouvert' }; }); return o; }
+function suiData(m){ var st = suiStored(m), lv = SUI.live[m] || {}; Object.keys(lv).forEach(function(k){ st[k] = lv[k]; }); if (ST.R && ST.month === m && ST.ag){ st[ST.ag] = { byCode:anomSum(ST.R).byCode, at:new Date().toISOString(), status:(ST.doc&&ST.doc.status)||'ouvert' }; } return st; }
+/* Recalcul de toutes les agences d'un mois : chargement des exports enregistrés, calcul, enregistrement du résumé */
+function suiRefresh(){
+  var m = suiMonth(), ags = agencies(), n = 0; SUI.live[m] = SUI.live[m] || {};
+  SUI.busy = 'Calcul des anomalies… 0 / '+ags.length; render();
+  var chain = Promise.resolve();
+  ags.forEach(function(a){ chain = chain.then(function(){
+    var id = a.code+'_'+m;
+    return STORE.getMonth(id).then(function(doc){
+      if (!doc || !(doc.files||[]).length) return;
+      var ov = deepMerge(blankOv(), doc.ov || {}), cfg = (doc.status === 'clos' && doc.cfgSnapshot) ? doc.cfgSnapshot : ST.cfg;
+      return Promise.all(doc.files.map(function(meta){ return STORE.loadImportRows(meta).then(function(rows){ return E.parseFile(meta.name, rows); }, function(){ return null; }); })).then(function(P){
+        var ok = P.filter(function(f){ return f && !f.error && f.kind; }); if (!ok.length) return;
+        var R = E.build(ok, cfg, ov, m, a.code), sum = anomSum(R, ov);
+        SUI.live[m][a.code] = { byCode:sum.byCode, at:sum.at, status:doc.status||'ouvert' };
+        if (canEdit() && (doc.status !== 'clos' || isAdmin())) return STORE.saveMonth(id, { anomSummary:sum }).catch(function(){});
+      });
+    }).then(function(){ n++; SUI.busy = 'Calcul des anomalies… '+n+' / '+ags.length; render(); });
+  }); });
+  chain.then(function(){ SUI.busy = ''; refreshIndex(); render(); toast('Anomalies recalculées pour '+monthLabel(m)); }, function(e){ SUI.busy = ''; render(); toast('Calcul interrompu : '+e.message); });
+}
+var SEV_ORD = { bloquant:0, verifier:1, info:2 };
+function vSuivi(){
+  var m = suiMonth(), ags = agencies(), D = suiData(m), codes = {};
+  Object.keys(D).forEach(function(ag){ Object.keys(D[ag].byCode||{}).forEach(function(c){ var x = D[ag].byCode[c]; codes[c] = codes[c] || { sev:x.sev, title:x.title }; }); });
+  var list = Object.keys(codes).sort(function(a, b){ return (SEV_ORD[codes[a].sev] - SEV_ORD[codes[b].sev]) || codes[a].title.localeCompare(codes[b].title); });
+  var L = last18(), opts = L.map(function(x){ return '<option value="'+x+'"'+(x===m?' selected':'')+'>'+monthLabel(x)+'</option>'; }).join('');
+  var tot = { bloquant:0, verifier:0, info:0 }; Object.keys(D).forEach(function(ag){ Object.keys(D[ag].byCode).forEach(function(c){ tot[D[ag].byCode[c].sev] += D[ag].byCode[c].n; }); });
+  var h = '<section class="view"><div class="strip"><span class="lbl">Période</span><select id="suisel" class="bigsel" aria-label="Période">'+opts+'</select>'+
+    '<span class="muted">'+Object.keys(D).length+' / '+ags.length+' agences calculées</span><span class="sp">'+(SUI.busy ? '<span class="muted">'+esc(SUI.busy)+'</span>' : '<button class="btn pri" data-a="suiRefresh">Recalculer toutes les agences</button>')+'<button class="btn" data-a="xlsSui"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></span></div>';
+  h += '<div class="kpis">'+kpi('Bloquant', tot.bloquant, 'lignes non facturées')+kpi('À vérifier', tot.verifier, 'lignes facturées à confirmer')+kpi('Info', tot.info, 'écarts Odoo sans action')+kpi('Agences', Object.keys(D).length+' / '+ags.length, 'avec un calcul pour '+monthLabel(m))+'</div>';
+  h += '<div class="panel"><div class="ph"><h2>Anomalies par nature et par agence</h2><span class="muted">Nombre de lignes concernées · '+monthLabel(m)+'</span><span class="legend"><i class="lg-b"></i>Bloquant<i class="lg-v"></i>À vérifier<i class="lg-i"></i>Info</span></div>';
+  if (!list.length) h += '<div class="empty">Aucune anomalie calculée pour '+monthLabel(m)+'. Cliquer sur « Recalculer toutes les agences ».</div>';
+  else {
+    h += '<div class="tw"><table class="suit"><thead><tr><th>Gravité</th><th>Nature de l\'anomalie</th>'+ags.map(function(a){ return '<th class="n" title="'+esc(a.label||a.code)+'">'+esc(a.label||a.code)+'</th>'; }).join('')+'<th class="n">Total</th></tr></thead><tbody>';
+    list.forEach(function(c){ var t = 0;
+      h += '<tr class="sv-'+codes[c].sev+'"><td><span class="pill p-'+codes[c].sev+'">'+SEV[codes[c].sev]+'</span></td><td>'+esc(codes[c].title)+'</td>'+ags.map(function(a){ var d = D[a.code]; if (!d) return '<td class="n muted">·</td>'; var x = d.byCode[c], v = x ? x.n : 0; t += v; return '<td class="n'+(v?' hit':'')+'">'+(v ? '<button class="lnk num" data-suigo="'+esc(a.code)+'" title="Ouvrir les anomalies de '+esc(a.label||a.code)+'">'+v+'</button>' : '<span class="muted">0</span>')+'</td>'; }).join('')+'<td class="n"><strong>'+t+'</strong></td></tr>';
+    });
+    h += '</tbody><tfoot><tr class="tot"><td colspan="2">Total lignes</td>'+ags.map(function(a){ var d = D[a.code]; if (!d) return '<td class="n muted">·</td>'; return '<td class="n">'+Object.keys(d.byCode).reduce(function(s, c){ return s + d.byCode[c].n; }, 0)+'</td>'; }).join('')+'<td class="n">'+(tot.bloquant+tot.verifier+tot.info)+'</td></tr></tfoot></table></div>';
+    h += '<p class="pb note muted" style="margin:0">« · » : agence sans calcul pour ce mois (pas d\'exports importés, ou mois jamais ouvert depuis la v2.7). Cliquer un nombre ouvre l\'onglet Anomalies de l\'agence.</p>';
+  }
+  h += '</div>';
+  // Évolution sur 18 mois (résumés enregistrés)
+  var rows = L.map(function(x){ return { m:x, d:suiData(x) }; }).filter(function(r){ return Object.keys(r.d).length; });
+  if (rows.length){
+    h += '<div class="panel"><div class="ph"><h2>Évolution</h2><span class="muted">Lignes bloquantes / à vérifier par agence et par mois</span></div><div class="tw"><table class="suit"><thead><tr><th>Mois</th>'+ags.map(function(a){ return '<th class="n">'+esc(a.label||a.code)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+      rows.map(function(r){ return '<tr'+(r.m===m?' class="hl"':'')+'><td><button class="lnk" data-suim="'+r.m+'">'+monthLabel(r.m)+'</button></td>'+ags.map(function(a){ var d = r.d[a.code]; if (!d) return '<td class="n muted">·</td>'; var b = 0, v = 0; Object.keys(d.byCode).forEach(function(c){ var x = d.byCode[c]; if (x.sev==='bloquant') b += x.n; else if (x.sev==='verifier') v += x.n; }); return '<td class="n"><span class="'+(b?'dko':'muted')+'">'+b+'</span> / <span class="'+(v?'wv':'muted')+'">'+v+'</span></td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div></div>';
+  }
+  return h + '</section>';
+}
+function exportSuivi(){
+  var m = suiMonth(), ags = agencies(), D = suiData(m), rows = [];
+  var codes = {}; Object.keys(D).forEach(function(ag){ Object.keys(D[ag].byCode).forEach(function(c){ codes[c] = D[ag].byCode[c]; }); });
+  Object.keys(codes).sort(function(a, b){ return SEV_ORD[codes[a].sev] - SEV_ORD[codes[b].sev]; }).forEach(function(c){
+    var r = { 'Gravité':SEV[codes[c].sev], 'Code':c, 'Nature':codes[c].title }, t = 0;
+    ags.forEach(function(a){ var d = D[a.code]; var v = d ? ((d.byCode[c]||{}).n || 0) : ''; r[a.label||a.code] = v; t += +v || 0; });
+    r['Total'] = t; r['À faire'] = anomDo({ code:c, sev:codes[c].sev }); rows.push(r);
+  });
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Anomalies '+m);
+  saveXlsx(wb, 'Suivi anomalies OTIS '+m+'.xlsx');
+}
 function vSynth(){
   var rows = synthRows(), ags = {};
   rows.forEach(function(r){ if (r.s) Object.keys(r.s.byAg).forEach(function(k){ ags[k] = r.s.byAg[k].label; }); });
+  var miss = agencies().filter(function(a){ return !ags[a.code]; });
   var ag = ST.synAgs = (ST.synAgs || []).filter(function(k){ return ags[k]; }), data = rows.map(function(r){ return { id:r.id, status:r.status, v:pick(r.s, ag) }; });
-  var h = '<section class="view"><div class="chipbar"><span class="lbl">Agences</span><button class="chip'+(!ag.length?' on':'')+'" data-synag="all" aria-pressed="'+(!ag.length)+'">Toutes</button>'+Object.keys(ags).sort().map(function(k){ var on = ag.indexOf(k) >= 0; return '<button class="chip'+(on?' on':'')+'" data-synag="'+esc(k)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(ags[k])+'</button>'; }).join('')+'<span class="muted">'+(ag.length ? ag.length+' agence'+(ag.length>1?'s':'')+' sélectionnée'+(ag.length>1?'s':'') : 'Cliquer pour sélectionner une ou plusieurs agences')+'</span></div>';
+  var h = '<section class="view"><div class="chipbar"><span class="lbl">Agences</span><button class="chip'+(!ag.length?' on':'')+'" data-synag="all" aria-pressed="'+(!ag.length)+'">Toutes</button>'+Object.keys(ags).sort().map(function(k){ var on = ag.indexOf(k) >= 0; return '<button class="chip'+(on?' on':'')+'" data-synag="'+esc(k)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(ags[k])+'</button>'; }).join('')+miss.map(function(a){ return '<span class="chip off" title="Aucune facture générée pour cette agence sur les 18 derniers mois">'+esc(a.label||a.code)+'</span>'; }).join('')+'<span class="muted">'+(ag.length ? ag.length+' agence'+(ag.length>1?'s':'')+' sélectionnée'+(ag.length>1?'s':'') : 'Cliquer pour sélectionner une ou plusieurs agences')+'</span></div>'+
+    (miss.length ? '<p class="note syn-miss">Grisées : agences sans factures générées ('+esc(miss.map(function(a){ return a.label||a.code; }).join(', '))+'). La synthèse reprend les montants enregistrés à la génération des factures : ouvrir l\'agence dans Factures logistiques, puis « Générer les factures ».</p>' : '');
   var filled = data.filter(function(d){ return d.v; });
   if (!filled.length) return h + '<div class="panel empty">Aucun mois facturé sur les 18 derniers mois.</div></section>';
   var last = filled[filled.length-1];
@@ -2738,6 +2827,8 @@ document.addEventListener('click', function(e){
     var ids = sel.map(function(x){ return x.value; }), nms = {}; sel.forEach(function(x){ nms[x.value] = x.dataset.nm; });
     STORE.openChat(ids, nms, ($('chtitle')||{}).value || '').then(chatOpenConv, function(e){ toast('Discussion impossible : '+e.message); }); return; }
   if (d.chsend !== undefined){ chatSend(); return; }
+  if (d.suigo){ ST.ltab = 'fac'; ST.sub = 'ano'; selectMonth(d.suigo, suiMonth()); window.scrollTo(0,0); return; }
+  if (d.suim){ SUI.month = d.suim; render(); return; }
   if (d.goinv){ goInvoice(d.goinv, ST.openPdf); return; }
   if (d.backctl !== undefined){ ST.sub = 'ctl'; ST.hlInv = null; var bp = ST.backCtl; ST.backCtl = null; render(); setTimeout(function(){ var r = bp && document.querySelector('tr[data-pdf="'+bp+'"]'); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
   if (d.pvo){ viewOdooPdf(d.pvo); return; }
@@ -2783,6 +2874,8 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsFam') exportFamDetail();
   else if (a === 'xlsCtl') exportCtl();
   else if (a === 'xlsAnom') exportAnomalies();
+  else if (a === 'suiRefresh') suiRefresh();
+  else if (a === 'xlsSui') exportSuivi();
   else if (a === 'chat'){ CH.open = !CH.open; if (CH.open && CH.mode === 'conv' && CH.cur) STORE.markRead(CH.cur); renderChat(true); }
   else if (a === 'invfReset'){ ST.invF = {}; ST.fOpen = null; ST.fq = {}; render(); }
   else if (a === 'agmenu'){ ST.agMenu = !ST.agMenu; render(); }
@@ -2806,6 +2899,7 @@ document.addEventListener('change', function(e){
   }
   if (d.docup){ if (t.files[0]) agDocUpload(d.docup, t.files[0]); t.value = ''; return; }
   if (d.slotin){ if (t.files[0]) importFile(t.files[0], d.slotin); t.value = ''; return; }
+  if (t.id === 'suisel'){ SUI.month = t.value; render(); return; }
   if (t.id === 'persel'){ selectMonth(ST.ag, t.value); return; }
   if (t.id === 'parsel'){ ST.parAg = t.value; render(); return; }
   if (t.id === 'trf_m' || t.id === 'trf_a'){ ST.trF = { month:$('trf_m').value, ag:$('trf_a').value }; render(); return; }
