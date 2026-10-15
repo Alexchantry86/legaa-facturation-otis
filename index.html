@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.7 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.8 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -506,6 +506,25 @@ table.suit th.n{white-space:normal;min-width:70px;max-width:120px;vertical-align
 .chip.off{opacity:.5;cursor:default;border-style:dashed}
 .chip.off:hover{border-color:var(--line);color:var(--ink-2)}
 .syn-miss{margin:0;padding:8px 12px;background:var(--warn-bg);border-radius:6px;font-size:13px}
+/* ---- v4.6 : contrôle des données Odoo ---- */
+.choice.c-dq::before{background:#7a4fb3}
+.choice.c-dq .ico{background:#efe8f8;color:#6a3fa5}
+.choice.c-dq .go{color:#6a3fa5}
+.dq-files{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:12px}
+.dq-files .drop{grid-column:1/-1}
+.dq-slot{display:grid;gap:4px;align-content:start;border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:6px;padding:12px 14px}
+.dq-slot.done{border-left-color:var(--ok)}
+.dq-slot .btn{justify-self:start}
+.dq-f input[type=date]{font:inherit;padding:3px 6px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink)}
+.dq-hd,.dq-h{grid-template-columns:110px 92px minmax(170px,1fr) 64px minmax(200px,1.5fr) minmax(200px,1.5fr)}
+th.hlc{color:var(--ink)}
+td.hl-bloquant{background:#fdecea;font-weight:600}
+td.hl-verifier{background:#fff4c2;font-weight:600}
+td.hl-info{background:#eceff2}
+@media (max-width:820px){.dq-hd{display:none}.dq-h{grid-template-columns:auto 1fr auto}}
+.landing{max-width:1080px}
+.choices{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
+.choice .k{font-size:22px;line-height:1.15}
 </style>
 </head>
 <body>
@@ -1555,7 +1574,7 @@ function renderTop(){
   var cur = mod === 'log' ? ST.ltab : ST.ttab;
   $('tabs').innerHTML = tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+(mod==='log'?'ltab':'ttab')+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
   $('tabs').hidden = !tabs.length;
-  $('modname').textContent = mod === 'log' ? 'Logistique' : mod === 'trp' ? 'Transport' : mod === 'acc' ? 'Mon compte' : '';
+  $('modname').textContent = mod === 'log' ? 'Logistique' : mod === 'trp' ? 'Transport' : mod === 'acc' ? 'Mon compte' : mod === 'dq' ? 'Contrôle des données' : '';
   if (ST.user) $('who').textContent = ST.user.name + ' · ' + ({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role];
   $('src').textContent = STORE.mode === 'demo' ? 'mode démo' : '';
 }
@@ -1564,6 +1583,7 @@ function render(){
   var m = $('main'), h;
   if (ST.module === 'home') h = vLanding();
   else if (ST.module === 'acc') h = vAccount();
+  else if (ST.module === 'dq') h = vDQ();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vTransport();
   else if (ST.ltab === 'par') h = vParams();
   else if (ST.ltab === 'syn') h = vSynth();
@@ -1572,7 +1592,7 @@ function render(){
   else h = vFactures();
   m.innerHTML = h;
   renderModal();
-  placePop();
+  placePop(); if (ST.module === 'dq') bindDQ();
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); }
   if (ST.module === 'log' && ST.ltab === 'syn') bindChartTips();
   if (ST.module === 'trp' && ST.ttab === 'new') calcTransport();
@@ -1581,10 +1601,168 @@ function render(){
 /* ============ ACCUEIL ============ */
 var ICO_LOG = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M6 26 32 12l26 14v28H6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M16 54V34h32v20" fill="none" stroke="currentColor" stroke-width="3"/><path d="M22 42h8v12h-8zM34 42h8v12h-8zM28 34h8v8h-8z" fill="currentColor" opacity=".35"/></svg>';
 var ICO_TRP = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M4 16h34v28H4zM38 26h12l10 10v8H38z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="15" cy="47" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><circle cx="49" cy="47" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><path d="M42 30h6l6 6h-12z" fill="currentColor" opacity=".35"/></svg>';
+/* ============ CONTRÔLE DES DONNÉES ODOO (responsables logistiques) ============
+   Entrées : export Odoo « Lignes de mouvement de stock » (stock.move.line) et export « Quantités » (stock.quant).
+   Tout est calculé dans le navigateur ; rien n'est enregistré. Chaque anomalie liste les lignes Excel concernées. */
+var DQ = { f:{ m:null, q:null }, owners:[], from:'', to:'', res:null, open:{}, lim:{}, busy:'' };
+var ICO_DQ = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><rect x="10" y="8" width="34" height="44" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><path d="M17 20h20M17 28h20M17 36h12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="44" r="10" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><path d="M51 51l7 7" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M40 44l3 3 5-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/></svg>';
+function dqStr(v){ return v === null || v === undefined ? '' : String(v).trim(); }
+function dqNum(v){ if (typeof v === 'number') return v; var s = dqStr(v).replace(/\s/g,'').replace(',', '.'); return s === '' ? NaN : +s; }
+function dqDate(v){ if (v instanceof Date) return v; var s = dqStr(v); if (!s) return null; var m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/); if (m) return new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0), +(m[6]||0)); m = s.match(/^(\d{2})\/(\d{2})\/(\d{2,4})/); if (m) return new Date(+(m[3].length===2?'20'+m[3]:m[3]), +m[2]-1, +m[1]); return null; }
+function dqFr(d){ return d ? d.toLocaleDateString('fr-FR') : ''; }
+function dqIso(d){ return d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : ''; }
+/* Lecture d'un export : détection du type par les en-têtes */
+function dqRead(file){
+  return readBuf(file).then(function(buf){
+    var wb = XLSX.read(new Uint8Array(buf), { type:'array', cellDates:true }), ws = wb.Sheets[wb.SheetNames[0]];
+    var A = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:null }); if (!A.length) throw new Error('fichier vide');
+    var H = A[0].map(dqStr), idx = {}; H.forEach(function(h, i){ if (idx[h] === undefined) idx[h] = i; else idx[h+' (2)'] = i; });
+    var kind = idx['Emplacement'] !== undefined && (idx['Colis'] !== undefined || idx['Quantité'] !== undefined) && idx['De'] === undefined ? 'q' : (idx['De'] !== undefined && idx['Vers'] !== undefined ? 'm' : null);
+    if (!kind) throw new Error('format non reconnu (ni « Lignes de mouvement de stock », ni « Quantités »)');
+    var rows = []; for (var i = 1; i < A.length; i++){ var r = A[i]; if (!r || r.every(function(x){ return x === null || x === ''; })) continue; var o = { _l:i+1 }; H.forEach(function(h, j){ if (o[h] === undefined) o[h] = r[j]; }); rows.push(o); }
+    return { kind:kind, name:file.name, rows:rows, cols:H, at:new Date() };
+  });
+}
+function dqAdd(list){
+  var arr = Array.prototype.slice.call(list).filter(function(f){ return /\.(xlsx|xls|csv)$/i.test(f.name); }); if (!arr.length){ toast('Déposer des fichiers Excel exportés d\'Odoo'); return; }
+  DQ.busy = 'Lecture de '+arr.length+' fichier(s)…'; render();
+  Promise.all(arr.map(function(f){ return dqRead(f).then(function(x){ return x; }, function(e){ toast(f.name+' : '+e.message); return null; }); })).then(function(L){
+    L.forEach(function(x){ if (x) DQ.f[x.kind] = x; }); DQ.busy = ''; DQ.owners = []; dqRun(); render();
+    STORE.log('dq_import', L.filter(Boolean).map(function(x){ return x.name+' ('+x.rows.length+' l.)'; }).join(' · '));
+  });
+}
+var DQ_GENERIC = /^(REGUL|MISE EN STOCK|STOCK|TEST|DIVERS|INVENTAIRE)/i;
+var DQ_ROWQ = function(r){ return { 'Ligne':r._l, 'Emplacement':r['Emplacement'], 'Produit':r['Produit'], 'Colis':dqStr(r['Colis']), 'Détenteur':r['Détenteur'], 'N° de commande':r['N° de commande'], 'N° de BR':r['N° de bon de réception'], 'L × l × H mm':dqStr(r['Longueur'])+' × '+dqStr(r['Largeur'])+' × '+dqStr(r['Hauteur']), 'Poids brut kg':r['Poids brut'], 'Volume m3':r['Volume (m³)'], 'Surface m2':r['Surface (m²)'], 'Quantité':r['Quantité'], 'Disponible':r['Available Quantity'], 'Date d\'entrée':dqFr(dqDate(r['Date d\'entrée en stock'])), 'Dernier comptage':dqFr(dqDate(r['Date du dernier comptage'])), 'Code contremaître':r['Code contremaître'] }; };
+var DQ_ROWM = function(r){ return { 'Ligne':r._l, 'Date':r._d ? r._d.toLocaleString('fr-FR',{ dateStyle:'short', timeStyle:'short' }) : dqStr(r['Date']), 'Référence':r['Référence'], 'Produit':r['Produit'], 'Appartenant à':r['Appartenant à'], 'N° de commande':r['N° de commande'], 'N° de BR':r['N° de bon de réception'], 'De':r['De'], 'Vers':r['Vers'], 'Quantité':r['Quantité'], 'Statut':r['Statut'], 'Créé par':r['Créé par'] }; };
+function dqRun(){
+  var Q = DQ.f.q ? DQ.f.q.rows : [], M = DQ.f.m ? DQ.f.m.rows : [], A = [], own = DQ.owners;
+  function add(code, src, sev, title, explain, todo, rows, hl){ if (rows.length) A.push({ code:code, src:src, sev:sev, title:title, explain:explain, todo:todo, rows:rows, hl:hl||[] }); }
+  function ownOk(o){ return !own.length || own.indexOf(dqStr(o) || '(sans détenteur)') >= 0; }
+  var q = Q.filter(function(r){ return ownOk(r['Détenteur']); });
+  M.forEach(function(r){ r._d = dqDate(r['Date']); });
+  var fromD = DQ.from ? new Date(DQ.from+'T00:00:00') : null, toD = DQ.to ? new Date(DQ.to+'T23:59:59') : null;
+  var m = M.filter(function(r){ return ownOk(r['Appartenant à']) && (!fromD || (r._d && r._d >= fromD)) && (!toD || (r._d && r._d <= toD)); });
+  // ---- Stock (Quantités) ----
+  if (Q.length){
+    var Rq = function(fn){ return q.filter(fn).map(DQ_ROWQ); };
+    add('Q_NEG','Stock','bloquant','Quantité en stock négative','Le stock d\'un colis ne peut pas être négatif : sortie enregistrée sans entrée, ou entrée saisie sur un autre colis.','Retrouver l\'entrée manquante (BR) ou corriger la sortie dans Odoo, puis refaire un comptage de l\'emplacement.', Rq(function(r){ return dqNum(r['Quantité']) < 0; }), ['Quantité']);
+    add('Q_DIM','Stock','bloquant','Dimensions ou volume nuls','Sans longueur, largeur, hauteur et volume, le stockage ne peut pas être facturé.','Mesurer le colis et compléter la fiche colis dans Odoo.', Rq(function(r){ return !(dqNum(r['Longueur']) > 0 && dqNum(r['Largeur']) > 0 && dqNum(r['Hauteur']) > 0 && dqNum(r['Volume (m³)']) > 0); }), ['L × l × H mm','Volume m3']);
+    add('Q_OWNER','Stock','bloquant','Colis sans détenteur','Le détenteur (client propriétaire) est vide : le colis ne sera facturé à personne.','Renseigner le détenteur du colis dans Odoo.', Rq(function(r){ return !dqStr(r['Détenteur']); }), ['Détenteur']);
+    var noEntry = q.filter(function(r){ return !dqDate(r['Date d\'entrée en stock']); });
+    if (noEntry.length && noEntry.length === q.length) add('Q_DATE_SYS','Stock','bloquant','Date d\'entrée en stock vide sur tout l\'export','La colonne « Date d\'entrée en stock » est vide sur toutes les lignes : la durée de stockage ne peut pas être calculée à partir de cet export (le calcul retombe sur la date de création du colis ou les mouvements).','Vérifier le paramétrage d\'Odoo (champ non alimenté à la réception) et l\'ajouter à l\'export.', noEntry.slice(0, 1).map(DQ_ROWQ).map(function(x){ x['Lignes concernées'] = noEntry.length; return x; }), ['Date d\'entrée']);
+    else add('Q_DATE','Stock','bloquant','Date d\'entrée en stock absente','Sans date d\'entrée, la durée de stockage et la tranche tarifaire ne peuvent pas être calculées.','Compléter la date d\'entrée en stock du colis dans Odoo.', noEntry.map(DQ_ROWQ), ['Date d\'entrée']);
+    add('Q_ZERO','Stock','verifier','Ligne de stock à quantité nulle','Le colis apparaît dans le stock avec une quantité de 0 : colis vidé mais non clôturé, ou erreur de saisie.','Vérifier physiquement l\'emplacement ; archiver le colis vide ou corriger la quantité.', Rq(function(r){ return dqNum(r['Quantité']) === 0; }), ['Quantité']);
+    add('Q_VOL','Stock','verifier','Volume ou surface ≠ dimensions','Le volume (ou la surface) enregistré ne correspond pas à L × l × H : le stockage serait facturé sur une mauvaise base.','Corriger les dimensions ou le volume dans la fiche colis.', Rq(function(r){ var L = dqNum(r['Longueur']), l = dqNum(r['Largeur']), h = dqNum(r['Hauteur']); if (!(L>0 && l>0 && h>0)) return false; return Math.abs(L*l*h/1e9 - dqNum(r['Volume (m³)'])) > 0.0005 || Math.abs(L*l/1e6 - dqNum(r['Surface (m²)'])) > 0.0005; }), ['L × l × H mm','Volume m3','Surface m2']);
+    add('Q_POIDS','Stock','verifier','Poids brut nul ou absent','Sans poids, l\'unité payante (max m³ / tonnes) et le minimum « chariot » ne peuvent pas être contrôlés.','Peser le colis et compléter le poids brut dans Odoo.', Rq(function(r){ return !(dqNum(r['Poids brut']) > 0); }), ['Poids brut kg']);
+    add('Q_COLIS','Stock','verifier','Ligne de stock sans n° de colis','Le stock n\'est pas rattaché à un colis : impossible de le suivre et de le facturer au colis.','Affecter un n° de colis (étiquette) dans Odoo.', Rq(function(r){ return !dqStr(r['Colis']); }), ['Colis']);
+    var byC = {}; q.forEach(function(r){ var c = dqStr(r['Colis']); if (c) (byC[c] = byC[c] || []).push(r); });
+    var dupC = []; Object.keys(byC).forEach(function(c){ if (byC[c].length > 1) dupC = dupC.concat(byC[c]); });
+    add('Q_COLIS_DUP','Stock','verifier','Même n° de colis sur plusieurs lignes','Un colis doit être unique. Plusieurs lignes (produits ou emplacements différents) portent le même n° : risque de double facturation du stockage.','Vérifier le colis et fusionner ou renuméroter dans Odoo.', dupC.map(DQ_ROWQ), ['Colis']);
+    add('Q_CMD','Stock','verifier','N° de commande absent ou générique','Sans n° de commande client (ou avec « REGUL STOCK », « MISE EN STOCK », « TEST »…), le colis ne peut pas être affecté à une affaire / un appareil.','Saisir le vrai n° de commande client (ex. APPAREIL / AFFAIRE pour OTIS).', Rq(function(r){ var c = dqStr(r['N° de commande']); return !c || DQ_GENERIC.test(c); }), ['N° de commande']);
+    add('Q_BR','Stock','verifier','Colis sans bon de réception','Le colis n\'est rattaché à aucune réception : son origine et sa date d\'entrée ne sont pas traçables.','Retrouver la réception d\'origine ; à défaut, documenter l\'ajustement.', Rq(function(r){ return !dqStr(r['N° de bon de réception']); }), ['N° de BR']);
+    add('Q_QUAI','Stock','verifier','Stock sur un emplacement d\'entrée ou de sortie','Le colis est encore sur un quai (Entrée / Sortie) : réception non rangée ou expédition non validée.','Ranger le colis (transfert interne) ou valider la livraison dans Odoo.', Rq(function(r){ return /\/(Entr[ée]e|Sortie|Input|Output|Quai)/i.test(dqStr(r['Emplacement'])); }), ['Emplacement']);
+    var now = new Date(), lim = new Date(now.getTime() - 365*86400000);
+    add('Q_INV','Stock','info','Jamais compté ou dernier comptage > 12 mois','Le colis n\'a pas été inventorié depuis plus d\'un an (ou jamais).','Programmer un comptage tournant de l\'emplacement.', Rq(function(r){ var d = dqDate(r['Date du dernier comptage']); return !d || d < lim; }), ['Dernier comptage']);
+    add('Q_RES','Stock','info','Quantité disponible ≠ quantité en stock','Une partie du stock est réservée (préparation en cours).','Vérifier les préparations ouvertes anciennes.', Rq(function(r){ var a = dqNum(r['Available Quantity']); return !isNaN(a) && a !== dqNum(r['Quantité']); }), ['Disponible','Quantité']);
+    add('Q_OTIS_CM','Stock','verifier','Colis OTIS sans code contremaître','Pour OTIS, le code contremaître sert au rattachement et à la facturation par contremaître.','Renseigner le contremaître (contact) du colis dans Odoo.', Rq(function(r){ return /OTIS/i.test(dqStr(r['Détenteur'])) && !dqStr(r['Code contremaître']); }), ['Code contremaître']);
+    add('Q_TEST','Stock','verifier','Produit ou commande de test en stock','Données de test présentes dans le stock réel.','Supprimer ou archiver les données de test.', Rq(function(r){ return /\bTEST\b/i.test(dqStr(r['Produit'])+' '+dqStr(r['N° de commande'])); }), ['Produit']);
+  }
+  // ---- Mouvements ----
+  if (M.length){
+    var Rm = function(fn){ return m.filter(fn).map(DQ_ROWM); };
+    var ext = function(l){ return /^(Partners|Partenaires|Virtual Locations|Emplacements virtuels)\b/i.test(dqStr(l)); };
+    var io = function(r){ return ext(r['De']) !== ext(r['Vers']); };
+    // Prestations et fournitures facturées comme articles : pas du stock client, exclues des contrôles de rattachement
+    var svc = function(r){ return /PRESTATION|FOURNITURE/i.test(dqStr(r['Produit'])) || /^\[(P|F)[A-Z0-9]*\]/.test(dqStr(r['Produit'])); };
+    var owned = {}; M.forEach(function(r){ if (dqStr(r['Appartenant à'])) owned[dqStr(r['Produit'])] = 1; }); Q.forEach(function(r){ if (dqStr(r['Détenteur'])) owned[dqStr(r['Produit'])] = 1; });
+    add('M_STATUT','Mouvements','verifier','Mouvement non terminé','Statut différent de « done » : le mouvement n\'a pas été validé.','Valider ou annuler le transfert dans Odoo.', Rm(function(r){ var s = dqStr(r['Statut']); return s && s !== 'done'; }), ['Statut']);
+    add('M_FUT','Mouvements','verifier','Mouvement daté dans le futur','Date postérieure au jour de l\'analyse.','Corriger la date du transfert (« Force Date »).', Rm(function(r){ return r._d && r._d > new Date(); }), ['Date']);
+    add('M_OWNER','Mouvements','verifier','Entrée ou sortie sans propriétaire','Mouvement entre l\'entrepôt et l\'extérieur sans « Appartenant à », sur un article qui appartient par ailleurs à un client (prestations, fournitures et consommables internes exclus) : la marchandise n\'est rattachée à aucun client.','Renseigner le propriétaire sur le transfert (ou vérifier qu\'il s\'agit de consommables internes).', Rm(function(r){ return io(r) && !svc(r) && owned[dqStr(r['Produit'])] && !/Production|Scrap|Rebut/i.test(dqStr(r['De'])+dqStr(r['Vers'])) && !dqStr(r['Appartenant à']); }), ['Appartenant à']);
+    add('M_CMD','Mouvements','verifier','Entrée ou sortie sans n° de commande','Le mouvement ne porte pas le n° de commande client : affectation à l\'affaire impossible.','Compléter le n° de commande sur la réception ou la livraison.', Rm(function(r){ return io(r) && !svc(r) && /Partners|Partenaires/i.test(dqStr(r['De'])+dqStr(r['Vers'])) && !dqStr(r['N° de commande']); }), ['N° de commande']);
+    add('M_BR','Mouvements','info','Réception sans n° de BR','Entrée fournisseur sans bon de réception.','Vérifier la réception d\'origine.', Rm(function(r){ return /Vendors|Fournisseurs/i.test(dqStr(r['De'])) && !dqStr(r['N° de bon de réception']); }), ['N° de BR']);
+    add('M_INV','Mouvements','verifier','Ajustement d\'inventaire','Correction manuelle de stock (écart d\'inventaire) : chaque ajustement doit être justifié, surtout s\'il est important ou répété.','Justifier l\'écart (comptage, casse, erreur de réception) et en analyser la cause.', Rm(function(r){ return /Inventory adjustment|Ajustement d.inventaire/i.test(dqStr(r['De'])+dqStr(r['Vers'])); }), ['De','Vers','Quantité','Créé par']);
+    add('M_SCRAP','Mouvements','info','Mise au rebut','Sortie de stock vers le rebut.','Vérifier l\'accord du client propriétaire.', Rm(function(r){ return /Scrap|Rebut/i.test(dqStr(r['Vers'])); }), ['Vers']);
+    add('M_TEST','Mouvements','verifier','Mouvement sur produit ou commande de test','Données de test dans les mouvements réels.','Annuler ou isoler les mouvements de test.', Rm(function(r){ return /\bTEST/i.test(dqStr(r['Produit'])+' '+dqStr(r['N° de commande'])+' '+dqStr(r['Appartenant à'])); }), ['Produit']);
+  }
+  // ---- Croisé : stock théorique (Σ entrées − Σ sorties) vs stock réel, par produit, sur les entrepôts présents dans l'export Quantités ----
+  if (Q.length && M.length){
+    var wh = {}; Q.forEach(function(r){ var w = dqStr(r['Emplacement']).split('/')[0]; if (w) wh[w] = 1; });
+    var inW = function(l){ return !!wh[dqStr(l).split('/')[0]]; };
+    var P = {};
+    M.forEach(function(r){ if (dqStr(r['Statut']) && dqStr(r['Statut']) !== 'done') return; var a = inW(r['De']), b = inW(r['Vers']); if (a === b) return; var p = dqStr(r['Produit']), x = P[p] = P[p] || { e:0, s:0, q:0, own:{}, n:0 }; var qt = dqNum(r['Quantité']) || 0; if (b) x.e += qt; else x.s += qt; x.n++; if (dqStr(r['Appartenant à'])) x.own[dqStr(r['Appartenant à'])] = 1; });
+    Q.forEach(function(r){ var p = dqStr(r['Produit']), x = P[p] = P[p] || { e:0, s:0, q:0, own:{}, n:0 }; x.q += dqNum(r['Quantité']) || 0; if (dqStr(r['Détenteur'])) x.own[dqStr(r['Détenteur'])] = 1; });
+    var rowsX = [];
+    Object.keys(P).sort().forEach(function(p){ var x = P[p], th = Math.round((x.e - x.s)*1000)/1000, ec = Math.round((x.q - th)*1000)/1000; if (Math.abs(ec) < 1e-6) return;
+      var owns = Object.keys(x.own); if (own.length && !owns.some(function(o){ return own.indexOf(o) >= 0; })) return;
+      rowsX.push({ 'Produit':p, 'Détenteur(s)':owns.join(', '), 'Entrées':x.e, 'Sorties':x.s, 'Stock théorique':th, 'Stock réel':x.q, 'Écart':ec, 'Mouvements':x.n }); });
+    add('X_BAL','Croisé','verifier','Stock réel ≠ stock théorique des mouvements','Pour ces produits, le stock de l\'export Quantités ne correspond pas à Σ entrées − Σ sorties de l\'export Mouvements ('+Object.keys(wh).join(', ')+'). Causes : mouvement manquant, sortie non validée, ou export Mouvements qui ne couvre pas tout l\'historique.','Comparer avec l\'historique du produit dans Odoo et corriger le mouvement manquant ; compter le stock si l\'écart persiste.', rowsX, ['Écart']);
+  }
+  var ord = { bloquant:0, verifier:1, info:2 }, so = { 'Stock':0, 'Croisé':1, 'Mouvements':2 };
+  A.sort(function(a, b){ return ord[a.sev] - ord[b.sev] || so[a.src] - so[b.src] || b.rows.length - a.rows.length; });
+  var ownSet = {}; Q.forEach(function(r){ ownSet[dqStr(r['Détenteur']) || '(sans détenteur)'] = 1; }); M.forEach(function(r){ ownSet[dqStr(r['Appartenant à']) || '(sans détenteur)'] = 1; });
+  DQ.res = { A:A, nQ:q.length, nM:m.length, ownList:Object.keys(ownSet).sort(), at:new Date() };
+}
+function vDQ(){
+  var h = '<section class="view">';
+  h += '<div class="panel"><div class="ph"><h2>Contrôle des données Odoo</h2><span class="muted">Avant facturation : déposer l\'export des mouvements de stock et l\'export des quantités en stock. Rien n\'est enregistré.</span></div>'+
+    '<div class="pb dq-files">'+[['m','Mouvements de stock','Odoo › Inventaire › Rapports › Historique des mouvements (stock.move.line) — export Excel'],['q','Quantités en stock','Odoo › Inventaire › Rapports › Stock (stock.quant) — export Excel']].map(function(k){ var f = DQ.f[k[0]];
+      return '<div class="dq-slot'+(f?' done':'')+'"><span class="ds-t">'+k[1]+'</span>'+(f ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+f.rows.length+' lignes · chargé à '+f.at.toLocaleTimeString('fr-FR',{ hour:'2-digit', minute:'2-digit' })+'</span><button class="btn sm" data-dqrm="'+k[0]+'">Retirer</button>' : '<span class="muted">'+k[2]+'</span>')+'</div>'; }).join('')+
+    '<label class="drop" id="dqdrop"><input type="file" id="dqin" multiple accept=".xlsx,.xls"><strong>'+(DQ.busy ? esc(DQ.busy) : 'Déposer les exports Odoo ici (les deux en même temps si possible)')+'</strong><span class="muted">Le type de fichier est reconnu automatiquement par ses colonnes.</span></label></div></div>';
+  if (!DQ.res){ return h + '</section>'; }
+  var R = DQ.res, c = { bloquant:0, verifier:0, info:0 }; R.A.forEach(function(a){ c[a.sev] += a.code === 'Q_DATE_SYS' ? a.rows[0]['Lignes concernées'] : a.rows.length; });
+  h += '<div class="strip dq-f"><span class="lbl">Détenteur</span><div class="mfilt"><button class="fbtn'+(DQ.owners.length?' on':'')+'" data-fopen="dqown"><span>'+(DQ.owners.length ? (DQ.owners.length===1 ? esc(DQ.owners[0]) : DQ.owners.length+' sélectionnés') : 'Tous')+'</span><span class="caret">▾</span></button>'+(ST.fOpen==='dqown' ? '<div class="fpop" id="fpop"><input type="search" class="fq" data-fsearch="dqown" placeholder="Rechercher…"><div class="fpop-h"><button class="lnk" data-dqownnone>Tous</button></div><div class="fpop-l">'+R.ownList.map(function(o){ return '<label><input type="checkbox" data-dqown value="'+esc(o)+'"'+(DQ.owners.indexOf(o)>=0?' checked':'')+'> '+esc(o)+'</label>'; }).join('')+'</div></div>' : '')+'</div>'+
+    (DQ.f.m ? '<span class="lbl">Mouvements du</span><input type="date" id="dqfrom" value="'+esc(DQ.from)+'"><span class="lbl">au</span><input type="date" id="dqto" value="'+esc(DQ.to)+'">' : '')+
+    '<span class="sp"><button class="btn" data-a="xlsDQ"'+(canSave()?'':' disabled')+'>Exporter les anomalies (.xlsx)</button></span></div>';
+  h += '<div class="kpis">'+kpi('Bloquant', c.bloquant, 'lignes à corriger avant facturation')+kpi('À vérifier', c.verifier, 'lignes à contrôler')+kpi('Info', c.info, 'points d\'attention')+kpi('Lignes analysées', R.nQ+' stock · '+R.nM+' mvts', (DQ.owners.length ? 'détenteur filtré' : 'tous détenteurs')+((DQ.from||DQ.to) ? ' · période filtrée' : ''))+'</div>';
+  h += '<div class="panel"><div class="ph"><h2>Anomalies à corriger dans Odoo</h2><span class="legend"><i class="lg-b"></i>Bloquant<i class="lg-v"></i>À vérifier<i class="lg-i"></i>Info</span></div>';
+  if (!R.A.length) h += '<div class="empty">Aucune anomalie détectée.</div>';
+  else h += '<div class="anom-hd dq-hd"><span>Gravité</span><span>Source</span><span>Anomalie</span><span class="n">Lignes</span><span>Explication</span><span>À faire</span></div>';
+  R.A.forEach(function(a){ var open = DQ.open[a.code], n = a.code === 'Q_DATE_SYS' ? a.rows[0]['Lignes concernées'] : a.rows.length;
+    h += '<div class="anom sv-'+a.sev+(open?' open':'')+'"><button class="anom-h dq-h" data-dqa="'+a.code+'" aria-expanded="'+(open?'true':'false')+'"><span><span class="pill p-'+a.sev+'">'+SEV[a.sev]+'</span></span><span class="muted">'+a.src+'</span><span class="t">'+(open?'▾ ':'▸ ')+esc(a.title)+'</span><span class="num n">'+n+'</span><span class="e">'+esc(a.explain)+'</span><span class="do">'+esc(a.todo)+'</span></button>';
+    if (open){ var lim = DQ.lim[a.code] || 200, cols = Object.keys(a.rows[0]);
+      h += '<div class="anom-b"><div class="detail"><table><thead><tr>'+cols.map(function(k){ return '<th'+(a.hl.indexOf(k)>=0?' class="hlc"':'')+'>'+esc(k)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+        a.rows.slice(0, lim).map(function(r){ return '<tr>'+cols.map(function(k){ var v = r[k]; return '<td class="'+(typeof v === 'number' ? 'n' : '')+(a.hl.indexOf(k)>=0?' hl-'+a.sev:'')+'">'+esc(v === null || v === undefined ? '' : (typeof v === 'number' ? (Number.isInteger(v) ? v : nx(v)) : v))+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div>'+
+        (a.rows.length > lim ? '<p><button class="btn sm" data-dqmore="'+a.code+'">Afficher '+Math.min(500, a.rows.length-lim)+' lignes de plus ('+(a.rows.length-lim)+' restantes)</button></p>' : '')+'</div>'; }
+    h += '</div>'; });
+  return h + '</div></section>';
+}
+function bindDQ(){
+  var d = $('dqdrop'), i = $('dqin'); if (!d) return;
+  i.onchange = function(){ dqAdd(i.files); i.value = ''; };
+  d.ondragover = function(e){ e.preventDefault(); d.classList.add('over'); };
+  d.ondragleave = function(){ d.classList.remove('over'); };
+  d.ondrop = function(e){ e.preventDefault(); d.classList.remove('over'); dqAdd(e.dataTransfer.files); };
+}
+function exportDQ(){
+  var R = DQ.res; if (!R) return;
+  var syn = R.A.map(function(a){ return { 'Gravité':SEV[a.sev], 'Source':a.src, 'Anomalie':a.title, 'Lignes':a.code === 'Q_DATE_SYS' ? a.rows[0]['Lignes concernées'] : a.rows.length, 'Explication':a.explain, 'À faire':a.todo, __sev:a.sev, __hl:[] }; });
+  var sheets = [['Synthèse', syn]];
+  ['Stock','Mouvements','Croisé'].forEach(function(src){ var L = []; R.A.filter(function(a){ return a.src === src; }).forEach(function(a){ a.rows.forEach(function(r){ var o = { 'Gravité':SEV[a.sev], 'Anomalie':a.title }; Object.keys(r).forEach(function(k){ o[k] = r[k]; }); o['À faire'] = a.todo; o.__sev = a.sev; o.__hl = a.hl; L.push(o); }); }); if (L.length) sheets.push([src, L]); });
+  function build(X, styled){
+    var wb = X.utils.book_new();
+    sheets.forEach(function(sh){
+      var rows = sh[1].map(function(r){ var o = {}; Object.keys(r).forEach(function(k){ if (k.indexOf('__') !== 0) o[k] = r[k]; }); return o; });
+      var hdr = []; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ if (hdr.indexOf(k) < 0) hdr.push(k); }); }); var di = hdr.indexOf('À faire'); if (di >= 0){ hdr.splice(di, 1); hdr.push('À faire'); }
+      var ws = X.utils.json_to_sheet(rows, { header:hdr });
+      ws['!cols'] = hdr.map(function(k){ return { wch: k === 'À faire' || k === 'Explication' ? 60 : k === 'Anomalie' || k === 'Produit' ? 40 : 16 }; });
+      ws['!autofilter'] = { ref: X.utils.encode_range({ s:{ r:0, c:0 }, e:{ r:rows.length, c:hdr.length-1 } }) };
+      if (styled){
+        hdr.forEach(function(k, j){ var c = ws[X.utils.encode_cell({ r:0, c:j })]; if (c) c.s = { font:{ bold:true, color:{ rgb:'FFFFFF' } }, fill:{ fgColor:{ rgb:'0F2A4D' } } }; });
+        sh[1].forEach(function(r, i){ hdr.forEach(function(k, j){ var paint = sh[0] === 'Synthèse' || k === 'Gravité' || r.__hl.indexOf(k) >= 0; if (!paint) return; var ref = X.utils.encode_cell({ r:i+1, c:j }), c = ws[ref] || (ws[ref] = { t:'s', v:'' }); c.s = { fill:{ fgColor:{ rgb:SEV_FILL[r.__sev] } }, font:{ bold:k === 'Gravité', color:{ rgb: k === 'Gravité' ? SEV_INK[r.__sev] : '141618' } }, alignment:{ vertical:'top', wrapText: k === 'À faire' || k === 'Explication' } }; }); });
+      }
+      X.utils.book_append_sheet(wb, ws, sh[0]);
+    });
+    var buf = X.write(wb, { bookType:'xlsx', type:'array' });
+    saveBlob('Contrôle données Odoo '+new Date().toISOString().slice(0,10)+'.xlsx', new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'xlsx');
+  }
+  loadStyledXlsx().then(function(X){ build(X, true); }, function(){ build(XLSX, false); });
+}
+
 function vLanding(){
   return '<section class="landing"><h2>'+esc(ST.user ? 'Bonjour '+ST.user.name.split(' ')[0] : 'Bonjour')+'</h2><div class="choices">'+
     '<button class="choice c-log" data-mod="log"><span class="ico">'+ICO_LOG+'</span><span class="k">Logistique</span><span class="go">Entrer →</span></button>'+
     '<button class="choice c-trp" data-mod="trp"><span class="ico">'+ICO_TRP+'</span><span class="k">Transport</span><span class="go">Entrer →</span></button>'+
+    '<button class="choice c-dq" data-mod="dq"><span class="ico">'+ICO_DQ+'</span><span class="k">Contrôle des données</span><span class="go">Entrer →</span></button>'+
     '</div>'+(isAdmin() ? '<p class="adm-l"><button class="lnk" data-mod="log" data-ltabgo="adm">Administration des accès</button></p>' : '')+'</section>';
 }
 
@@ -2829,6 +3007,10 @@ document.addEventListener('click', function(e){
   if (d.chsend !== undefined){ chatSend(); return; }
   if (d.suigo){ ST.ltab = 'fac'; ST.sub = 'ano'; selectMonth(d.suigo, suiMonth()); window.scrollTo(0,0); return; }
   if (d.suim){ SUI.month = d.suim; render(); return; }
+  if (d.dqa){ DQ.open[d.dqa] = !DQ.open[d.dqa]; render(); return; }
+  if (d.dqmore){ DQ.lim[d.dqmore] = (DQ.lim[d.dqmore] || 200) + 500; render(); return; }
+  if (d.dqrm){ DQ.f[d.dqrm] = null; DQ.owners = []; if (DQ.f.m || DQ.f.q) dqRun(); else DQ.res = null; render(); return; }
+  if (d.dqownnone !== undefined){ DQ.owners = []; dqRun(); render(); return; }
   if (d.goinv){ goInvoice(d.goinv, ST.openPdf); return; }
   if (d.backctl !== undefined){ ST.sub = 'ctl'; ST.hlInv = null; var bp = ST.backCtl; ST.backCtl = null; render(); setTimeout(function(){ var r = bp && document.querySelector('tr[data-pdf="'+bp+'"]'); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
   if (d.pvo){ viewOdooPdf(d.pvo); return; }
@@ -2874,6 +3056,7 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsFam') exportFamDetail();
   else if (a === 'xlsCtl') exportCtl();
   else if (a === 'xlsAnom') exportAnomalies();
+  else if (a === 'xlsDQ') exportDQ();
   else if (a === 'suiRefresh') suiRefresh();
   else if (a === 'xlsSui') exportSuivi();
   else if (a === 'chat'){ CH.open = !CH.open; if (CH.open && CH.mode === 'conv' && CH.cur) STORE.markRead(CH.cur); renderChat(true); }
@@ -2906,6 +3089,8 @@ document.addEventListener('change', function(e){
   if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
+  if (t.dataset.dqown !== undefined && t.type === 'checkbox'){ DQ.owners = DQ.owners.filter(function(x){ return x !== t.value; }); if (t.checked) DQ.owners.push(t.value); var fl0 = document.querySelector('#fpop .fpop-l'), st1 = fl0 ? fl0.scrollTop : 0; dqRun(); render(); fl0 = document.querySelector('#fpop .fpop-l'); if (fl0) fl0.scrollTop = st1; return; }
+  if (t.id === 'dqfrom' || t.id === 'dqto'){ DQ[t.id === 'dqfrom' ? 'from' : 'to'] = t.value; dqRun(); render(); return; }
   if (d.fchk){ var FF = ST.invF = ST.invF || {}, arr = FF[d.fchk] = (FF[d.fchk] || []).filter(function(x){ return x !== t.value; }); if (t.checked) arr.push(t.value); var fl = document.querySelector('#fpop .fpop-l'), st0 = fl ? fl.scrollTop : 0; render(); fl = document.querySelector('#fpop .fpop-l'); if (fl) fl.scrollTop = st0; return; }
   if (d.pchk){ if (!canEdit() || monthClosed()){ render(); return; } ST.ov.pchk = ST.ov.pchk || {}; ST.ov.pchk[d.pchk] = t.value; var pp = ST.pdfs.filter(function(x){ return x.id === d.pchk; })[0]; render(); persist('Check '+(pp ? pp.name : d.pchk)+' : '+PCHK[t.value]); return; }
   if (d.st){ if (!canEdit()){ render(); return; } ST.ov.status[d.st] = t.value; render(); persist('Statut '+(ST.R.invoices.filter(function(I){ return I.key===d.st; })[0]||{}).num+' : '+INVST[t.value]); return; }
