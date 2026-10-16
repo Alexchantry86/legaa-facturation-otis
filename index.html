@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.10 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.11 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -536,6 +536,15 @@ td.hl-info{background:#eceff2}
 table.billt td .sub{display:block;font-size:11.5px;color:var(--muted);max-width:340px;white-space:normal}
 table.billt tr.orph td{background:#fdecea}
 table.billt tr.selfr td{color:var(--muted);background:var(--sunk)}
+/* ---- v4.9 : lisibilité factures à émettre ---- */
+table.billt{border-collapse:collapse;width:100%}
+table.billt th,table.billt td{border:1px solid var(--line,#d5d9e0);padding:6px 8px;vertical-align:middle}
+table.billt thead th{background:var(--sunk,#eef1f5);white-space:normal;line-height:1.25}
+table.billt td.cli{text-align:left;min-width:220px;max-width:320px}
+table.billt td.cli .lnk{text-align:left;padding:0}
+table.billt td.mot{white-space:nowrap}
+table.billt .grp{display:inline-block;margin-left:6px;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--acc,#1f3a68);color:#fff;font-size:11px;text-align:center;cursor:help;vertical-align:middle}
+table.billt tbody tr:hover td{background:#f5f8fc}
 </style>
 </head>
 <body>
@@ -1708,16 +1717,15 @@ function dqBillView(R){
   var ready = ext.filter(function(x){ return !x.b; }).length;
   var h = '<div class="panel"><div class="ph"><h2>Factures à émettre</h2><span class="muted">'+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+' · '+ext.length+' client'+(ext.length>1?'s':'')+' · stock à la date de l\'export, entrées et sorties du '+(DQ.from ? dqFr(new Date(DQ.from+'T00:00:00')) : '…')+' au '+(DQ.to ? dqFr(new Date(DQ.to+'T00:00:00')) : '…')+'</span><span class="kd-n'+(ready===ext.length?' ok':'')+'">'+ready+' / '+ext.length+' sans anomalie bloquante</span><div class="sp"><button class="btn sm" data-a="xlsBill"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
   if (!B.length) return h + '<div class="empty">Aucun client avec du stock ou un mouvement sur la période.</div></div>';
-  if (R.A.some(function(a){ return a.code === 'Q_DATE_SYS'; })) h += '<p class="note syn-miss" style="margin:10px 14px"><span class="pill p-bloquant">Toutes les factures</span> La date d\'entrée en stock est vide sur tout l\'export Quantités : la durée de stockage de chaque client ne peut pas être établie à partir d\'Odoo. Point de paramétrage à corriger une fois pour toutes (non compté dans la colonne Données).</p>';
   h += '<div class="tw"><table class="billt"><thead><tr><th>Client</th><th>Motif</th><th class="n">Colis en stock</th><th class="n">Qté en stock</th><th class="n">Volume m³</th><th class="n">Surface m²</th><th class="n">Entrées (lignes · qté)</th><th class="n">Sorties (lignes · qté)</th><th>Données</th></tr></thead><tbody>';
   function row(x, cls){ var mot = []; if (x.lq) mot.push('Stock'); if (x.eL) mot.push('Entrées'); if (x.sL) mot.push('Sorties');
     var st = x.client === '(sans propriétaire)' ? '<span class="pill p-bloquant">À rattacher</span>' : x.internal ? '<span class="pill p-info">Stock propre · non facturé</span>' : x.b ? '<span class="pill p-bloquant">À corriger · '+x.b+' bloquant'+(x.b>1?'s':'')+'</span>'+(x.v?' <span class="pill p-verifier">'+x.v+' à vérifier</span>':'') : x.v ? '<span class="pill p-verifier">'+x.v+' à vérifier</span>' : '<span class="pill p-ok">Prêt</span>';
     var owners = Object.keys(x.owners).filter(function(o){ return o !== x.client; });
-    return '<tr class="'+(cls||'')+'"><td><button class="lnk" data-dqcli="'+esc(x.client)+'" title="Filtrer les anomalies sur ce client">'+esc(x.client)+'</button>'+(owners.length ? '<span class="sub">'+esc(owners.join(' · '))+'</span>' : '')+'</td><td>'+mot.join(' + ')+'</td><td class="n">'+(x.nColis||'—')+'</td><td class="n">'+(x.qty||'—')+'</td><td class="n">'+(x.vol?nx(x.vol):'—')+'</td><td class="n">'+(x.surf?nx(x.surf):'—')+'</td><td class="n">'+(x.eL ? x.eL+' · '+x.eQ : '—')+'</td><td class="n">'+(x.sL ? x.sL+' · '+x.sQ : '—')+'</td><td>'+st+'</td></tr>'; }
+    return '<tr class="'+(cls||'')+'"><td class="cli"><button class="lnk" data-dqcli="'+esc(x.client)+'" title="Filtrer les anomalies sur ce client">'+esc(x.client)+'</button>'+(owners.length ? '<span class="grp" title="Regroupe '+owners.length+' détenteur'+(owners.length>1?'s':'')+' :&#10;'+esc(owners.join('\n'))+'">'+owners.length+'</span>' : '')+'</td><td class="mot">'+mot.join(' + ')+'</td><td class="n">'+(x.nColis||'—')+'</td><td class="n">'+(x.qty||'—')+'</td><td class="n">'+(x.vol?nx(x.vol):'—')+'</td><td class="n">'+(x.surf?nx(x.surf):'—')+'</td><td class="n">'+(x.eL ? x.eL+' · '+x.eQ : '—')+'</td><td class="n">'+(x.sL ? x.sL+' · '+x.sQ : '—')+'</td><td>'+st+'</td></tr>'; }
   h += ext.map(function(x){ return row(x); }).join('');
   if (orphan) h += row(orphan, 'orph');
   h += self.map(function(x){ return row(x, 'selfr'); }).join('');
-  return h + '</tbody></table></div><p class="pb note muted" style="margin:0">Client = société du détenteur (Quantités) ou du propriétaire « Appartenant à » (Mouvements), contact après la virgule regroupé. Entrées : réceptions d\'un partenaire ; sorties : livraisons à un partenaire ; ajustements d\'inventaire, production, prestations et fournitures exclus. « Données » : anomalies portant sur les lignes du client. Cliquer un client filtre les anomalies.</p></div>';
+  return h + '</tbody></table></div><p class="pb note muted" style="margin:0">Client = société du détenteur (Quantités) ou du propriétaire « Appartenant à » (Mouvements), contact après la virgule regroupé (pastille : survoler pour voir les détenteurs regroupés). Entrées : réceptions d\'un partenaire ; sorties : livraisons à un partenaire ; ajustements d\'inventaire, production, prestations et fournitures exclus. « Données » : anomalies portant sur les lignes du client. Cliquer un client filtre les anomalies.</p></div>';
 }
 function exportBill(){
   var R = DQ.res; if (!R) return;
@@ -1741,8 +1749,7 @@ function dqRun(){
     add('Q_DIM','Stock','bloquant','Dimensions ou volume nuls','Sans longueur, largeur, hauteur et volume, le stockage ne peut pas être facturé.','Mesurer le colis et compléter la fiche colis dans Odoo.', Rq(function(r){ return !(dqNum(r['Longueur']) > 0 && dqNum(r['Largeur']) > 0 && dqNum(r['Hauteur']) > 0 && dqNum(r['Volume (m³)']) > 0); }), ['L × l × H mm','Volume m3']);
     add('Q_OWNER','Stock','bloquant','Colis sans détenteur','Le détenteur (client propriétaire) est vide : le colis ne sera facturé à personne.','Renseigner le détenteur du colis dans Odoo.', Rq(function(r){ return !dqStr(r['Détenteur']); }), ['Détenteur']);
     var noEntry = q.filter(function(r){ return !dqDate(r['Date d\'entrée en stock']); });
-    if (noEntry.length && noEntry.length === q.length) add('Q_DATE_SYS','Stock','bloquant','Date d\'entrée en stock vide sur tout l\'export','La colonne « Date d\'entrée en stock » est vide sur toutes les lignes : la durée de stockage ne peut pas être calculée à partir de cet export (le calcul retombe sur la date de création du colis ou les mouvements).','Vérifier le paramétrage d\'Odoo (champ non alimenté à la réception) et l\'ajouter à l\'export.', noEntry.slice(0, 1).map(DQ_ROWQ).map(function(x){ x['Lignes concernées'] = noEntry.length; return x; }), ['Date d\'entrée']);
-    else add('Q_DATE','Stock','bloquant','Date d\'entrée en stock absente','Sans date d\'entrée, la durée de stockage et la tranche tarifaire ne peuvent pas être calculées.','Compléter la date d\'entrée en stock du colis dans Odoo.', noEntry.map(DQ_ROWQ), ['Date d\'entrée']);
+    if (noEntry.length && noEntry.length < q.length) add('Q_DATE','Stock','bloquant','Date d\'entrée en stock absente','Sans date d\'entrée, la durée de stockage et la tranche tarifaire ne peuvent pas être calculées.','Compléter la date d\'entrée en stock du colis dans Odoo.', noEntry.map(DQ_ROWQ), ['Date d\'entrée']);
     add('Q_ZERO','Stock','verifier','Ligne de stock à quantité nulle','Le colis apparaît dans le stock avec une quantité de 0 : colis vidé mais non clôturé, ou erreur de saisie.','Vérifier physiquement l\'emplacement ; archiver le colis vide ou corriger la quantité.', Rq(function(r){ return dqNum(r['Quantité']) === 0; }), ['Quantité']);
     add('Q_VOL','Stock','verifier','Volume ou surface ≠ dimensions','Le volume (ou la surface) enregistré ne correspond pas à L × l × H : le stockage serait facturé sur une mauvaise base.','Corriger les dimensions ou le volume dans la fiche colis.', Rq(function(r){ var L = dqNum(r['Longueur']), l = dqNum(r['Largeur']), h = dqNum(r['Hauteur']); if (!(L>0 && l>0 && h>0)) return false; return Math.abs(L*l*h/1e9 - dqNum(r['Volume (m³)'])) > 0.0005 || Math.abs(L*l/1e6 - dqNum(r['Surface (m²)'])) > 0.0005; }), ['L × l × H mm','Volume m3','Surface m2']);
     add('Q_POIDS','Stock','verifier','Poids brut nul ou absent','Sans poids, l\'unité payante (max m³ / tonnes) et le minimum « chariot » ne peuvent pas être contrôlés.','Peser le colis et compléter le poids brut dans Odoo.', Rq(function(r){ return !(dqNum(r['Poids brut']) > 0); }), ['Poids brut kg']);
