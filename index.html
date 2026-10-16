@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.11 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.12 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -545,6 +545,15 @@ table.billt td.cli .lnk{text-align:left;padding:0}
 table.billt td.mot{white-space:nowrap}
 table.billt .grp{display:inline-block;margin-left:6px;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--acc,#1f3a68);color:#fff;font-size:11px;text-align:center;cursor:help;vertical-align:middle}
 table.billt tbody tr:hover td{background:#f5f8fc}
+/* ---- v5.0 : totaux, bulles, synthèse données ---- */
+#ctip.ml{white-space:pre-line;line-height:1.45;max-width:420px}
+table.billt thead tr.tot td{background:#e3e9f2;font-weight:700;border-top:2px solid var(--acc,#1f3a68);border-bottom:2px solid var(--acc,#1f3a68)}
+table.billt thead tr.tot td.mot{font-weight:400;font-size:12px}
+table.billt .grp:focus{outline:2px solid var(--acc,#1f3a68);outline-offset:1px}
+.dq-top .seg+.seg{margin-left:18px}
+table.dqsyn td.cli{min-width:140px}
+.charts.dq3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.charts.dq3{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -1614,7 +1623,7 @@ function render(){
   renderModal();
   placePop(); if (ST.module === 'dq') bindDQ();
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); }
-  if (ST.module === 'log' && ST.ltab === 'syn') bindChartTips();
+  if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if (ST.module === 'trp' && ST.ttab === 'new') calcTransport();
 }
 
@@ -1624,7 +1633,7 @@ var ICO_TRP = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true
 /* ============ CONTRÔLE DES DONNÉES ODOO (responsables logistiques) ============
    Entrées : export Odoo « Lignes de mouvement de stock » (stock.move.line) et export « Quantités » (stock.quant).
    Tout est calculé dans le navigateur ; rien n'est enregistré. Chaque anomalie liste les lignes Excel concernées. */
-var DQ = { f:{ m:null, q:null }, owners:[], from:'', to:'', res:null, open:{}, lim:{}, busy:'', co:'LEGAA', month:null, doc:null, index:[], loadedId:null };
+var DQ = { f:{ m:null, q:null }, owners:[], from:'', to:'', res:null, open:{}, lim:{}, busy:'', co:'LEGAA', month:null, doc:null, index:[], loadedId:null, tab:'mois', synCli:'', bf:{} };
 var DQ_CO = { LEGAA:{ label:'LEGAA', soc:/LEGAA/i, ref:/^LGA\//, other:'CAPEMBAL' }, CAPEMBAL:{ label:'CAP\'EMBAL', soc:/CAP.?EMBAL/i, ref:/^(NEUV|MARQ|CAP|GOND)\//, other:'LEGAA' } };
 var ICO_DQ = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><rect x="10" y="8" width="34" height="44" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><path d="M17 20h20M17 28h20M17 36h12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="44" r="10" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><path d="M51 51l7 7" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M40 44l3 3 5-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/></svg>';
 function dqStr(v){ return v === null || v === undefined ? '' : String(v).trim(); }
@@ -1663,7 +1672,7 @@ function dqSelect(co, m){
     DQ.doc = doc; var files = (doc && doc.files) || [];
     return Promise.all(files.map(function(meta){ return STORE.loadImportRows(meta).then(function(A){ var x = dqParse(meta.name, A); x.meta = meta; x.at = meta.at ? new Date(meta.at) : null; return x; }, function(e){ toast(meta.name+' : '+e.message); return null; }); })).then(function(L){
       if (DQ.loadedId !== id) return;
-      L.forEach(function(x){ if (x) DQ.f[x.kind] = x; }); DQ.busy = ''; if (DQ.f.m || DQ.f.q) dqRun(); render();
+      L.forEach(function(x){ if (x) DQ.f[x.kind] = x; }); DQ.busy = ''; if (DQ.f.m || DQ.f.q){ dqRun(); dqSaveSum(id, DQ.res, DQ.doc); } render();
     });
   }).catch(function(e){ DQ.busy = ''; toast('Chargement impossible : '+e.message); render(); });
 }
@@ -1681,6 +1690,76 @@ function dqAdd(list){
     }).catch(function(e){ toast(f.name+' refusé : '+e.message); });
   }); });
   chain.then(function(){ DQ.busy = ''; dqRefreshIndex(); if (n) toast(n+' fichier(s) enregistré(s) pour '+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)); return dqSelect(); });
+}
+/* Résumé mensuel (onglet Synthèse) : enregistré dans le document du mois, calculé sur le mois civil complet, tous détenteurs */
+function dqMakeSum(R){
+  var c = { bloquant:0, verifier:0, info:0 }; R.A.forEach(function(a){ c[a.sev] += a.rows.length; });
+  var r3 = function(v){ return Math.round((v||0)*1000)/1000; };
+  return { v:1, from:DQ.from, to:DQ.to, nb:c.bloquant, nv:c.verifier, fm:DQ.f.m ? DQ.f.m.name : '', fq:DQ.f.q ? DQ.f.q.name : '', qAt:DQ.f.q && DQ.f.q.meta ? DQ.f.q.meta.at || '' : '',
+    C:(R.bill||[]).map(function(x){ return { c:x.client, k:x.internal ? 'self' : x.client === '(sans propriétaire)' ? 'orph' : 'ext', nColis:x.nColis, qty:r3(x.qty), vol:x.vol, surf:x.surf, eL:x.eL, eQ:r3(x.eQ), sL:x.sL, sQ:r3(x.sQ), b:x.b, vv:x.v }; }) };
+}
+function dqSaveSum(id, R, doc){
+  if (!R || !canEdit()) return;
+  var b = dqBounds(id.split('_').pop()); if (DQ.from !== b[0] || DQ.to !== b[1] || DQ.owners.length) return;
+  var sum = dqMakeSum(R); if (doc && doc.dqSum && JSON.stringify(doc.dqSum) === JSON.stringify(sum)) return;
+  STORE.saveMonth(id, { dqSum:sum }).then(function(){ if (doc) doc.dqSum = sum; return dqRefreshIndex(); }).then(function(){ if (DQ.tab === 'syn') render(); }, function(){});
+}
+/* Calcul en arrière-plan des mois déposés avant l'ajout de la synthèse */
+function dqBackfill(){
+  if (DQ.bfRun || !canEdit()) return;
+  var todo = DQ.index.filter(function(d){ return String(d.id).indexOf('DQ'+DQ.co+'_') === 0 && (d.files||[]).length && !d.dqSum && !DQ.bf[d.id]; });
+  if (!todo.length) return;
+  DQ.bfRun = true; var d = todo[0]; DQ.bf[d.id] = 1;
+  STORE.getMonth(d.id).then(function(doc){
+    return Promise.all(((doc && doc.files) || []).map(function(meta){ return STORE.loadImportRows(meta).then(function(A){ var x = dqParse(meta.name, A); x.meta = meta; return x; }, function(){ return null; }); })).then(function(L){
+      var keys = ['co','month','from','to','owners','billCache','f','res','balNote'], S = {}; keys.forEach(function(k){ S[k] = DQ[k]; });
+      var m = d.id.split('_').pop(), b = dqBounds(m), sum = null;
+      try { DQ.co = d.id.slice(2, d.id.lastIndexOf('_')); DQ.month = m; DQ.from = b[0]; DQ.to = b[1]; DQ.owners = []; DQ.billCache = null; DQ.f = { m:null, q:null };
+        L.forEach(function(x){ if (x) DQ.f[x.kind] = x; }); if (DQ.f.m || DQ.f.q){ dqRun(); sum = dqMakeSum(DQ.res); } }
+      finally { keys.forEach(function(k){ DQ[k] = S[k]; }); }
+      return sum ? STORE.saveMonth(d.id, { dqSum:sum }) : null;
+    });
+  }).then(function(){ return dqRefreshIndex(); }).catch(function(){}).then(function(){ DQ.bfRun = false; if (DQ.tab === 'syn' && ST.module === 'dq'){ render(); } });
+}
+var DQS_COLS = [['nColis','Colis en stock'],['qty','Qté en stock'],['vol','Volume m³'],['surf','Surface m²'],['eQ','Entrées (qté)'],['sQ','Sorties (qté)']];
+function dqSynRows(){
+  var cli = DQ.synCli, out = [];
+  DQ.index.forEach(function(d){ if (String(d.id).indexOf('DQ'+DQ.co+'_') !== 0 || !d.dqSum) return;
+    var C = d.dqSum.C.filter(function(x){ return cli ? x.c === cli : x.k !== 'self'; }), t = { n:C.filter(function(x){ return x.k === 'ext'; }).length, nColis:0, qty:0, vol:0, surf:0, eL:0, eQ:0, sL:0, sQ:0, b:0, vv:0 };
+    C.forEach(function(x){ ['nColis','qty','vol','surf','eL','eQ','sL','sQ','b','vv'].forEach(function(k){ t[k] += x[k] || 0; }); });
+    ['vol','surf','qty','eQ','sQ'].forEach(function(k){ t[k] = Math.round(t[k]*1000)/1000; });
+    t.ready = C.filter(function(x){ return x.k === 'ext' && !x.b; }).length;
+    out.push({ id:d.id.split('_').pop(), doc:d, t:t, has:C.length > 0 }); });
+  return out.sort(function(a, b){ return a.id < b.id ? 1 : -1; });
+}
+function vDQSyn(){
+  var rows = dqSynRows(), clients = {};
+  DQ.index.forEach(function(d){ if (String(d.id).indexOf('DQ'+DQ.co+'_') === 0 && d.dqSum) d.dqSum.C.forEach(function(x){ if (x.k !== 'self') clients[x.c] = 1; }); });
+  var pending = DQ.index.filter(function(d){ return String(d.id).indexOf('DQ'+DQ.co+'_') === 0 && (d.files||[]).length && !d.dqSum; }).length;
+  if (pending) setTimeout(dqBackfill, 0);
+  var h = '<div class="strip"><span class="lbl">Client</span><select id="dqcl" class="bigsel" aria-label="Client"><option value="">Tous les clients (hors stock propre)</option>'+Object.keys(clients).sort(function(a,b){ return (a==='(sans propriétaire)') - (b==='(sans propriétaire)') || a.localeCompare(b); }).map(function(c){ return '<option'+(DQ.synCli===c?' selected':'')+' value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('')+'</select>'+
+    (pending ? '<span class="muted">Calcul de '+pending+' mois déposé'+(pending>1?'s':'')+' avant cette version…</span>' : '')+
+    '<span class="sp"><button class="btn" data-a="xlsDQS"'+(canSave() && rows.length?'':' disabled')+'>Exporter (.xlsx)</button></span></div>';
+  if (!rows.length) return h + '<div class="panel empty">Aucun mois analysé pour '+DQ_CO[DQ.co].label+'. Déposer les exports d\'un mois dans l\'onglet « Contrôle du mois ».</div>';
+  var asc = rows.slice().reverse(), first = asc[0].id, cur = dqMonthDefault(), months = [], d = new Date(+first.slice(0,4), +first.slice(5)-1, 1);
+  while (true){ var k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if (k > cur && k > asc[asc.length-1].id) break; months.push(k); d.setMonth(d.getMonth()+1); }
+  months = months.slice(-18); var by = {}; rows.forEach(function(r){ by[r.id] = r.t; });
+  var data = months.map(function(m){ return { id:m, v:by[m] || null }; });
+  h += '<div class="charts dq3">'+DQS_COLS.map(function(c){ return chart(c[1].replace(/ \(.*\)|m³|m²/g,'').trim(), c[0]==='vol' ? 'm³' : c[0]==='surf' ? 'm²' : c[0]==='nColis' ? 'colis' : 'unités', data, function(v){ return v[c[0]]; }, function(v){ return nInt(v[c[0]])+(c[0]==='vol'?' m³':c[0]==='surf'?' m²':''); }); }).join('')+'</div>';
+  h += '<div class="panel"><div class="ph"><h2>Synthèse mensuelle · '+DQ_CO[DQ.co].label+(DQ.synCli ? ' · '+esc(DQ.synCli) : '')+'</h2><span class="muted">Stock à la date de l\'export Quantités du mois ; entrées et sorties sur le mois civil. Cliquer un mois ouvre son contrôle.</span></div>'+
+    '<div class="tw"><table class="billt dqsyn"><thead><tr><th>Mois</th>'+(DQ.synCli ? '' : '<th class="n">Clients à facturer</th>')+'<th class="n">Colis en stock</th><th class="n">Qté en stock</th><th class="n">Volume m³</th><th class="n">Surface m²</th><th class="n">Entrées (lignes · qté)</th><th class="n">Sorties (lignes · qté)</th><th>Données</th><th>Export Quantités</th></tr></thead><tbody>'+
+    rows.map(function(r){ var t = r.t, ds = r.doc.dqSum;
+      var st = !r.has ? '<span class="muted">Aucune activité</span>' : DQ.synCli ? (t.b ? '<span class="pill p-bloquant">À corriger · '+t.b+'</span>' : t.vv ? '<span class="pill p-verifier">'+t.vv+' à vérifier</span>' : '<span class="pill p-ok">Prêt</span>') : '<span class="pill '+(t.ready===t.n?'p-ok':'p-verifier')+'">'+t.ready+' / '+t.n+' prêts</span>';
+      return '<tr><td class="cli"><button class="lnk" data-dqgo="'+r.id+'">'+monthLabel(r.id)+'</button></td>'+(DQ.synCli ? '' : '<td class="n">'+t.n+'</td>')+'<td class="n">'+nInt(t.nColis)+'</td><td class="n">'+nInt(t.qty)+'</td><td class="n">'+nx(t.vol)+'</td><td class="n">'+nx(t.surf)+'</td><td class="n">'+(t.eL ? nInt(t.eL)+' · '+nInt(t.eQ) : '—')+'</td><td class="n">'+(t.sL ? nInt(t.sL)+' · '+nInt(t.sQ) : '—')+'</td><td>'+st+'</td><td class="muted">'+(ds.fq ? (ds.qAt ? 'déposé le '+dt(ds.qAt) : esc(ds.fq)) : 'absent')+'</td></tr>'; }).join('')+
+    '</tbody></table></div></div>';
+  return h;
+}
+function exportDQSyn(){
+  var rows = dqSynRows().map(function(r){ var t = r.t, o = { 'Mois':monthLabel(r.id) }; if (!DQ.synCli) o['Clients à facturer'] = t.n; o['Colis en stock'] = t.nColis; o['Qté en stock'] = t.qty; o['Volume m3'] = t.vol; o['Surface m2'] = t.surf; o['Entrées lignes'] = t.eL; o['Entrées qté'] = t.eQ; o['Sorties lignes'] = t.sL; o['Sorties qté'] = t.sQ; o['Anomalies bloquantes'] = t.b; o['Anomalies à vérifier'] = t.vv; if (!DQ.synCli) o['Clients prêts'] = t.ready; return o; });
+  var det = []; DQ.index.forEach(function(d){ if (String(d.id).indexOf('DQ'+DQ.co+'_') !== 0 || !d.dqSum) return; d.dqSum.C.forEach(function(x){ if (DQ.synCli && x.c !== DQ.synCli) return; det.push({ 'Mois':d.id.split('_').pop(), 'Client':x.c, 'Type':x.k === 'self' ? 'Stock propre' : x.k === 'orph' ? 'Sans propriétaire' : 'Client', 'Colis en stock':x.nColis, 'Qté en stock':x.qty, 'Volume m3':x.vol, 'Surface m2':x.surf, 'Entrées lignes':x.eL, 'Entrées qté':x.eQ, 'Sorties lignes':x.sL, 'Sorties qté':x.sQ, 'Bloquants':x.b, 'À vérifier':x.vv }); }); });
+  det.sort(function(a, b){ return a['Mois'] < b['Mois'] ? 1 : a['Mois'] > b['Mois'] ? -1 : a['Client'].localeCompare(b['Client']); });
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Synthèse mensuelle'); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(det), 'Détail par client');
+  saveXlsx(wb, 'Synthèse données '+DQ_CO[DQ.co].label.replace(/'/g,'')+(DQ.synCli ? ' '+DQ.synCli : '')+'.xlsx');
 }
 function dqRemove(kind){
   var x = DQ.f[kind]; if (!x || !x.meta || !canEdit()) return;
@@ -1717,16 +1796,20 @@ function dqBillView(R){
   var ready = ext.filter(function(x){ return !x.b; }).length;
   var h = '<div class="panel"><div class="ph"><h2>Factures à émettre</h2><span class="muted">'+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+' · '+ext.length+' client'+(ext.length>1?'s':'')+' · stock à la date de l\'export, entrées et sorties du '+(DQ.from ? dqFr(new Date(DQ.from+'T00:00:00')) : '…')+' au '+(DQ.to ? dqFr(new Date(DQ.to+'T00:00:00')) : '…')+'</span><span class="kd-n'+(ready===ext.length?' ok':'')+'">'+ready+' / '+ext.length+' sans anomalie bloquante</span><div class="sp"><button class="btn sm" data-a="xlsBill"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
   if (!B.length) return h + '<div class="empty">Aucun client avec du stock ou un mouvement sur la période.</div></div>';
-  h += '<div class="tw"><table class="billt"><thead><tr><th>Client</th><th>Motif</th><th class="n">Colis en stock</th><th class="n">Qté en stock</th><th class="n">Volume m³</th><th class="n">Surface m²</th><th class="n">Entrées (lignes · qté)</th><th class="n">Sorties (lignes · qté)</th><th>Données</th></tr></thead><tbody>';
+  h += '<div class="tw"><table class="billt"><thead><tr><th>Client</th><th>Motif</th><th class="n">Colis en stock</th><th class="n">Qté en stock</th><th class="n">Volume m³</th><th class="n">Surface m²</th><th class="n">Entrées (lignes · qté)</th><th class="n">Sorties (lignes · qté)</th><th>Données</th></tr>'+dqTotRow(ext.concat(orphan ? [orphan] : []))+'</thead><tbody>';
   function row(x, cls){ var mot = []; if (x.lq) mot.push('Stock'); if (x.eL) mot.push('Entrées'); if (x.sL) mot.push('Sorties');
     var st = x.client === '(sans propriétaire)' ? '<span class="pill p-bloquant">À rattacher</span>' : x.internal ? '<span class="pill p-info">Stock propre · non facturé</span>' : x.b ? '<span class="pill p-bloquant">À corriger · '+x.b+' bloquant'+(x.b>1?'s':'')+'</span>'+(x.v?' <span class="pill p-verifier">'+x.v+' à vérifier</span>':'') : x.v ? '<span class="pill p-verifier">'+x.v+' à vérifier</span>' : '<span class="pill p-ok">Prêt</span>';
     var owners = Object.keys(x.owners).filter(function(o){ return o !== x.client; });
-    return '<tr class="'+(cls||'')+'"><td class="cli"><button class="lnk" data-dqcli="'+esc(x.client)+'" title="Filtrer les anomalies sur ce client">'+esc(x.client)+'</button>'+(owners.length ? '<span class="grp" title="Regroupe '+owners.length+' détenteur'+(owners.length>1?'s':'')+' :&#10;'+esc(owners.join('\n'))+'">'+owners.length+'</span>' : '')+'</td><td class="mot">'+mot.join(' + ')+'</td><td class="n">'+(x.nColis||'—')+'</td><td class="n">'+(x.qty||'—')+'</td><td class="n">'+(x.vol?nx(x.vol):'—')+'</td><td class="n">'+(x.surf?nx(x.surf):'—')+'</td><td class="n">'+(x.eL ? x.eL+' · '+x.eQ : '—')+'</td><td class="n">'+(x.sL ? x.sL+' · '+x.sQ : '—')+'</td><td>'+st+'</td></tr>'; }
+    return '<tr class="'+(cls||'')+'"><td class="cli"><button class="lnk" data-dqcli="'+esc(x.client)+'" title="Filtrer les anomalies sur ce client">'+esc(x.client)+'</button>'+(owners.length ? '<span class="grp" tabindex="0" data-tip="'+esc('Regroupe '+owners.length+' détenteur'+(owners.length>1?'s':'')+' :\n'+owners.join('\n'))+'">'+owners.length+'</span>' : '')+'</td><td class="mot">'+mot.join(' + ')+'</td><td class="n">'+(x.nColis ? nInt(x.nColis) : '—')+'</td><td class="n">'+(x.qty ? nInt(x.qty) : '—')+'</td><td class="n">'+(x.vol?nx(x.vol):'—')+'</td><td class="n">'+(x.surf?nx(x.surf):'—')+'</td><td class="n">'+(x.eL ? nInt(x.eL)+' · '+nInt(x.eQ) : '—')+'</td><td class="n">'+(x.sL ? nInt(x.sL)+' · '+nInt(x.sQ) : '—')+'</td><td>'+st+'</td></tr>'; }
   h += ext.map(function(x){ return row(x); }).join('');
   if (orphan) h += row(orphan, 'orph');
   h += self.map(function(x){ return row(x, 'selfr'); }).join('');
   return h + '</tbody></table></div><p class="pb note muted" style="margin:0">Client = société du détenteur (Quantités) ou du propriétaire « Appartenant à » (Mouvements), contact après la virgule regroupé (pastille : survoler pour voir les détenteurs regroupés). Entrées : réceptions d\'un partenaire ; sorties : livraisons à un partenaire ; ajustements d\'inventaire, production, prestations et fournitures exclus. « Données » : anomalies portant sur les lignes du client. Cliquer un client filtre les anomalies.</p></div>';
 }
+function dqTot(L){ var t = { n:L.length, nColis:0, qty:0, vol:0, surf:0, eL:0, eQ:0, sL:0, sQ:0 }; L.forEach(function(x){ ['nColis','qty','vol','surf','eL','eQ','sL','sQ'].forEach(function(k){ t[k] += x[k] || 0; }); }); t.vol = Math.round(t.vol*1000)/1000; t.surf = Math.round(t.surf*1000)/1000; t.qty = Math.round(t.qty*1000)/1000; t.eQ = Math.round(t.eQ*1000)/1000; t.sQ = Math.round(t.sQ*1000)/1000; return t; }
+function dqTotRow(L){ var t = dqTot(L), ne = L.filter(function(x){ return x.client !== '(sans propriétaire)'; }).length, no = L.length - ne;
+  return '<tr class="tot"><td class="cli">Total · '+ne+' client'+(ne>1?'s':'')+(no ? ' + sans propriétaire' : '')+'</td><td class="mot muted">hors stock propre</td><td class="n">'+nInt(t.nColis)+'</td><td class="n">'+nInt(t.qty)+'</td><td class="n">'+nx(t.vol)+'</td><td class="n">'+nx(t.surf)+'</td><td class="n">'+(t.eL ? nInt(t.eL)+' · '+nInt(t.eQ) : '—')+'</td><td class="n">'+(t.sL ? nInt(t.sL)+' · '+nInt(t.sQ) : '—')+'</td><td></td></tr>'; }
+function nInt(v){ return (Math.round(v*1000)/1000).toLocaleString('fr-FR'); }
 function exportBill(){
   var R = DQ.res; if (!R) return;
   var rows = (R.bill||[]).map(function(x){ return { 'Client':x.client, 'Détenteurs / contacts':Object.keys(x.owners).join(' · '), 'Stock propre':x.internal ? 'Oui' : '', 'Colis en stock':x.nColis, 'Lignes de stock':x.lq, 'Qté en stock':x.qty, 'Volume m3':x.vol, 'Surface m2':x.surf, 'Entrées lignes':x.eL, 'Entrées qté':x.eQ, 'Sorties lignes':x.sL, 'Sorties qté':x.sQ, 'Anomalies bloquantes':x.b, 'Anomalies à vérifier':x.v, 'Données':x.client === '(sans propriétaire)' ? 'À rattacher' : x.internal ? 'Non facturé' : x.b ? 'À corriger' : 'Prêt' }; });
@@ -1809,9 +1892,12 @@ function vDQ(){
   if (!DQ.month){ setTimeout(function(){ dqSelect(DQ.co, dqMonthDefault()); }, 0); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
   var idx = {}; DQ.index.forEach(function(d){ idx[d.id] = d; });
   var L = last18(); if (L.indexOf(DQ.month) < 0){ L.push(DQ.month); L.sort().reverse(); } var i = L.indexOf(DQ.month);
-  var h = '<section class="view"><div class="strip dq-top"><span class="lbl">Entreprise</span><span class="seg">'+Object.keys(DQ_CO).map(function(k){ return '<button class="seg-b'+(DQ.co===k?' on':'')+'" data-dqco="'+k+'" aria-pressed="'+(DQ.co===k)+'">'+DQ_CO[k].label+'</button>'; }).join('')+'</span>'+
+  var tabs = '<span class="seg">'+[['mois','Contrôle du mois'],['syn','Synthèse mensuelle']].map(function(t){ return '<button class="seg-b'+(DQ.tab===t[0]?' on':'')+'" data-dqtab="'+t[0]+'" aria-pressed="'+(DQ.tab===t[0])+'">'+t[1]+'</button>'; }).join('')+'</span>';
+  var h = '<section class="view"><div class="strip dq-top"><span class="lbl">Entreprise</span><span class="seg">'+Object.keys(DQ_CO).map(function(k){ return '<button class="seg-b'+(DQ.co===k?' on':'')+'" data-dqco="'+k+'" aria-pressed="'+(DQ.co===k)+'">'+DQ_CO[k].label+'</button>'; }).join('')+'</span>'+tabs+
+    (DQ.tab === 'syn' ? '' : 
     '<span class="lbl">Période</span><span class="persel"><button class="btn sm" data-dqm="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="dqmsel" class="bigsel" aria-label="Période">'+L.map(function(x){ var d = idx['DQ'+DQ.co+'_'+x], nf = d ? (d.files||[]).length : 0; return '<option value="'+x+'"'+(x===DQ.month?' selected':'')+'>'+monthLabel(x)+(nf ? ' · '+nf+' fichier'+(nf>1?'s':'') : '')+'</option>'; }).join('')+'</select><button class="btn sm" data-dqm="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span>'+
-    '<span class="muted">'+(DQ.doc && DQ.doc.updatedAt ? 'Enregistré le '+dt(DQ.doc.updatedAt)+' par '+esc(DQ.doc.updatedBy||'') : 'Aucun fichier pour ce mois')+'</span></div>';
+    '<span class="muted">'+(DQ.doc && DQ.doc.updatedAt ? 'Enregistré le '+dt(DQ.doc.updatedAt)+' par '+esc(DQ.doc.updatedBy||'') : 'Aucun fichier pour ce mois')+'</span>')+'</div>';
+  if (DQ.tab === 'syn') return h + vDQSyn() + '</section>';
   h += '<div class="panel"><div class="ph"><h2>Contrôle des données Odoo · '+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+'</h2><span class="muted">Déposer l\'export des mouvements de stock et l\'export des quantités en stock du mois. Les fichiers sont conservés 18 mois.</span></div>'+
     '<div class="pb dq-files">'+[['m','Mouvements de stock','Odoo › Inventaire › Rapports › Historique des mouvements (stock.move.line) — export Excel'],['q','Quantités en stock','Odoo › Inventaire › Rapports › Stock (stock.quant) — export Excel']].map(function(k){ var f = DQ.f[k[0]];
       return '<div class="dq-slot'+(f?' done':'')+'"><span class="ds-t">'+k[1]+'</span>'+(f ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+f.rows.length+' lignes'+(f.meta ? ' · '+dt(f.meta.at)+' · '+esc(f.meta.by||'') : '')+'</span>'+(f.meta ? '<div class="row"><button class="btn sm" data-dqdl="'+k[0]+'">Télécharger</button>'+(canEdit()?'<button class="btn sm" data-dqrm="'+k[0]+'">Supprimer</button>':'')+'</div>' : '') : '<span class="muted">'+k[2]+'</span>')+'</div>'; }).join('')+
@@ -2843,7 +2929,7 @@ function chart(title, unit, data, get, tip){
   for (var g = 0; g <= 4; g++){ var y = T + (H - T - B) * (1 - g/4), v = step * g; s += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(L-6)+'" y="'+(y+3.5)+'" class="ax" text-anchor="end">'+fmtAx(v)+'</text>'; }
   data.forEach(function(d, i){
     var cx = L + bw * i + bw / 2, v = vals[i];
-    if (i % 3 === (n - 1) % 3) s += '<text x="'+cx+'" y="'+(H-8)+'" class="ax" text-anchor="middle">'+MCOURT[+d.id.slice(5)-1]+' '+d.id.slice(2,4)+'</text>';
+    if (n <= 6 || i % 3 === (n - 1) % 3) s += '<text x="'+cx+'" y="'+(H-8)+'" class="ax" text-anchor="middle">'+MCOURT[+d.id.slice(5)-1]+' '+d.id.slice(2,4)+'</text>';
     if (v === null || v === 0) return;
     var hgt = (H - T - B) * v / top, y0 = H - B;
     s += '<path class="bar'+(i===n-1?' cur':'')+'" d="'+barPath(cx - bar/2, y0 - hgt, bar, hgt)+'" data-tip="'+esc(monthLabel(d.id)+' · '+tip(d.v))+'"/>';
@@ -2861,6 +2947,15 @@ function bindChartTips(){
     b.addEventListener('mouseleave', function(){ tipEl.hidden = true; });
   });
 }
+/* bulles [data-tip] hors graphiques (survol et toucher) */
+(function(){
+  function show(el, x, y){ var tp = $('ctip'); if (!tp) return; tp.textContent = el.getAttribute('data-tip'); tp.classList.add('ml'); tp.hidden = false; tp.style.left = Math.max(8, Math.min(x + 12, window.innerWidth - tp.offsetWidth - 8))+'px'; tp.style.top = Math.max(8, y - tp.offsetHeight - 10)+'px'; }
+  function hide(){ var tp = $('ctip'); if (tp){ tp.hidden = true; tp.classList.remove('ml'); } }
+  document.addEventListener('mouseover', function(e){ var el = e.target.closest && e.target.closest('[data-tip]:not(.bar)'); if (el){ var r = el.getBoundingClientRect(); show(el, r.left, r.top); } });
+  document.addEventListener('mouseout', function(e){ var el = e.target.closest && e.target.closest('[data-tip]:not(.bar)'); if (el && !el.contains(e.relatedTarget)) hide(); });
+  document.addEventListener('focusin', function(e){ var el = e.target.closest && e.target.closest('[data-tip]:not(.bar)'); if (el){ var r = el.getBoundingClientRect(); show(el, r.left, r.top); } });
+  document.addEventListener('focusout', hide);
+})();
 function exportSynth(){
   var rows = synthRows(), out = [];
   var SA = ST.synAgs || [];
@@ -3123,7 +3218,9 @@ document.addEventListener('click', function(e){
   if (d.dqrm){ dqRemove(d.dqrm); return; }
   if (d.dqdl){ var fx = DQ.f[d.dqdl]; if (fx && fx.meta) STORE.getFileBytes(fx.meta).then(function(b){ saveBlob(fx.name, new Blob([b]), 'xlsx'); }); return; }
   if (d.dqcli){ var own = DQ.res.ownList.filter(function(o){ return (dqClient(o) || '(sans propriétaire)') === d.dqcli || (d.dqcli === '(sans propriétaire)' && o === '(sans détenteur)'); }); DQ.owners = own; dqRun(); render(); setTimeout(function(){ var e = document.querySelector('.dq-f'); if (e) e.scrollIntoView({ block:'start' }); }, 0); return; }
-  if (d.dqco){ if (d.dqco !== DQ.co) dqSelect(d.dqco, DQ.month); return; }
+  if (d.dqco){ if (d.dqco !== DQ.co){ DQ.synCli = ''; dqSelect(d.dqco, DQ.month); } return; }
+  if (d.dqtab){ DQ.tab = d.dqtab; if (d.dqtab === 'syn') dqRefreshIndex().then(render); render(); return; }
+  if (d.dqgo){ DQ.tab = 'mois'; dqSelect(DQ.co, d.dqgo); return; }
   if (d.dqm){ dqSelect(DQ.co, d.dqm); return; }
   if (d.dqownnone !== undefined){ DQ.owners = []; dqRun(); render(); return; }
   if (d.goinv){ goInvoice(d.goinv, ST.openPdf); return; }
@@ -3173,6 +3270,7 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsAnom') exportAnomalies();
   else if (a === 'xlsDQ') exportDQ();
   else if (a === 'xlsBill') exportBill();
+  else if (a === 'xlsDQS') exportDQSyn();
   else if (a === 'suiRefresh') suiRefresh();
   else if (a === 'xlsSui') exportSuivi();
   else if (a === 'chat'){ CH.open = !CH.open; if (CH.open && CH.mode === 'conv' && CH.cur) STORE.markRead(CH.cur); renderChat(true); }
@@ -3207,6 +3305,7 @@ document.addEventListener('change', function(e){
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
   if (t.dataset.dqown !== undefined && t.type === 'checkbox'){ DQ.owners = DQ.owners.filter(function(x){ return x !== t.value; }); if (t.checked) DQ.owners.push(t.value); var fl0 = document.querySelector('#fpop .fpop-l'), st1 = fl0 ? fl0.scrollTop : 0; dqRun(); render(); fl0 = document.querySelector('#fpop .fpop-l'); if (fl0) fl0.scrollTop = st1; return; }
   if (t.id === 'dqmsel'){ dqSelect(DQ.co, t.value); return; }
+  if (t.id === 'dqcl'){ DQ.synCli = t.value; render(); return; }
   if (t.id === 'dqfrom' || t.id === 'dqto'){ DQ[t.id === 'dqfrom' ? 'from' : 'to'] = t.value; DQ.billCache = null; dqRun(); render(); return; }
   if (d.fchk){ var FF = ST.invF = ST.invF || {}, arr = FF[d.fchk] = (FF[d.fchk] || []).filter(function(x){ return x !== t.value; }); if (t.checked) arr.push(t.value); var fl = document.querySelector('#fpop .fpop-l'), st0 = fl ? fl.scrollTop : 0; render(); fl = document.querySelector('#fpop .fpop-l'); if (fl) fl.scrollTop = st0; return; }
   if (d.pchk){ if (!canEdit() || monthClosed()){ render(); return; } ST.ov.pchk = ST.ov.pchk || {}; ST.ov.pchk[d.pchk] = t.value; var pp = ST.pdfs.filter(function(x){ return x.id === d.pchk; })[0]; render(); persist('Check '+(pp ? pp.name : d.pchk)+' : '+PCHK[t.value]); return; }
