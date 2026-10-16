@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.8 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.10 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -525,6 +525,17 @@ td.hl-info{background:#eceff2}
 .landing{max-width:1080px}
 .choices{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
 .choice .k{font-size:22px;line-height:1.15}
+/* ---- v4.7 : contrôle des données par entreprise et par mois ---- */
+.seg{display:inline-flex;border:1px solid var(--acc);border-radius:6px;overflow:hidden}
+.seg-b{background:var(--surface);border:0;padding:6px 16px;font-family:var(--f-label);font-weight:600;font-size:14px;color:var(--acc);cursor:pointer}
+.seg-b+.seg-b{border-left:1px solid var(--acc)}
+.seg-b.on{background:var(--acc);color:var(--acc-ink)}
+.dq-top{gap:10px 14px}
+.dq-slot .row{display:flex;gap:6px}
+/* ---- v4.8 : factures à émettre ---- */
+table.billt td .sub{display:block;font-size:11.5px;color:var(--muted);max-width:340px;white-space:normal}
+table.billt tr.orph td{background:#fdecea}
+table.billt tr.selfr td{color:var(--muted);background:var(--sunk)}
 </style>
 </head>
 <body>
@@ -1558,7 +1569,7 @@ function blankOv(){ return { assign:{}, exclude:{}, affaire:{}, affMap:{}, statu
 function deepMerge(base, over){ if (!over || typeof over !== 'object' || Array.isArray(over)) return over === undefined ? base : over; var o = clone(base || {}); Object.keys(over).forEach(function(k){ o[k] = (base && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) ? deepMerge(base[k], over[k]) : over[k]; }); return o; }
 function last18(){ var o = [], d = new Date(); d.setDate(1); for (var i=0;i<18;i++){ o.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); d.setMonth(d.getMonth()-1); } return o; }
 function agencies(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.code).localeCompare(String(b.code), 'fr', { numeric:true }); }); }
-function agLabel(code){ var a = ST.cfg.agencies[code]; return a ? (a.label || 'AG '+code) : 'AG '+code; }
+function agLabel(code){ if (/^DQ/.test(String(code))){ var k = String(code).slice(2); return 'Contrôle données '+((DQ_CO[k]||{}).label||k); } var a = ST.cfg.agencies[code]; return a ? (a.label || 'AG '+code) : 'AG '+code; }
 function kpi(l,v,s){ return '<div class="kpi"><span class="lbl">'+esc(l)+'</span><span class="v">'+esc(v)+'</span><span class="s">'+esc(s||'')+'</span></div>'; }
 function uniqA(a){ return a.filter(function(x,i){ return a.indexOf(x)===i; }); }
 var GEAR = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4a4.9 4.9 0 010-1.6L3.6 5.8l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1h2.6zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg>';
@@ -1604,37 +1615,118 @@ var ICO_TRP = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true
 /* ============ CONTRÔLE DES DONNÉES ODOO (responsables logistiques) ============
    Entrées : export Odoo « Lignes de mouvement de stock » (stock.move.line) et export « Quantités » (stock.quant).
    Tout est calculé dans le navigateur ; rien n'est enregistré. Chaque anomalie liste les lignes Excel concernées. */
-var DQ = { f:{ m:null, q:null }, owners:[], from:'', to:'', res:null, open:{}, lim:{}, busy:'' };
+var DQ = { f:{ m:null, q:null }, owners:[], from:'', to:'', res:null, open:{}, lim:{}, busy:'', co:'LEGAA', month:null, doc:null, index:[], loadedId:null };
+var DQ_CO = { LEGAA:{ label:'LEGAA', soc:/LEGAA/i, ref:/^LGA\//, other:'CAPEMBAL' }, CAPEMBAL:{ label:'CAP\'EMBAL', soc:/CAP.?EMBAL/i, ref:/^(NEUV|MARQ|CAP|GOND)\//, other:'LEGAA' } };
 var ICO_DQ = '<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><rect x="10" y="8" width="34" height="44" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><path d="M17 20h20M17 28h20M17 36h12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="44" r="10" fill="var(--surface)" stroke="currentColor" stroke-width="3"/><path d="M51 51l7 7" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M40 44l3 3 5-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/></svg>';
 function dqStr(v){ return v === null || v === undefined ? '' : String(v).trim(); }
 function dqNum(v){ if (typeof v === 'number') return v; var s = dqStr(v).replace(/\s/g,'').replace(',', '.'); return s === '' ? NaN : +s; }
-function dqDate(v){ if (v instanceof Date) return v; var s = dqStr(v); if (!s) return null; var m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/); if (m) return new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0), +(m[6]||0)); m = s.match(/^(\d{2})\/(\d{2})\/(\d{2,4})/); if (m) return new Date(+(m[3].length===2?'20'+m[3]:m[3]), +m[2]-1, +m[1]); return null; }
+function dqDate(v){ if (v instanceof Date) return v; if (typeof v === 'number' && v > 20000 && v < 80000){ var u = new Date(Math.round((v - 25569) * 86400000)); return new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate(), u.getUTCHours(), u.getUTCMinutes(), u.getUTCSeconds()); } var s = dqStr(v); if (!s) return null; var m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/); if (m) return new Date(+m[1], +m[2]-1, +m[3], +(m[4]||0), +(m[5]||0), +(m[6]||0)); m = s.match(/^(\d{2})\/(\d{2})\/(\d{2,4})/); if (m) return new Date(+(m[3].length===2?'20'+m[3]:m[3]), +m[2]-1, +m[1]); return null; }
 function dqFr(d){ return d ? d.toLocaleDateString('fr-FR') : ''; }
 function dqIso(d){ return d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : ''; }
 /* Lecture d'un export : détection du type par les en-têtes */
-function dqRead(file){
-  return readBuf(file).then(function(buf){
-    var wb = XLSX.read(new Uint8Array(buf), { type:'array', cellDates:true }), ws = wb.Sheets[wb.SheetNames[0]];
-    var A = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:null }); if (!A.length) throw new Error('fichier vide');
-    var H = A[0].map(dqStr), idx = {}; H.forEach(function(h, i){ if (idx[h] === undefined) idx[h] = i; else idx[h+' (2)'] = i; });
-    var kind = idx['Emplacement'] !== undefined && (idx['Colis'] !== undefined || idx['Quantité'] !== undefined) && idx['De'] === undefined ? 'q' : (idx['De'] !== undefined && idx['Vers'] !== undefined ? 'm' : null);
-    if (!kind) throw new Error('format non reconnu (ni « Lignes de mouvement de stock », ni « Quantités »)');
-    var rows = []; for (var i = 1; i < A.length; i++){ var r = A[i]; if (!r || r.every(function(x){ return x === null || x === ''; })) continue; var o = { _l:i+1 }; H.forEach(function(h, j){ if (o[h] === undefined) o[h] = r[j]; }); rows.push(o); }
-    return { kind:kind, name:file.name, rows:rows, cols:H, at:new Date() };
-  });
+function dqParse(name, A){
+  if (!A || !A.length) throw new Error('fichier vide');
+  var H = A[0].map(dqStr), idx = {}; H.forEach(function(h, i){ if (idx[h] === undefined) idx[h] = i; });
+  var kind = idx['Emplacement'] !== undefined && (idx['Colis'] !== undefined || idx['Quantité'] !== undefined) && idx['De'] === undefined ? 'q' : (idx['De'] !== undefined && idx['Vers'] !== undefined ? 'm' : null);
+  if (!kind) throw new Error('format non reconnu (ni « Lignes de mouvement de stock », ni « Quantités »)');
+  var rows = []; for (var i = 1; i < A.length; i++){ var r = A[i]; if (!r || r.every(function(x){ return x === null || x === ''; })) continue; var o = { _l:i+1 }; H.forEach(function(h, j){ if (o[h] === undefined) o[h] = r[j]; }); rows.push(o); }
+  return { kind:kind, name:name, rows:rows, cols:H, at:new Date() };
+}
+function dqRead(file){ return readBuf(file).then(function(buf){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' }); return dqParse(file.name, XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:null })); }); }
+/* Entreprise du fichier : colonne Société (Quantités) ou préfixe des références (Mouvements) */
+function dqCompany(x){
+  var co = { LEGAA:0, CAPEMBAL:0 };
+  x.rows.forEach(function(r){ var soc = dqStr(r['Société']), ref = dqStr(r['Référence']) + ' ' + dqStr(r['De']) + ' ' + dqStr(r['Emplacement']);
+    Object.keys(DQ_CO).forEach(function(k){ if (soc ? DQ_CO[k].soc.test(soc) : DQ_CO[k].ref.test(dqStr(r['Référence'])) || DQ_CO[k].ref.test(dqStr(r['De'])) || DQ_CO[k].ref.test(dqStr(r['Emplacement']))) co[k]++; }); });
+  var tot = co.LEGAA + co.CAPEMBAL; if (!tot) return null;
+  return co.LEGAA >= co.CAPEMBAL ? (co.LEGAA / tot > 0.8 ? 'LEGAA' : null) : (co.CAPEMBAL / tot > 0.8 ? 'CAPEMBAL' : null);
+}
+function dqId(){ return 'DQ' + DQ.co + '_' + DQ.month; }
+function dqMonthDefault(){ var d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function dqBounds(m){ var p = m.split('-'), last = new Date(+p[0], +p[1], 0).getDate(); return [m+'-01', m+'-'+String(last).padStart(2,'0')]; }
+/* Chargement d'une entreprise × mois : fichiers enregistrés, lecture, analyse */
+function dqSelect(co, m){
+  DQ.co = co || DQ.co; DQ.month = m || DQ.month || dqMonthDefault();
+  var b = dqBounds(DQ.month); DQ.from = b[0]; DQ.to = b[1]; DQ.owners = []; DQ.open = {}; DQ.billCache = null; DQ.f = { m:null, q:null }; DQ.res = null; DQ.doc = null;
+  var id = dqId(); DQ.loadedId = id; DQ.busy = 'Chargement de '+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+'…'; render();
+  return STORE.getMonth(id).then(function(doc){
+    if (DQ.loadedId !== id) return;
+    DQ.doc = doc; var files = (doc && doc.files) || [];
+    return Promise.all(files.map(function(meta){ return STORE.loadImportRows(meta).then(function(A){ var x = dqParse(meta.name, A); x.meta = meta; x.at = meta.at ? new Date(meta.at) : null; return x; }, function(e){ toast(meta.name+' : '+e.message); return null; }); })).then(function(L){
+      if (DQ.loadedId !== id) return;
+      L.forEach(function(x){ if (x) DQ.f[x.kind] = x; }); DQ.busy = ''; if (DQ.f.m || DQ.f.q) dqRun(); render();
+    });
+  }).catch(function(e){ DQ.busy = ''; toast('Chargement impossible : '+e.message); render(); });
 }
 function dqAdd(list){
-  var arr = Array.prototype.slice.call(list).filter(function(f){ return /\.(xlsx|xls|csv)$/i.test(f.name); }); if (!arr.length){ toast('Déposer des fichiers Excel exportés d\'Odoo'); return; }
-  DQ.busy = 'Lecture de '+arr.length+' fichier(s)…'; render();
-  Promise.all(arr.map(function(f){ return dqRead(f).then(function(x){ return x; }, function(e){ toast(f.name+' : '+e.message); return null; }); })).then(function(L){
-    L.forEach(function(x){ if (x) DQ.f[x.kind] = x; }); DQ.busy = ''; DQ.owners = []; dqRun(); render();
-    STORE.log('dq_import', L.filter(Boolean).map(function(x){ return x.name+' ('+x.rows.length+' l.)'; }).join(' · '));
-  });
+  if (!canEdit()){ toast('Dépôt réservé aux profils ADV et administrateur'); return; }
+  var arr = Array.prototype.slice.call(list).filter(function(f){ return /\.(xlsx|xls)$/i.test(f.name); }); if (!arr.length){ toast('Déposer des fichiers Excel exportés d\'Odoo'); return; }
+  var id = dqId(), n = 0; DQ.busy = 'Contrôle et enregistrement de '+arr.length+' fichier(s)…'; render();
+  var chain = Promise.resolve();
+  arr.forEach(function(f){ chain = chain.then(function(){
+    return dqRead(f).then(function(x){
+      var co = dqCompany(x);
+      if (co && co !== DQ.co) throw new Error('fichier '+DQ_CO[co].label+' : choisir l\'entreprise '+DQ_CO[co].label+' avant de le déposer');
+      var old = DQ.f[x.kind] && DQ.f[x.kind].meta;
+      return STORE.uploadImport(id, f).then(function(){ n++; if (old) return STORE.deleteImport(id, old).catch(function(){}); });
+    }).catch(function(e){ toast(f.name+' refusé : '+e.message); });
+  }); });
+  chain.then(function(){ DQ.busy = ''; dqRefreshIndex(); if (n) toast(n+' fichier(s) enregistré(s) pour '+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)); return dqSelect(); });
 }
+function dqRemove(kind){
+  var x = DQ.f[kind]; if (!x || !x.meta || !canEdit()) return;
+  STORE.deleteImport(dqId(), x.meta).then(function(){ toast(x.name+' supprimé'); dqRefreshIndex(); dqSelect(); }, function(e){ toast('Suppression impossible : '+e.message); });
+}
+function dqRefreshIndex(){ return STORE.listMonths().then(setMonthsIndex); }
 var DQ_GENERIC = /^(REGUL|MISE EN STOCK|STOCK|TEST|DIVERS|INVENTAIRE)/i;
 var DQ_ROWQ = function(r){ return { 'Ligne':r._l, 'Emplacement':r['Emplacement'], 'Produit':r['Produit'], 'Colis':dqStr(r['Colis']), 'Détenteur':r['Détenteur'], 'N° de commande':r['N° de commande'], 'N° de BR':r['N° de bon de réception'], 'L × l × H mm':dqStr(r['Longueur'])+' × '+dqStr(r['Largeur'])+' × '+dqStr(r['Hauteur']), 'Poids brut kg':r['Poids brut'], 'Volume m3':r['Volume (m³)'], 'Surface m2':r['Surface (m²)'], 'Quantité':r['Quantité'], 'Disponible':r['Available Quantity'], 'Date d\'entrée':dqFr(dqDate(r['Date d\'entrée en stock'])), 'Dernier comptage':dqFr(dqDate(r['Date du dernier comptage'])), 'Code contremaître':r['Code contremaître'] }; };
 var DQ_ROWM = function(r){ return { 'Ligne':r._l, 'Date':r._d ? r._d.toLocaleString('fr-FR',{ dateStyle:'short', timeStyle:'short' }) : dqStr(r['Date']), 'Référence':r['Référence'], 'Produit':r['Produit'], 'Appartenant à':r['Appartenant à'], 'N° de commande':r['N° de commande'], 'N° de BR':r['N° de bon de réception'], 'De':r['De'], 'Vers':r['Vers'], 'Quantité':r['Quantité'], 'Statut':r['Statut'], 'Créé par':r['Créé par'] }; };
+/* Factures à émettre : un client (société du détenteur / propriétaire) dès qu'il a du stock à la date de l'export Quantités
+   ou une entrée / sortie (mouvement entre l'entrepôt et un partenaire) sur la période. Prestations et fournitures exclues. */
+function dqClient(o){ var s = dqStr(o); return s ? s.split(',')[0].trim() : ''; }
+function dqBill(Q, M, A, fromD, toD){
+  var C = {}, self = DQ_CO[DQ.co].soc;
+  function cl(name){ var k = dqClient(name) || '(sans propriétaire)'; return C[k] = C[k] || { client:k, owners:{}, colis:{}, lq:0, qty:0, vol:0, surf:0, eL:0, eQ:0, sL:0, sQ:0, b:0, v:0 }; }
+  Q.forEach(function(r){ var q = dqNum(r['Quantité']); if (!(q > 0)) return; var x = cl(r['Détenteur']); x.owners[dqStr(r['Détenteur'])||'(vide)'] = 1; x.lq++; x.qty += q; if (dqStr(r['Colis'])) x.colis[dqStr(r['Colis'])] = 1; x.vol += dqNum(r['Volume (m³)']) || 0; x.surf += dqNum(r['Surface (m²)']) || 0; });
+  M.forEach(function(r){
+    if (dqStr(r['Statut']) && dqStr(r['Statut']) !== 'done') return;
+    if ((fromD && (!r._d || r._d < fromD)) || (toD && (!r._d || r._d > toD))) return;
+    if (/PRESTATION|FOURNITURE/i.test(dqStr(r['Produit'])) || /^\[(P|F)[A-Z0-9]*\]/.test(dqStr(r['Produit']))) return;
+    var de = dqStr(r['De']), ve = dqStr(r['Vers']), pDe = /^(Partners|Partenaires)\b/i.test(de), pVe = /^(Partners|Partenaires)\b/i.test(ve);
+    var inE = pDe && !pVe && !/^(Virtual|Emplacements virtuels)/i.test(ve), outS = pVe && !pDe && !/^(Virtual|Emplacements virtuels)/i.test(de); if (!inE && !outS) return;
+    var x = cl(r['Appartenant à']); x.owners[dqStr(r['Appartenant à'])||'(vide)'] = 1; var q = dqNum(r['Quantité']) || 0;
+    if (inE){ x.eL++; x.eQ += q; } else { x.sL++; x.sQ += q; }
+  });
+  // anomalies rattachées à chaque client (lignes portant ce détenteur / propriétaire)
+  A.forEach(function(a){ if (a.code === 'Q_DATE_SYS') return; a.rows.forEach(function(r){ var o = r['Détenteur'] !== undefined ? r['Détenteur'] : r['Appartenant à'] !== undefined ? r['Appartenant à'] : r['Détenteur(s)']; if (o === undefined) return;
+    var k = dqClient(String(o).split(', ').length > 1 && r['Détenteur(s)'] !== undefined ? String(o).split(', ')[0] : o) || '(sans propriétaire)'; if (!C[k]) return; if (a.sev === 'bloquant') C[k].b++; else if (a.sev === 'verifier') C[k].v++; }); });
+  return Object.keys(C).map(function(k){ var x = C[k]; x.nColis = Object.keys(x.colis).length; x.internal = self.test(k); x.vol = Math.round(x.vol*1000)/1000; x.surf = Math.round(x.surf*1000)/1000; return x; })
+    .sort(function(a, b){ return (a.client === '(sans propriétaire)') - (b.client === '(sans propriétaire)') || a.internal - b.internal || a.client.localeCompare(b.client); });
+}
+function dqBillView(R){
+  var B = R.bill || [], ext = B.filter(function(x){ return !x.internal && x.client !== '(sans propriétaire)'; }), orphan = B.filter(function(x){ return x.client === '(sans propriétaire)'; })[0], self = B.filter(function(x){ return x.internal; });
+  var ready = ext.filter(function(x){ return !x.b; }).length;
+  var h = '<div class="panel"><div class="ph"><h2>Factures à émettre</h2><span class="muted">'+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+' · '+ext.length+' client'+(ext.length>1?'s':'')+' · stock à la date de l\'export, entrées et sorties du '+(DQ.from ? dqFr(new Date(DQ.from+'T00:00:00')) : '…')+' au '+(DQ.to ? dqFr(new Date(DQ.to+'T00:00:00')) : '…')+'</span><span class="kd-n'+(ready===ext.length?' ok':'')+'">'+ready+' / '+ext.length+' sans anomalie bloquante</span><div class="sp"><button class="btn sm" data-a="xlsBill"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
+  if (!B.length) return h + '<div class="empty">Aucun client avec du stock ou un mouvement sur la période.</div></div>';
+  if (R.A.some(function(a){ return a.code === 'Q_DATE_SYS'; })) h += '<p class="note syn-miss" style="margin:10px 14px"><span class="pill p-bloquant">Toutes les factures</span> La date d\'entrée en stock est vide sur tout l\'export Quantités : la durée de stockage de chaque client ne peut pas être établie à partir d\'Odoo. Point de paramétrage à corriger une fois pour toutes (non compté dans la colonne Données).</p>';
+  h += '<div class="tw"><table class="billt"><thead><tr><th>Client</th><th>Motif</th><th class="n">Colis en stock</th><th class="n">Qté en stock</th><th class="n">Volume m³</th><th class="n">Surface m²</th><th class="n">Entrées (lignes · qté)</th><th class="n">Sorties (lignes · qté)</th><th>Données</th></tr></thead><tbody>';
+  function row(x, cls){ var mot = []; if (x.lq) mot.push('Stock'); if (x.eL) mot.push('Entrées'); if (x.sL) mot.push('Sorties');
+    var st = x.client === '(sans propriétaire)' ? '<span class="pill p-bloquant">À rattacher</span>' : x.internal ? '<span class="pill p-info">Stock propre · non facturé</span>' : x.b ? '<span class="pill p-bloquant">À corriger · '+x.b+' bloquant'+(x.b>1?'s':'')+'</span>'+(x.v?' <span class="pill p-verifier">'+x.v+' à vérifier</span>':'') : x.v ? '<span class="pill p-verifier">'+x.v+' à vérifier</span>' : '<span class="pill p-ok">Prêt</span>';
+    var owners = Object.keys(x.owners).filter(function(o){ return o !== x.client; });
+    return '<tr class="'+(cls||'')+'"><td><button class="lnk" data-dqcli="'+esc(x.client)+'" title="Filtrer les anomalies sur ce client">'+esc(x.client)+'</button>'+(owners.length ? '<span class="sub">'+esc(owners.join(' · '))+'</span>' : '')+'</td><td>'+mot.join(' + ')+'</td><td class="n">'+(x.nColis||'—')+'</td><td class="n">'+(x.qty||'—')+'</td><td class="n">'+(x.vol?nx(x.vol):'—')+'</td><td class="n">'+(x.surf?nx(x.surf):'—')+'</td><td class="n">'+(x.eL ? x.eL+' · '+x.eQ : '—')+'</td><td class="n">'+(x.sL ? x.sL+' · '+x.sQ : '—')+'</td><td>'+st+'</td></tr>'; }
+  h += ext.map(function(x){ return row(x); }).join('');
+  if (orphan) h += row(orphan, 'orph');
+  h += self.map(function(x){ return row(x, 'selfr'); }).join('');
+  return h + '</tbody></table></div><p class="pb note muted" style="margin:0">Client = société du détenteur (Quantités) ou du propriétaire « Appartenant à » (Mouvements), contact après la virgule regroupé. Entrées : réceptions d\'un partenaire ; sorties : livraisons à un partenaire ; ajustements d\'inventaire, production, prestations et fournitures exclus. « Données » : anomalies portant sur les lignes du client. Cliquer un client filtre les anomalies.</p></div>';
+}
+function exportBill(){
+  var R = DQ.res; if (!R) return;
+  var rows = (R.bill||[]).map(function(x){ return { 'Client':x.client, 'Détenteurs / contacts':Object.keys(x.owners).join(' · '), 'Stock propre':x.internal ? 'Oui' : '', 'Colis en stock':x.nColis, 'Lignes de stock':x.lq, 'Qté en stock':x.qty, 'Volume m3':x.vol, 'Surface m2':x.surf, 'Entrées lignes':x.eL, 'Entrées qté':x.eQ, 'Sorties lignes':x.sL, 'Sorties qté':x.sQ, 'Anomalies bloquantes':x.b, 'Anomalies à vérifier':x.v, 'Données':x.client === '(sans propriétaire)' ? 'À rattacher' : x.internal ? 'Non facturé' : x.b ? 'À corriger' : 'Prêt' }; });
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Factures à émettre');
+  saveXlsx(wb, 'Factures à émettre '+DQ_CO[DQ.co].label.replace(/'/g,'')+' '+DQ.month+'.xlsx');
+}
 function dqRun(){
+  if (DQ.owners.length && !DQ.billCache){ var keepO = DQ.owners; DQ.owners = []; dqRun(); DQ.owners = keepO; }
   var Q = DQ.f.q ? DQ.f.q.rows : [], M = DQ.f.m ? DQ.f.m.rows : [], A = [], own = DQ.owners;
   function add(code, src, sev, title, explain, todo, rows, hl){ if (rows.length) A.push({ code:code, src:src, sev:sev, title:title, explain:explain, todo:todo, rows:rows, hl:hl||[] }); }
   function ownOk(o){ return !own.length || own.indexOf(dqStr(o) || '(sans détenteur)') >= 0; }
@@ -1685,7 +1777,11 @@ function dqRun(){
     add('M_TEST','Mouvements','verifier','Mouvement sur produit ou commande de test','Données de test dans les mouvements réels.','Annuler ou isoler les mouvements de test.', Rm(function(r){ return /\bTEST/i.test(dqStr(r['Produit'])+' '+dqStr(r['N° de commande'])+' '+dqStr(r['Appartenant à'])); }), ['Produit']);
   }
   // ---- Croisé : stock théorique (Σ entrées − Σ sorties) vs stock réel, par produit, sur les entrepôts présents dans l'export Quantités ----
-  if (Q.length && M.length){
+  var minMv = null; M.forEach(function(r){ if (r._d && (!minMv || r._d < minMv)) minMv = r._d; });
+  var minCol = null; Q.forEach(function(r){ var d = dqDate(r['Date création colis date']) || dqDate(r['Date d\'entrée en stock']); if (d && (!minCol || d < minCol)) minCol = d; });
+  DQ.balNote = '';
+  if (Q.length && M.length && minCol && minMv && minMv > new Date(minCol.getTime() + 86400000)) DQ.balNote = 'Contrôle « stock réel ≠ mouvements » non réalisé : l\'export Mouvements commence le '+dqFr(minMv)+' alors que des colis en stock datent du '+dqFr(minCol)+'. Exporter l\'historique complet des mouvements pour l\'activer.';
+  else if (Q.length && M.length){
     var wh = {}; Q.forEach(function(r){ var w = dqStr(r['Emplacement']).split('/')[0]; if (w) wh[w] = 1; });
     var inW = function(l){ return !!wh[dqStr(l).split('/')[0]]; };
     var P = {};
@@ -1700,20 +1796,27 @@ function dqRun(){
   var ord = { bloquant:0, verifier:1, info:2 }, so = { 'Stock':0, 'Croisé':1, 'Mouvements':2 };
   A.sort(function(a, b){ return ord[a.sev] - ord[b.sev] || so[a.src] - so[b.src] || b.rows.length - a.rows.length; });
   var ownSet = {}; Q.forEach(function(r){ ownSet[dqStr(r['Détenteur']) || '(sans détenteur)'] = 1; }); M.forEach(function(r){ ownSet[dqStr(r['Appartenant à']) || '(sans détenteur)'] = 1; });
-  DQ.res = { A:A, nQ:q.length, nM:m.length, ownList:Object.keys(ownSet).sort(), at:new Date() };
+  DQ.res = { A:A, nQ:q.length, nM:m.length, ownList:Object.keys(ownSet).sort(), at:new Date(), bill:(own.length && DQ.billCache) ? DQ.billCache : (DQ.billCache = dqBill(Q, M, A, fromD, toD)) };
 }
 function vDQ(){
-  var h = '<section class="view">';
-  h += '<div class="panel"><div class="ph"><h2>Contrôle des données Odoo</h2><span class="muted">Avant facturation : déposer l\'export des mouvements de stock et l\'export des quantités en stock. Rien n\'est enregistré.</span></div>'+
+  if (!DQ.month){ setTimeout(function(){ dqSelect(DQ.co, dqMonthDefault()); }, 0); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
+  var idx = {}; DQ.index.forEach(function(d){ idx[d.id] = d; });
+  var L = last18(); if (L.indexOf(DQ.month) < 0){ L.push(DQ.month); L.sort().reverse(); } var i = L.indexOf(DQ.month);
+  var h = '<section class="view"><div class="strip dq-top"><span class="lbl">Entreprise</span><span class="seg">'+Object.keys(DQ_CO).map(function(k){ return '<button class="seg-b'+(DQ.co===k?' on':'')+'" data-dqco="'+k+'" aria-pressed="'+(DQ.co===k)+'">'+DQ_CO[k].label+'</button>'; }).join('')+'</span>'+
+    '<span class="lbl">Période</span><span class="persel"><button class="btn sm" data-dqm="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="dqmsel" class="bigsel" aria-label="Période">'+L.map(function(x){ var d = idx['DQ'+DQ.co+'_'+x], nf = d ? (d.files||[]).length : 0; return '<option value="'+x+'"'+(x===DQ.month?' selected':'')+'>'+monthLabel(x)+(nf ? ' · '+nf+' fichier'+(nf>1?'s':'') : '')+'</option>'; }).join('')+'</select><button class="btn sm" data-dqm="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span>'+
+    '<span class="muted">'+(DQ.doc && DQ.doc.updatedAt ? 'Enregistré le '+dt(DQ.doc.updatedAt)+' par '+esc(DQ.doc.updatedBy||'') : 'Aucun fichier pour ce mois')+'</span></div>';
+  h += '<div class="panel"><div class="ph"><h2>Contrôle des données Odoo · '+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+'</h2><span class="muted">Déposer l\'export des mouvements de stock et l\'export des quantités en stock du mois. Les fichiers sont conservés 18 mois.</span></div>'+
     '<div class="pb dq-files">'+[['m','Mouvements de stock','Odoo › Inventaire › Rapports › Historique des mouvements (stock.move.line) — export Excel'],['q','Quantités en stock','Odoo › Inventaire › Rapports › Stock (stock.quant) — export Excel']].map(function(k){ var f = DQ.f[k[0]];
-      return '<div class="dq-slot'+(f?' done':'')+'"><span class="ds-t">'+k[1]+'</span>'+(f ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+f.rows.length+' lignes · chargé à '+f.at.toLocaleTimeString('fr-FR',{ hour:'2-digit', minute:'2-digit' })+'</span><button class="btn sm" data-dqrm="'+k[0]+'">Retirer</button>' : '<span class="muted">'+k[2]+'</span>')+'</div>'; }).join('')+
-    '<label class="drop" id="dqdrop"><input type="file" id="dqin" multiple accept=".xlsx,.xls"><strong>'+(DQ.busy ? esc(DQ.busy) : 'Déposer les exports Odoo ici (les deux en même temps si possible)')+'</strong><span class="muted">Le type de fichier est reconnu automatiquement par ses colonnes.</span></label></div></div>';
+      return '<div class="dq-slot'+(f?' done':'')+'"><span class="ds-t">'+k[1]+'</span>'+(f ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+f.rows.length+' lignes'+(f.meta ? ' · '+dt(f.meta.at)+' · '+esc(f.meta.by||'') : '')+'</span>'+(f.meta ? '<div class="row"><button class="btn sm" data-dqdl="'+k[0]+'">Télécharger</button>'+(canEdit()?'<button class="btn sm" data-dqrm="'+k[0]+'">Supprimer</button>':'')+'</div>' : '') : '<span class="muted">'+k[2]+'</span>')+'</div>'; }).join('')+
+    '<label class="drop" id="dqdrop"><input type="file" id="dqin" multiple accept=".xlsx,.xls"><strong>'+(DQ.busy ? esc(DQ.busy) : 'Déposer les exports Odoo du mois ici (les deux en même temps si possible)')+'</strong><span class="muted">Type de fichier et entreprise reconnus automatiquement ; un nouveau dépôt remplace le fichier du même type.</span></label></div></div>';
   if (!DQ.res){ return h + '</section>'; }
   var R = DQ.res, c = { bloquant:0, verifier:0, info:0 }; R.A.forEach(function(a){ c[a.sev] += a.code === 'Q_DATE_SYS' ? a.rows[0]['Lignes concernées'] : a.rows.length; });
   h += '<div class="strip dq-f"><span class="lbl">Détenteur</span><div class="mfilt"><button class="fbtn'+(DQ.owners.length?' on':'')+'" data-fopen="dqown"><span>'+(DQ.owners.length ? (DQ.owners.length===1 ? esc(DQ.owners[0]) : DQ.owners.length+' sélectionnés') : 'Tous')+'</span><span class="caret">▾</span></button>'+(ST.fOpen==='dqown' ? '<div class="fpop" id="fpop"><input type="search" class="fq" data-fsearch="dqown" placeholder="Rechercher…"><div class="fpop-h"><button class="lnk" data-dqownnone>Tous</button></div><div class="fpop-l">'+R.ownList.map(function(o){ return '<label><input type="checkbox" data-dqown value="'+esc(o)+'"'+(DQ.owners.indexOf(o)>=0?' checked':'')+'> '+esc(o)+'</label>'; }).join('')+'</div></div>' : '')+'</div>'+
     (DQ.f.m ? '<span class="lbl">Mouvements du</span><input type="date" id="dqfrom" value="'+esc(DQ.from)+'"><span class="lbl">au</span><input type="date" id="dqto" value="'+esc(DQ.to)+'">' : '')+
     '<span class="sp"><button class="btn" data-a="xlsDQ"'+(canSave()?'':' disabled')+'>Exporter les anomalies (.xlsx)</button></span></div>';
   h += '<div class="kpis">'+kpi('Bloquant', c.bloquant, 'lignes à corriger avant facturation')+kpi('À vérifier', c.verifier, 'lignes à contrôler')+kpi('Info', c.info, 'points d\'attention')+kpi('Lignes analysées', R.nQ+' stock · '+R.nM+' mvts', (DQ.owners.length ? 'détenteur filtré' : 'tous détenteurs')+((DQ.from||DQ.to) ? ' · période filtrée' : ''))+'</div>';
+  h += dqBillView(R);
+  if (DQ.balNote) h += '<p class="note syn-miss">'+esc(DQ.balNote)+'</p>';
   h += '<div class="panel"><div class="ph"><h2>Anomalies à corriger dans Odoo</h2><span class="legend"><i class="lg-b"></i>Bloquant<i class="lg-v"></i>À vérifier<i class="lg-i"></i>Info</span></div>';
   if (!R.A.length) h += '<div class="empty">Aucune anomalie détectée.</div>';
   else h += '<div class="anom-hd dq-hd"><span>Gravité</span><span>Source</span><span>Anomalie</span><span class="n">Lignes</span><span>Explication</span><span>À faire</span></div>';
@@ -1753,7 +1856,7 @@ function exportDQ(){
       X.utils.book_append_sheet(wb, ws, sh[0]);
     });
     var buf = X.write(wb, { bookType:'xlsx', type:'array' });
-    saveBlob('Contrôle données Odoo '+new Date().toISOString().slice(0,10)+'.xlsx', new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'xlsx');
+    saveBlob('Contrôle données Odoo '+DQ_CO[DQ.co].label.replace(/'/g,'')+' '+DQ.month+'.xlsx', new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'xlsx');
   }
   loadStyledXlsx().then(function(X){ build(X, true); }, function(){ build(XLSX, false); });
 }
@@ -1943,7 +2046,8 @@ function persist(what){
     }, function(e){ toast('Enregistrement impossible : '+e.message); });
   }, 700);
 }
-function refreshIndex(){ return STORE.listMonths().then(function(L){ ST.monthsIndex = L; if (ST.module==='log' && (ST.ltab==='fac' || ST.ltab==='syn')) render(); }); }
+function setMonthsIndex(L){ DQ.index = L.filter(function(m){ return /^DQ/.test(String(m.id)); }); ST.monthsIndex = L.filter(function(m){ return !/^DQ/.test(String(m.id)); }); return ST.monthsIndex; }
+function refreshIndex(){ return STORE.listMonths().then(function(L){ L = setMonthsIndex(L); if (ST.module==='log' && (ST.ltab==='fac' || ST.ltab==='syn')) render(); }); }
 
 /* A · Import : 2 fichiers */
 var SLOTS = [['manut','Entrées et sorties','Export Odoo « Fichier Manutention »'],['stock','Stockage','Export Odoo « Fichier Client Stockage »']];
@@ -3009,7 +3113,11 @@ document.addEventListener('click', function(e){
   if (d.suim){ SUI.month = d.suim; render(); return; }
   if (d.dqa){ DQ.open[d.dqa] = !DQ.open[d.dqa]; render(); return; }
   if (d.dqmore){ DQ.lim[d.dqmore] = (DQ.lim[d.dqmore] || 200) + 500; render(); return; }
-  if (d.dqrm){ DQ.f[d.dqrm] = null; DQ.owners = []; if (DQ.f.m || DQ.f.q) dqRun(); else DQ.res = null; render(); return; }
+  if (d.dqrm){ dqRemove(d.dqrm); return; }
+  if (d.dqdl){ var fx = DQ.f[d.dqdl]; if (fx && fx.meta) STORE.getFileBytes(fx.meta).then(function(b){ saveBlob(fx.name, new Blob([b]), 'xlsx'); }); return; }
+  if (d.dqcli){ var own = DQ.res.ownList.filter(function(o){ return (dqClient(o) || '(sans propriétaire)') === d.dqcli || (d.dqcli === '(sans propriétaire)' && o === '(sans détenteur)'); }); DQ.owners = own; dqRun(); render(); setTimeout(function(){ var e = document.querySelector('.dq-f'); if (e) e.scrollIntoView({ block:'start' }); }, 0); return; }
+  if (d.dqco){ if (d.dqco !== DQ.co) dqSelect(d.dqco, DQ.month); return; }
+  if (d.dqm){ dqSelect(DQ.co, d.dqm); return; }
   if (d.dqownnone !== undefined){ DQ.owners = []; dqRun(); render(); return; }
   if (d.goinv){ goInvoice(d.goinv, ST.openPdf); return; }
   if (d.backctl !== undefined){ ST.sub = 'ctl'; ST.hlInv = null; var bp = ST.backCtl; ST.backCtl = null; render(); setTimeout(function(){ var r = bp && document.querySelector('tr[data-pdf="'+bp+'"]'); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
@@ -3057,6 +3165,7 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsCtl') exportCtl();
   else if (a === 'xlsAnom') exportAnomalies();
   else if (a === 'xlsDQ') exportDQ();
+  else if (a === 'xlsBill') exportBill();
   else if (a === 'suiRefresh') suiRefresh();
   else if (a === 'xlsSui') exportSuivi();
   else if (a === 'chat'){ CH.open = !CH.open; if (CH.open && CH.mode === 'conv' && CH.cur) STORE.markRead(CH.cur); renderChat(true); }
@@ -3090,7 +3199,8 @@ document.addEventListener('change', function(e){
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
   if (t.dataset.dqown !== undefined && t.type === 'checkbox'){ DQ.owners = DQ.owners.filter(function(x){ return x !== t.value; }); if (t.checked) DQ.owners.push(t.value); var fl0 = document.querySelector('#fpop .fpop-l'), st1 = fl0 ? fl0.scrollTop : 0; dqRun(); render(); fl0 = document.querySelector('#fpop .fpop-l'); if (fl0) fl0.scrollTop = st1; return; }
-  if (t.id === 'dqfrom' || t.id === 'dqto'){ DQ[t.id === 'dqfrom' ? 'from' : 'to'] = t.value; dqRun(); render(); return; }
+  if (t.id === 'dqmsel'){ dqSelect(DQ.co, t.value); return; }
+  if (t.id === 'dqfrom' || t.id === 'dqto'){ DQ[t.id === 'dqfrom' ? 'from' : 'to'] = t.value; DQ.billCache = null; dqRun(); render(); return; }
   if (d.fchk){ var FF = ST.invF = ST.invF || {}, arr = FF[d.fchk] = (FF[d.fchk] || []).filter(function(x){ return x !== t.value; }); if (t.checked) arr.push(t.value); var fl = document.querySelector('#fpop .fpop-l'), st0 = fl ? fl.scrollTop : 0; render(); fl = document.querySelector('#fpop .fpop-l'); if (fl) fl.scrollTop = st0; return; }
   if (d.pchk){ if (!canEdit() || monthClosed()){ render(); return; } ST.ov.pchk = ST.ov.pchk || {}; ST.ov.pchk[d.pchk] = t.value; var pp = ST.pdfs.filter(function(x){ return x.id === d.pchk; })[0]; render(); persist('Check '+(pp ? pp.name : d.pchk)+' : '+PCHK[t.value]); return; }
   if (d.st){ if (!canEdit()){ render(); return; } ST.ov.status[d.st] = t.value; render(); persist('Statut '+(ST.R.invoices.filter(function(I){ return I.key===d.st; })[0]||{}).num+' : '+INVST[t.value]); return; }
@@ -3226,7 +3336,7 @@ function start(profile){
     if (m30 && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Minimum m² par appareil désactivé sur toutes les grilles (clause abandonnée)').catch(function(){});
     var ch = applyAgencyRules(ST.cfg); if (ch.length && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Règle de facturation AG 58 appliquée (Contrats / FHR par contremaître, cas 1) : '+ch.join(', ')).catch(function(){});
     ST.cfgM = ST.cfg; return STORE.listMonths(); })
-    .then(function(L){ ST.monthsIndex = L; var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); },
+    .then(function(L){ L = setMonthsIndex(L); var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); },
       function(e){ toast('Base de données inaccessible : '+e.message); });
 }
 STORE.onAuth(function(profile, msg){ if (profile) start(profile); else { ST.user = null; showLogin(msg); } });
