@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.18 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.19 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -650,6 +650,37 @@ table.cdt td.n{white-space:nowrap}
 table.ct2 .lnk.stl{text-decoration:underline;text-decoration-color:#bbb;text-underline-offset:3px;color:inherit}
 table.ct2 .lnk.stl:hover{text-decoration-color:#111}
 table.cdt tr.hl td{background:#f2f2f0}
+/* ---- v5.4 : bordures, blocs par famille ---- */
+table.ct2{border:1px solid #e3e3e1}
+table.ct2 th,table.ct2 td{border:1px solid #ececea}
+table.ct2 td.mono,table.ct2 th:first-child{white-space:nowrap}
+table.ct2 .icb{padding:5px 8px;gap:3px}
+table.ct2 .icb svg{width:18px;height:18px}
+table.ct2 .icb span{font-size:11px}
+table.ct2 td.icg{min-width:96px}
+table.cdt2{border-collapse:collapse;width:100%;border:1px solid #d9d9d6;font-size:13px}
+table.cdt2 th,table.cdt2 td{border:1px solid #e6e6e3;padding:7px 9px;background:#fff}
+table.cdt2 th{font-weight:600;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left}
+table.cdt2 th.n,table.cdt2 td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.cdt2 th.c,table.cdt2 td.c{text-align:center;white-space:nowrap}
+table.cdt2 td.id{white-space:nowrap}
+table.cdt2 th.bh{text-align:center;color:#111;font-size:12px;border-bottom:2px solid #1c1c1c}
+table.cdt2 .fE{background:#f6f8fb}table.cdt2 .fS{background:#f8f6fb}table.cdt2 .fK{background:#f6faf6}table.cdt2 .fT{background:#f1f1ef}
+table.cdt2 th.fE,table.cdt2 th.fS,table.cdt2 th.fK,table.cdt2 th.fT{background-clip:padding-box}
+table.cdt2 .b0{border-left:2px solid #9a9a98}
+table.cdt2 .b1{border-right:2px solid #9a9a98}
+table.cdt2 td.tt{font-weight:700}
+table.cdt2 tr.tot td{font-weight:700;border-bottom:2px solid #9a9a98}
+table.cdt2 tr.hl td{box-shadow:inset 0 2px 0 #1c1c1c,inset 0 -2px 0 #1c1c1c}
+.cdf-f{border:1px solid #e3e3e1;border-left:4px solid #9a9a98;border-radius:3px;padding:10px 12px;margin:12px 0}
+.cdf-f.fE{border-left-color:#5b7aa6}.cdf-f.fS{border-left-color:#8a6fb0}.cdf-f.fK{border-left-color:#5e8f61}
+.cdf-fh{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;margin-bottom:8px}
+.cdf-fh b{font-size:15px}
+.cdf-f table.ct2 tr.tot td{font-weight:700}
+table.ct2 th.w1{width:1%}
+table.ct2 td.icg .icb{border-color:#dcdcd9;background:#fafaf9;margin-right:4px}
+table.ct2 td.icg .icb span{font-size:12px;font-weight:600;color:#333}
+table.ct2 td.icg .icb:hover{border-color:#999;background:#fff}
 </style>
 </head>
 <body>
@@ -3037,14 +3068,14 @@ function vControl(){
   function menuBtn(id){ return '<button class="cm-b" data-cmenu="'+esc(id)+'" aria-label="Autres actions">⋯</button>'; }
   if (tab === 'ok'){
     var sO = 0, sC = 0; linked.forEach(function(p){ var v = p.result.parsed && p.result.parsed.totalHT; if (typeof v === 'number') sO = E.r2(sO + v); sC = E.r2(sC + ctlHT(EV[p.id].L)); });
-    h += '<div class="tw"><table class="ct2"><thead><tr><th>N° Odoo</th><th>Facture calculée</th><th>Affaire</th><th>Appareils</th><th class="n">HT Odoo</th><th class="n">HT calculé</th><th class="n">Écart</th><th>Statut</th><th class="c">PDF</th><th></th></tr>'+
+    h += '<div class="tw"><table class="ct2"><thead><tr><th class="w1">N° Odoo</th><th class="w1">Facture calculée</th><th>Affaire</th><th>Appareils</th><th class="n">HT Odoo</th><th class="n">HT calculé</th><th class="n">Écart</th><th>Statut</th><th class="c">PDF</th><th></th></tr>'+
       '<tr class="tot"><td>'+linked.length+' facture'+(linked.length>1?'s':'')+'</td><td>'+(ST.R.invoices.length - missing.length)+' / '+ST.R.invoices.length+' rapprochées</td><td></td><td></td><td class="n">'+n2(sO)+'</td><td class="n">'+n2(sC)+'</td><td class="n">'+dEur(E.r2(sO - sC))+'</td><td colspan="3"></td></tr></thead><tbody>';
     linked.forEach(function(p){ var r = p.result || {}, ev = EV[p.id], L = ev.L, open = ST.openPdf === p.id, hc = ctlHT(L), hp = r.parsed && typeof r.parsed.totalHT === 'number' ? r.parsed.totalHT : null;
       var affs = uniqA([].concat.apply([], L.map(invAffs))), aps = uniqA([].concat.apply([], L.map(invAps)));
       h += '<tr class="click'+(open?' open':'')+'" data-pdf="'+esc(p.id)+'"><td class="mono" title="'+esc(p.name)+'"><span class="arr">'+(open?'▾':'▸')+'</span> '+esc(r.parsed && r.parsed.numero ? r.parsed.numero : p.name)+'</td><td class="mono">'+L.map(function(I){ return '<button class="lnk mono" data-goinv="'+esc(I.key)+'" title="Ouvrir dans Factures">'+esc(I.num)+'</button>'; }).join('<br>')+'<span class="tag2">'+(ev.manual ? 'manuel' : 'auto')+'</span></td>'+
         '<td class="mono">'+codesCell(affs)+'</td><td class="mono">'+codesCell(aps)+'</td>'+
         '<td class="n">'+(hp !== null ? n2(hp) : '—')+'</td><td class="n">'+n2(hc)+'</td><td class="n">'+dEur(hp !== null ? E.r2(hp - hc) : null)+'</td><td><button class="lnk stl" data-gocdf="'+esc(p.id)+'" data-tip="Ouvrir le contrôle détaillé de cette facture">'+sdot(ev.status)+'</button></td>'+
-        '<td class="c icg">'+icb('data-pvo="'+esc(p.id)+'"', IC_PDF+'<span>O</span>', 'PDF Odoo')+L.map(function(I){ return icb('data-pvt="'+esc(I.key)+'"', IC_PDF+'<span>C</span>', 'Facture calculée '+I.num); }).join('')+'</td>'+
+        '<td class="c icg">'+icb('data-pvo="'+esc(p.id)+'"', IC_PDF+'<span>Odoo</span>', 'Voir le PDF Odoo')+L.map(function(I){ return icb('data-pvt="'+esc(I.key)+'"', IC_PDF+'<span>'+(L.length > 1 ? esc(I.num.slice(-6)) : 'Calculée')+'</span>', 'Voir la facture calculée '+I.num); }).join('')+'</td>'+
         '<td class="c icg">'+(!ro ? icb('data-pas="'+esc(p.id)+'"', IC_LINK, 'Associer à d\'autres factures') + icb('data-punl="'+esc(p.id)+'"', IC_UNLINK, 'Dissocier') : '')+menuBtn('p:'+p.id)+'</td></tr>';
       if (open) h += '<tr class="det"><td colspan="10">'+pdfDetail(p, { note:ev.note, checks:ev.checks, parsed:r.parsed }, L[0] || null)+'</td></tr>'; });
     if (!linked.length) h += '<tr><td colspan="10" class="muted">Aucune facture Odoo associée. Déposer les PDF du mois.</td></tr>';
@@ -3054,14 +3085,14 @@ function vControl(){
     h += '<div class="tw"><table class="ct2"><thead><tr><th>N° Odoo</th><th>Fichier</th><th>Affaire lue</th><th>Appareils lus</th><th class="n">HT Odoo</th><th>Statut</th><th>Motif</th><th class="c">PDF</th><th></th></tr><tr class="tot"><td>'+orphan.length+' facture'+(orphan.length>1?'s':'')+'</td><td colspan="3"></td><td class="n">'+n2(s2)+'</td><td colspan="4"></td></tr></thead><tbody>';
     orphan.forEach(function(p){ var r = p.result || {}, ev = EV[p.id], Q = r.parsed;
       h += '<tr><td class="mono">'+esc(Q && Q.numero ? Q.numero : '—')+'</td><td>'+esc(p.name)+'</td><td class="mono">'+codesCell(Q ? Q.affaires : [])+'</td><td class="mono">'+codesCell(Q ? Q.appareils.filter(function(a){ return Q.affaires.indexOf(a) < 0; }) : [])+'</td><td class="n">'+(Q && typeof Q.totalHT === 'number' ? n2(Q.totalHT) : '—')+'</td><td>'+sdot(ev.status)+'</td><td class="muted small">'+esc(ev.note || '')+'</td>'+
-        '<td class="c icg">'+icb('data-pvo="'+esc(p.id)+'"', IC_PDF+'<span>O</span>', 'PDF Odoo')+'</td><td class="c icg">'+(!ro ? icb('data-pas="'+esc(p.id)+'"', IC_LINK, 'Associer à des factures calculées') : '')+menuBtn('p:'+p.id)+'</td></tr>'; });
+        '<td class="c icg">'+icb('data-pvo="'+esc(p.id)+'"', IC_PDF+'<span>Odoo</span>', 'Voir le PDF Odoo')+'</td><td class="c icg">'+(!ro ? icb('data-pas="'+esc(p.id)+'"', IC_LINK, 'Associer à des factures calculées') : '')+menuBtn('p:'+p.id)+'</td></tr>'; });
     if (!orphan.length) h += '<tr><td colspan="9" class="muted">Toutes les factures Odoo sont associées.</td></tr>';
     h += '</tbody></table></div>';
   } else {
     h += '<div class="tw"><table class="ct2"><thead><tr><th>Facture calculée</th><th>Affaire</th><th>Appareils</th><th>Code contremaître</th><th class="n">Entrées</th><th class="n">Sorties</th><th class="n">Stockage</th><th class="n">HT calculé</th><th class="c">PDF</th><th></th></tr><tr class="tot"><td>'+missing.length+' facture'+(missing.length>1?'s':'')+'</td><td colspan="6"></td><td class="n">'+n2(ctlHT(missing))+'</td><td colspan="2"></td></tr></thead><tbody>';
     missing.forEach(function(I){ var f = famTotals(I);
       h += '<tr><td><button class="lnk mono" data-goinv="'+esc(I.key)+'">'+esc(I.num)+'</button></td><td class="mono">'+codesCell(invAffs(I))+'</td><td class="mono">'+codesCell(invAps(I))+'</td><td class="mono">'+esc(Object.keys(I.cmCodes).join(', ') || '—')+'</td><td class="n">'+n2(f.E)+'</td><td class="n">'+n2(f.S)+'</td><td class="n">'+n2(f.STK)+'</td><td class="n">'+n2(I.totals.HT)+'</td>'+
-        '<td class="c icg">'+icb('data-pvt="'+esc(I.key)+'"', IC_PDF+'<span>C</span>', 'Facture calculée')+'</td><td class="c icg">'+(!ro && P.length ? icb('data-ipick="'+esc(I.key)+'"', IC_LINK, 'Associer à une facture Odoo') : '')+menuBtn('i:'+I.key)+'</td></tr>'; });
+        '<td class="c icg">'+icb('data-pvt="'+esc(I.key)+'"', IC_PDF+'<span>Calculée</span>', 'Voir la facture calculée')+'</td><td class="c icg">'+(!ro && P.length ? icb('data-ipick="'+esc(I.key)+'"', IC_LINK, 'Associer à une facture Odoo') : '')+menuBtn('i:'+I.key)+'</td></tr>'; });
     if (!missing.length) h += '<tr><td colspan="10" class="muted">Toutes les factures calculées ont un PDF Odoo.</td></tr>';
     h += '</tbody></table></div>';
   }
@@ -3080,68 +3111,91 @@ function ctlMenuHtml(ro){
   } else { it.push('<button data-pvt="'+esc(id)+'">Voir la facture calculée</button>'); it.push('<button data-goinv="'+esc(id)+'">Ouvrir dans Factures</button>'); if (!ro && ST.pdfs.length){ it.push('<hr>'); it.push('<button data-ipick="'+esc(id)+'">Associer à une facture Odoo…</button>'); } }
   return '<div class="cmenu" style="left:'+m.x+'px;top:'+m.y+'px">'+it.join('')+'</div>';
 }
-/* ==== E · Contrôle détaillé factures : par facture Odoo, montants par famille et lignes en écart ====
-   Montant Odoo ligne à ligne : fichier de calcul déposé (s'il existe), sinon colonne « Prix » des exports Odoo du mois. */
-var CDF_ST = { ok:['d-ok','Identique'], diff:['d-ko','Montant différent'], present:['d-n','Sans montant Odoo'], absent_calc:['d-w','Absente du calcul'], non_fact:['d-w','Non facturée par l\'outil'], absent_adv:['d-w','Absente du fichier']};
-var FAMLBL = { E:'Entrée', S:'Sortie', STK:'Stockage' };
-function cdfLines(L){
-  var keys = {}; L.forEach(function(I){ keys[I.key] = 1; });
-  if (ST.adv && ST.adv.lines && !ST.adv.error){ var C = advCompare(); return C ? C.rows.filter(function(x){ return x.I && keys[x.I.key]; }).map(function(x){ return { st:x.st, I:x.I, r:x.r, l:x.l, fam:x.fam, odoo:x.adv, calc:x.calc, d:x.d, why:x.why }; }) : []; }
-  var out = [];
+/* ==== E · Contrôle détaillé factures ====
+   Par facture Odoo associée et par famille : montant lu dans le PDF Odoo, montant de l'outil, écart (somme des écarts de famille = écart total, identique à l'onglet D).
+   Détail ligne à ligne : lignes de l'outil (colis, calcul). Le prix Odoo ligne à ligne (fichier de calcul déposé, sinon colonne « Prix » des exports) n'est comparé
+   que si sa somme retombe sur le montant de la famille facturé dans Odoo (à 0,05 € près) ; sinon il n'explique pas la facture et n'est pas utilisé. */
+var CDF_ST = { ok:['d-ok','Identique'], diff:['d-ko','Montant différent'], odoo_only:['d-w','Absente de l\'outil'], tool_only:['d-w','Absente côté Odoo'], info:['d-n','—'] };
+var FAMLBL = { E:'Entrées', S:'Sorties', STK:'Stockage' };
+var CDF_TOL = 0.05;
+function cdfSrc(){ return ST.adv && ST.adv.lines && !ST.adv.error ? 'adv' : 'prix'; }
+function cdfFamLines(L){
+  var keys = {}, out = { E:[], S:[], STK:[] }, src = cdfSrc(), advBy = {}, advOnly = [];
+  L.forEach(function(I){ keys[I.key] = 1; });
+  if (src === 'adv'){ var C = advCompare(); (C ? C.rows : []).forEach(function(x){ if (x.r) advBy[x.r.key] = x.adv; else if (x.I && keys[x.I.key] && x.fam) advOnly.push(x); }); }
   L.forEach(function(I){ I.lineList.forEach(function(ln){ ln.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (!r || r.kind === 'min30') return;
-    var ex = ST.ov.exclude[k], calc = r.billable && !ex ? E.r2(r.amount) : 0, o = isNaN(r.odooPrix) || r.odooPrix === null ? null : E.r2(r.odooPrix), d = o === null ? null : E.r2(o - calc);
-    out.push({ st:o === null ? 'present' : Math.abs(d) <= 0.01 ? 'ok' : (calc === 0 && o ? 'non_fact' : 'diff'), I:I, r:r, l:null, fam:r.kind === 'manut' ? r.op : 'STK', odoo:o, calc:calc, d:d, why:ex ? 'exclue dans l\'outil ('+ex+')' : (!r.billable ? 'non facturable' : '') }); }); }); });
+    var ex = ST.ov.exclude[k], calc = r.billable && !ex ? E.r2(r.amount) : 0, f = r.kind === 'manut' ? r.op : 'STK';
+    var o = src === 'adv' ? (Object.prototype.hasOwnProperty.call(advBy, k) ? advBy[k] : null) : (r.odooPrix === null || r.odooPrix === undefined || isNaN(r.odooPrix) ? null : E.r2(r.odooPrix));
+    if (!calc && !o) return; // ni facturée par l'outil ni prix Odoo : sans objet
+    out[f] && out[f].push({ I:I, r:r, l:null, fam:f, odoo:o, calc:calc, why:ex ? 'exclue dans l\'outil ('+ex+')' : '' }); }); }); });
+  advOnly.forEach(function(x){ if (out[x.fam] && x.adv) out[x.fam].push({ I:x.I, r:null, l:x.l, fam:x.fam, odoo:x.adv, calc:0, why:x.why }); });
   return out;
 }
 function cdfRows(){
   var T = ctlTabs(ST.pdfs);
-  return T.linked.map(function(p){ var ev = T.EV[p.id], L = ev.L, Q = p.result.parsed || { fam:{} }, M = L.length === 1 ? L[0] : mergeInv(L), f = famTotals(M), lines = cdfLines(L);
-    var bad = lines.filter(function(x){ return x.st !== 'ok' && x.st !== 'present'; }), expl = E.r2(lines.reduce(function(s, x){ return s + (x.d || 0); }, 0));
-    var ho = typeof Q.totalHT === 'number' ? Q.totalHT : null;
-    return { p:p, num:Q.numero || p.name, L:L, M:M, affs:uniqA([].concat.apply([], L.map(invAffs))), odoo:{ E:Q.fam.E, S:Q.fam.S, STK:Q.fam.STK, T:ho }, calc:{ E:f.E, S:f.S, STK:f.STK, T:M.totals.HT }, ecart:ho === null ? null : E.r2(ho - M.totals.HT), lines:lines, bad:bad, expl:expl }; });
+  return T.linked.map(function(p){ var ev = T.EV[p.id], L = ev.L, Q = p.result.parsed || { fam:{} }, M = L.length === 1 ? L[0] : mergeInv(L), f = famTotals(M), FL = cdfFamLines(L);
+    var ho = typeof Q.totalHT === 'number' ? Q.totalHT : null, fam = {}, nbad = 0;
+    ['E','S','STK'].forEach(function(k){ var od = typeof Q.fam[k] === 'number' ? Q.fam[k] : (ho !== null ? 0 : null), lines = FL[k];
+      var have = lines.filter(function(y){ return y.odoo !== null; }), srcSum = E.r2(have.reduce(function(s, y){ return s + y.odoo; }, 0));
+      var rec = od !== null && have.length > 0 && Math.abs(srcSum - od) <= CDF_TOL;
+      lines.forEach(function(y){ y.d = rec ? E.r2((y.odoo || 0) - y.calc) : null; y.st = !rec ? 'info' : Math.abs(y.d) <= 0.01 ? 'ok' : (!y.calc ? 'odoo_only' : (y.odoo === null || y.odoo === 0) ? 'tool_only' : 'diff'); });
+      var bad = rec ? lines.filter(function(y){ return y.st !== 'ok'; }).length : 0; nbad += bad;
+      fam[k] = { odoo:od, calc:f[k], ecart:od === null ? null : E.r2(od - f[k]), lines:lines, rec:rec, srcSum:srcSum, have:have.length, bad:bad }; });
+    return { p:p, num:Q.numero || p.name, L:L, M:M, affs:uniqA([].concat.apply([], L.map(invAffs))), fam:fam, odoo:ho, calc:M.totals.HT, ecart:ho === null ? null : E.r2(ho - M.totals.HT), nbad:nbad }; });
 }
 function vCdf(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les exports Odoo.</div>';
-  var ro = !canEdit() || monthClosed(), R = cdfRows(), A = ST.adv && !ST.adv.error ? ST.adv : null, n2n = function(v){ return v === null || v === undefined ? '0,00' : n2(v); };
-  var h = '<div class="card2"><div class="h2"><span class="muted">Source des montants Odoo ligne à ligne : '+(A ? 'fichier de calcul <b>'+esc(A.name)+'</b> ('+A.lines.length+' lignes'+(A.meta && A.meta.at ? ', déposé le '+esc(dt(A.meta.at))+' par '+esc(A.meta.by||'') : '')+')' : 'colonne « Prix » des exports Odoo du mois')+'</span><div class="r">'+
+  var ro = !canEdit() || monthClosed(), R = cdfRows(), A = ST.adv && !ST.adv.error ? ST.adv : null;
+  var h = '<div class="card2"><div class="h2"><span class="muted small">Prix Odoo ligne à ligne : '+(A ? 'fichier de calcul <b>'+esc(A.name)+'</b>'+(A.meta && A.meta.at ? ' (déposé le '+esc(dt(A.meta.at))+')' : '') : 'colonne « Prix » des exports Odoo')+'</span><div class="r">'+
     (!ro ? '<label class="btn sm">'+(A ? 'Remplacer le fichier de calcul' : 'Déposer le fichier de calcul')+'<input type="file" id="advin" accept=".xlsx,.xls,.xlsm,.csv" hidden></label>' : '')+(A && A.meta ? '<button class="btn sm g" data-advdl>Télécharger</button>'+(!ro ? '<button class="btn sm g" data-advrm>Supprimer</button>' : '') : '')+'<button class="btn sm g" data-a="xlsCdf"'+(canSave()?'':' disabled')+'>Exporter</button></div></div>';
   if (ST.adv && ST.adv.error) h += '<p class="pb neg small">'+esc(ST.adv.error)+'</p>';
-  var t = { o:{E:0,S:0,STK:0,T:0}, c:{E:0,S:0,STK:0,T:0}, e:0, x:0, b:0 };
-  R.forEach(function(x){ ['E','S','STK','T'].forEach(function(k){ t.o[k] = E.r2(t.o[k] + (x.odoo[k] || 0)); t.c[k] = E.r2(t.c[k] + (x.calc[k] || 0)); }); t.e = E.r2(t.e + (x.ecart || 0)); t.x = E.r2(t.x + x.expl); t.b += x.bad.length; });
-  h += '<div class="tw"><table class="ct2 cdt"><thead><tr><th rowspan="2">N° Odoo</th><th rowspan="2">Facture calculée</th><th rowspan="2">Affaire</th><th colspan="2" class="g">Entrées</th><th colspan="2" class="g">Sorties</th><th colspan="2" class="g">Stockage</th><th colspan="3" class="g">Total HT</th><th rowspan="2" class="n">Écart expliqué<br>par les lignes</th><th rowspan="2" class="n">Lignes<br>en écart</th></tr>'+
-    '<tr>'+['E','S','STK'].map(function(){ return '<th class="n">Odoo</th><th class="n">Outil</th>'; }).join('')+'<th class="n">Odoo</th><th class="n">Outil</th><th class="n">Écart</th></tr>'+
-    '<tr class="tot"><td>'+R.length+' facture'+(R.length>1?'s':'')+'</td><td></td><td></td>'+['E','S','STK'].map(function(k){ return '<td class="n">'+n2(t.o[k])+'</td><td class="n">'+n2(t.c[k])+'</td>'; }).join('')+'<td class="n">'+n2(t.o.T)+'</td><td class="n">'+n2(t.c.T)+'</td><td class="n">'+dEur(t.e)+'</td><td class="n">'+dEur(t.x)+'</td><td class="n">'+t.b+'</td></tr></thead><tbody>'+
-    R.map(function(x){ return '<tr id="cdf-'+esc(x.p.id)+'"'+(ST.cdfHl === x.p.id ? ' class="hl"' : '')+'><td class="mono">'+esc(x.num)+'</td><td class="mono">'+x.L.map(function(I){ return '<button class="lnk mono" data-goinv="'+esc(I.key)+'">'+esc(I.num)+'</button>'; }).join('<br>')+'</td><td class="mono">'+codesCell(x.affs)+'</td>'+
-      ['E','S','STK'].map(function(k){ var d = x.odoo[k] === null || x.odoo[k] === undefined ? null : E.r2(x.odoo[k] - x.calc[k]); return '<td class="n'+(d !== null && Math.abs(d) > 0.01 ? ' neg' : '')+'">'+n2n(x.odoo[k])+'</td><td class="n">'+n2(x.calc[k])+'</td>'; }).join('')+
-      '<td class="n">'+(x.odoo.T === null ? '—' : n2(x.odoo.T))+'</td><td class="n">'+n2(x.calc.T)+'</td><td class="n">'+dEur(x.ecart)+'</td><td class="n">'+dEur(x.expl)+'</td><td class="n">'+(x.bad.length ? '<button class="lnk" data-cdfl="'+esc(x.p.id)+'">'+x.bad.length+'</button>' : '<span class="zero">0</span>')+'</td></tr>'; }).join('')+
-    (R.length ? '' : '<tr><td colspan="14" class="muted">Aucune facture Odoo associée : déposer et associer les PDF dans D · Contrôle factures.</td></tr>')+'</tbody></table></div>';
-  h += '<p class="pb small muted" style="margin:0">Montants Odoo par famille : lignes lues dans le PDF de la facture (en rouge si différents de l\'outil). Écart = total HT Odoo − total HT de l\'outil, identique à l\'onglet D. Écart expliqué = somme des écarts ligne à ligne (montant Odoo de la ligne − montant de l\'outil).</p></div>';
+  var t = { E:{o:0,c:0}, S:{o:0,c:0}, STK:{o:0,c:0}, T:{o:0,c:0} };
+  R.forEach(function(x){ ['E','S','STK'].forEach(function(k){ t[k].o = E.r2(t[k].o + (x.fam[k].odoo || 0)); t[k].c = E.r2(t[k].c + x.fam[k].calc); }); t.T.o = E.r2(t.T.o + (x.odoo || 0)); t.T.c = E.r2(t.T.c + x.calc); });
+  function blk(o, c, cls, tot){ var d = o === null ? null : E.r2(o - c); return '<td class="n '+cls+' b0">'+(o === null ? '—' : n2(o))+'</td><td class="n '+cls+'">'+n2(c)+'</td><td class="n '+cls+' b1'+(tot ? ' tt' : '')+'">'+dEur(d)+'</td>'; }
+  h += '<div class="tw"><table class="cdt2"><thead><tr><th rowspan="2" class="id">N° Odoo</th><th rowspan="2" class="id">Facture calculée</th><th rowspan="2">Affaire</th><th colspan="3" class="bh fE">Entrées</th><th colspan="3" class="bh fS">Sorties</th><th colspan="3" class="bh fK">Stockage</th><th colspan="3" class="bh fT">Total HT</th><th rowspan="2" class="c">Détail</th></tr><tr>'+
+    ['fE','fS','fK','fT'].map(function(c){ return '<th class="n '+c+' b0">Odoo</th><th class="n '+c+'">Outil</th><th class="n '+c+' b1">Écart</th>'; }).join('')+'</tr>'+
+    '<tr class="tot"><td colspan="3">'+R.length+' facture'+(R.length>1?'s':'')+' Odoo associée'+(R.length>1?'s':'')+'</td>'+blk(t.E.o, t.E.c, 'fE')+blk(t.S.o, t.S.c, 'fS')+blk(t.STK.o, t.STK.c, 'fK')+blk(t.T.o, t.T.c, 'fT', 1)+'<td></td></tr></thead><tbody>'+
+    R.map(function(x){ return '<tr id="cdf-'+esc(x.p.id)+'"'+(ST.cdfHl === x.p.id ? ' class="hl"' : '')+'><td class="mono id"><button class="lnk mono" data-pvo="'+esc(x.p.id)+'" data-tip="Voir le PDF Odoo">'+esc(x.num)+'</button></td><td class="mono id">'+x.L.map(function(I){ return '<button class="lnk mono" data-pvt="'+esc(I.key)+'" data-tip="Voir la facture calculée (PDF)">'+esc(I.num)+'</button>'; }).join('<br>')+'</td><td class="mono">'+codesCell(x.affs)+'</td>'+
+      blk(x.fam.E.odoo, x.fam.E.calc, 'fE')+blk(x.fam.S.odoo, x.fam.S.calc, 'fS')+blk(x.fam.STK.odoo, x.fam.STK.calc, 'fK')+blk(x.odoo, x.calc, 'fT', 1)+
+      '<td class="c"><button class="lnk" data-cdfl="'+esc(x.p.id)+'">'+(x.nbad ? x.nbad+' ligne'+(x.nbad>1?'s':'')+' en écart' : 'lignes')+'</button></td></tr>'; }).join('')+
+    (R.length ? '' : '<tr><td colspan="16" class="muted">Aucune facture Odoo associée : déposer et associer les PDF dans D · Contrôle factures.</td></tr>')+'</tbody></table></div>';
+  h += '<p class="pb small muted" style="margin:0">Odoo = montants lus dans le PDF de la facture. Écart = Odoo − outil ; la somme des écarts Entrées, Sorties et Stockage donne l\'écart total, identique à l\'onglet D. « Détail » liste les lignes de l\'outil par famille ; le prix Odoo ligne à ligne n\'est comparé que lorsque sa somme retombe sur le montant facturé dans Odoo pour la famille.</p></div>';
   return h;
 }
 function cdfModal(){
   var x = cdfRows().filter(function(r){ return r.p.id === ST.modal.cdf.pdf; })[0]; if (!x) return '';
-  var L = ST.modal.cdf.all ? x.lines : x.bad;
-  return '<div class="mbox mbox-cdf" role="dialog" aria-modal="true"><div class="mhead"><div><span class="lbl">Contrôle détaillé · '+esc(x.L.map(function(I){ return I.num; }).join(' + '))+'</span><h2>Facture Odoo '+esc(x.num)+' · '+L.length+' ligne'+(L.length>1?'s':'')+(ST.modal.cdf.all ? '' : ' en écart')+'</h2></div><div class="row"><button class="btn sm" data-cdfall>'+(ST.modal.cdf.all ? 'Lignes en écart seulement' : 'Toutes les lignes')+'</button><button class="btn sm" data-cdfx="pdf"'+(canSave()?'':' disabled')+'>Export PDF</button><button class="btn sm" data-cdfx="xlsx"'+(canSave()?'':' disabled')+'>Export Excel</button><button class="btn" data-mclose>Fermer</button></div></div>'+
-    '<div class="mbody"><table class="ct2"><thead><tr><th>Écart</th><th>Ligne Odoo</th><th>N° colis</th><th>Famille</th><th>Produit</th><th class="n">Odoo</th><th class="n">Outil</th><th class="n">Écart €</th><th>Calcul de l\'outil</th></tr></thead><tbody>'+
-    L.map(function(y){ return '<tr><td><span class="sdot"><i class="dot '+CDF_ST[y.st][0]+'"></i>'+CDF_ST[y.st][1]+'</span></td><td class="mono small">'+(y.r ? esc(shortF(y.r.file))+' · '+y.r.line : y.l ? esc(y.l.sheet)+' · '+y.l.line : '—')+'</td><td class="mono">'+esc(y.r ? y.r.colis : y.l ? y.l.colis : '')+'</td><td>'+(FAMLBL[y.fam] || '—')+'</td><td class="small">'+esc(y.r ? y.r.produit : y.l ? y.l.produit : '')+'</td><td class="n">'+(y.odoo === null ? '—' : n2(y.odoo))+'</td><td class="n">'+n2(y.calc)+'</td><td class="n">'+dEur(y.d)+'</td><td class="small muted">'+esc(y.why || (y.r ? y.r.formula || '' : ''))+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
+  var only = !ST.modal.cdf.all && x.nbad > 0;
+  var h = '<div class="mbox mbox-cdf" role="dialog" aria-modal="true"><div class="mhead"><div><span class="lbl">Contrôle détaillé · '+esc(x.L.map(function(I){ return I.num; }).join(' + '))+'</span><h2>Facture Odoo '+esc(x.num)+' · écart '+(x.ecart === null ? '—' : (x.ecart > 0 ? '+' : '')+n2(x.ecart)+' €')+'</h2></div><div class="row">'+(x.nbad ? '<button class="btn sm" data-cdfall>'+(only ? 'Toutes les lignes' : 'Lignes en écart seulement')+'</button>' : '')+'<button class="btn sm" data-cdfx="pdf"'+(canSave()?'':' disabled')+'>Export PDF</button><button class="btn sm" data-cdfx="xlsx"'+(canSave()?'':' disabled')+'>Export Excel</button><button class="btn" data-mclose>Fermer</button></div></div><div class="mbody">';
+  ['E','S','STK'].forEach(function(k){ var F = x.fam[k], L = only ? F.lines.filter(function(y){ return y.st !== 'ok' && y.st !== 'info'; }) : F.lines;
+    h += '<div class="cdf-f f'+(k==='STK'?'K':k)+'"><div class="cdf-fh"><b>'+FAMLBL[k]+'</b><span>Odoo '+(F.odoo === null ? '—' : n2(F.odoo))+'</span><span>Outil '+n2(F.calc)+'</span><span>Écart '+dEur(F.odoo === null ? null : E.r2(F.odoo - F.calc))+'</span><span class="muted small">'+F.lines.length+' ligne'+(F.lines.length>1?'s':'')+' outil'+(F.rec ? ' · prix Odoo ligne à ligne rapprochés' : F.have ? ' · prix Odoo ligne à ligne ('+n2(F.srcSum)+') ≠ montant facturé : non comparés' : ' · pas de prix Odoo ligne à ligne')+'</span></div>';
+    if (!L.length){ h += '<p class="small muted" style="margin:6px 0 0">Aucune ligne'+(only ? ' en écart' : '')+'.</p></div>'; return; }
+    h += '<table class="ct2"><thead><tr><th>Ligne</th><th>N° colis</th><th>Produit</th>'+(k === 'STK' ? '<th class="n">Jours</th>' : '<th>Date</th>')+'<th class="n">Outil</th>'+(F.rec ? '<th class="n">Odoo</th><th class="n">Écart €</th><th>Écart</th>' : '')+'<th>Calcul de l\'outil</th></tr></thead><tbody>'+
+      L.map(function(y){ var r = y.r; return '<tr><td class="mono small">'+(r ? esc(shortF(r.file))+' · '+r.line : y.l ? esc(y.l.sheet)+' · '+y.l.line : '—')+'</td><td class="mono">'+esc(r ? r.colis : y.l ? y.l.colis : '')+'</td><td class="small">'+esc(r ? r.produit : y.l ? y.l.produit : '')+'</td><td class="'+(k === 'STK' ? 'n' : '')+'">'+(r ? (k === 'STK' ? (r.days || '') : E.frDate(r.date)) : '')+'</td><td class="n">'+n2(y.calc)+'</td>'+
+        (F.rec ? '<td class="n">'+(y.odoo === null ? '—' : n2(y.odoo))+'</td><td class="n">'+dEur(y.d)+'</td><td><span class="sdot"><i class="dot '+CDF_ST[y.st][0]+'"></i>'+CDF_ST[y.st][1]+'</span></td>' : '')+'<td class="small muted">'+esc(y.why || (r ? r.formula || '' : ''))+'</td></tr>'; }).join('')+
+      '<tr class="tot"><td colspan="4">Total '+FAMLBL[k].toLowerCase()+'</td><td class="n">'+n2(E.r2(L.reduce(function(s, y){ return s + y.calc; }, 0)))+'</td>'+(F.rec ? '<td class="n">'+n2(E.r2(L.reduce(function(s, y){ return s + (y.odoo || 0); }, 0)))+'</td><td class="n">'+dEur(E.r2(L.reduce(function(s, y){ return s + (y.d || 0); }, 0)))+'</td><td></td>' : '')+'<td></td></tr></tbody></table></div>'; });
+  return h + '</div></div>';
 }
+function cdfFlat(x, only){ var out = []; ['E','S','STK'].forEach(function(k){ var F = x.fam[k]; F.lines.forEach(function(y){ if (only && (y.st === 'ok' || y.st === 'info')) return; out.push({ 'Famille':FAMLBL[k], 'Fichier':y.r ? y.r.file : (y.l ? y.l.sheet : ''), 'Ligne':y.r ? y.r.line : (y.l ? y.l.line : ''), 'N° colis':y.r ? y.r.colis : (y.l ? y.l.colis : ''), 'Produit':y.r ? y.r.produit : '', 'Facture calculée':y.I ? y.I.num : '', 'Montant outil':y.calc, 'Prix Odoo ligne':F.rec && y.odoo !== null ? y.odoo : '', 'Écart €':F.rec && y.d !== null ? y.d : '', 'Écart':F.rec ? CDF_ST[y.st][1] : 'non comparé', 'Calcul de l\'outil':y.r ? y.r.formula || '' : '', 'Explication':y.why || '' }); }); }); return out; }
 function cdfExport(kind){
-  var x = cdfRows().filter(function(r){ return r.p.id === ST.modal.cdf.pdf; })[0]; if (!x) return; var L = ST.modal.cdf.all ? x.lines : x.bad, name = 'Controle detaille '+x.num+' '+ST.month;
-  var rows = L.map(function(y){ return { 'Écart':CDF_ST[y.st][1], 'Fichier':y.r ? y.r.file : (y.l ? y.l.sheet : ''), 'Ligne':y.r ? y.r.line : (y.l ? y.l.line : ''), 'N° colis':y.r ? y.r.colis : (y.l ? y.l.colis : ''), 'Famille':FAMLBL[y.fam] || '', 'Produit':y.r ? y.r.produit : '', 'Facture calculée':y.I ? y.I.num : '', 'Montant Odoo':y.odoo === null ? '' : y.odoo, 'Montant outil':y.calc, 'Écart €':y.d === null ? '' : y.d, 'Calcul de l\'outil':y.r ? y.r.formula || '' : '', 'Explication':y.why || '' }; });
-  if (kind === 'xlsx'){ var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Lignes'); saveXlsx(wb, name+'.xlsx'); return; }
+  var x = cdfRows().filter(function(r){ return r.p.id === ST.modal.cdf.pdf; })[0]; if (!x) return; var only = !ST.modal.cdf.all && x.nbad > 0, rows = cdfFlat(x, only), name = 'Controle detaille '+x.num+' '+ST.month;
+  var syn = ['E','S','STK'].map(function(k){ var F = x.fam[k]; return { 'Famille':FAMLBL[k], 'Odoo':F.odoo === null ? '' : F.odoo, 'Outil':F.calc, 'Écart':F.odoo === null ? '' : E.r2(F.odoo - F.calc), 'Lignes outil':F.lines.length, 'Prix Odoo ligne à ligne':F.rec ? 'rapprochés' : (F.have ? 'non comparés (Σ '+F.srcSum+')' : 'absents') }; });
+  syn.push({ 'Famille':'Total HT', 'Odoo':x.odoo === null ? '' : x.odoo, 'Outil':x.calc, 'Écart':x.ecart === null ? '' : x.ecart });
+  if (kind === 'xlsx'){ var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(syn), 'Synthèse'); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Lignes'); saveXlsx(wb, name+'.xlsx'); return; }
   if (!window.jspdf || !window.jspdf.jsPDF){ toast('Générateur PDF indisponible'); return; }
   var doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'landscape' });
   doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text(pdfTxt('Contrôle détaillé · facture Odoo '+x.num+' · '+x.L.map(function(I){ return I.num; }).join(' + ')+' · '+monthLabel(ST.month)), 12, 14);
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(pdfTxt('Total HT Odoo '+(x.odoo.T === null ? '-' : n2(x.odoo.T))+' · outil '+n2(x.calc.T)+' · écart '+(x.ecart === null ? '-' : n2(x.ecart))+' · écart expliqué par les lignes '+n2(x.expl)+' · '+L.length+' ligne(s)'), 12, 20);
-  doc.autoTable({ startY:25, styles:{ fontSize:7.5, cellPadding:1.4 }, headStyles:{ fillColor:[28,28,28] }, head:[['Écart','Fichier · ligne','N° colis','Famille','Produit','Odoo','Outil','Écart €','Calcul de l\'outil']].map(function(r){ return r.map(pdfTxt); }),
-    body:L.map(function(y){ return [CDF_ST[y.st][1], y.r ? shortF(y.r.file)+' · '+y.r.line : (y.l ? y.l.sheet+' · '+y.l.line : ''), y.r ? y.r.colis : (y.l ? y.l.colis : ''), FAMLBL[y.fam] || '', (y.r ? y.r.produit : '').slice(0, 40), y.odoo === null ? '' : n2(y.odoo), n2(y.calc), y.d === null ? '' : n2(y.d), (y.why || (y.r ? y.r.formula || '' : '')).slice(0, 70)].map(pdfTxt); }),
-    columnStyles:{ 5:{ halign:'right' }, 6:{ halign:'right' }, 7:{ halign:'right' } } });
+  doc.autoTable({ startY:19, styles:{ fontSize:8.5, cellPadding:1.5 }, headStyles:{ fillColor:[28,28,28] }, head:[['Famille','Odoo','Outil','Écart','Lignes outil','Prix Odoo ligne à ligne'].map(pdfTxt)], body:syn.map(function(s){ return [s['Famille'], s['Odoo'] === '' ? '-' : n2(s['Odoo']), n2(s['Outil']), s['Écart'] === '' ? '-' : n2(s['Écart']), s['Lignes outil'] === undefined ? '' : s['Lignes outil'], s['Prix Odoo ligne à ligne'] || ''].map(pdfTxt); }), columnStyles:{ 1:{ halign:'right' }, 2:{ halign:'right' }, 3:{ halign:'right' } }, margin:{ left:12, right:12 } });
+  doc.autoTable({ startY:doc.lastAutoTable.finalY + 6, styles:{ fontSize:7.5, cellPadding:1.3 }, headStyles:{ fillColor:[60,60,60] }, head:[['Famille','Fichier · ligne','N° colis','Produit','Outil','Prix Odoo','Écart €','Calcul de l\'outil'].map(pdfTxt)],
+    body:rows.map(function(o){ return [o['Famille'], (o['Fichier'] ? shortF(o['Fichier']) : '')+' · '+o['Ligne'], o['N° colis'], String(o['Produit']).slice(0, 40), n2(o['Montant outil']), o['Prix Odoo ligne'] === '' ? '' : n2(o['Prix Odoo ligne']), o['Écart €'] === '' ? '' : n2(o['Écart €']), String(o['Explication'] || o['Calcul de l\'outil']).slice(0, 70)].map(pdfTxt); }),
+    columnStyles:{ 4:{ halign:'right' }, 5:{ halign:'right' }, 6:{ halign:'right' } }, margin:{ left:12, right:12 } });
   saveBlob(name+'.pdf', doc.output('blob'), 'pdf');
 }
 function exportCdf(){
-  var R = cdfRows(), syn = R.map(function(x){ return { 'N° Odoo':x.num, 'Factures calculées':x.L.map(function(I){ return I.num; }).join(', '), 'Affaire':x.affs.join(', '), 'Entrées Odoo':x.odoo.E, 'Entrées outil':x.calc.E, 'Sorties Odoo':x.odoo.S, 'Sorties outil':x.calc.S, 'Stockage Odoo':x.odoo.STK, 'Stockage outil':x.calc.STK, 'Total HT Odoo':x.odoo.T, 'Total HT outil':x.calc.T, 'Écart':x.ecart, 'Écart expliqué par les lignes':x.expl, 'Lignes en écart':x.bad.length }; });
-  var det = []; R.forEach(function(x){ x.bad.forEach(function(y){ det.push({ 'N° Odoo':x.num, 'Facture calculée':y.I ? y.I.num : '', 'Écart':CDF_ST[y.st][1], 'Fichier':y.r ? y.r.file : (y.l ? y.l.sheet : ''), 'Ligne':y.r ? y.r.line : (y.l ? y.l.line : ''), 'N° colis':y.r ? y.r.colis : (y.l ? y.l.colis : ''), 'Famille':FAMLBL[y.fam] || '', 'Montant Odoo':y.odoo === null ? '' : y.odoo, 'Montant outil':y.calc, 'Écart €':y.d === null ? '' : y.d, 'Calcul de l\'outil':y.r ? y.r.formula || '' : '', 'Explication':y.why || '' }); }); });
-  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(syn), 'Par facture Odoo'); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(det), 'Lignes en écart');
+  var R = cdfRows(), syn = R.map(function(x){ var o = { 'N° Odoo':x.num, 'Factures calculées':x.L.map(function(I){ return I.num; }).join(', '), 'Affaire':x.affs.join(', ') };
+    ['E','S','STK'].forEach(function(k){ var F = x.fam[k]; o[FAMLBL[k]+' Odoo'] = F.odoo === null ? '' : F.odoo; o[FAMLBL[k]+' outil'] = F.calc; o[FAMLBL[k]+' écart'] = F.odoo === null ? '' : E.r2(F.odoo - F.calc); });
+    o['Total HT Odoo'] = x.odoo === null ? '' : x.odoo; o['Total HT outil'] = x.calc; o['Écart total'] = x.ecart === null ? '' : x.ecart; o['Lignes en écart'] = x.nbad; return o; });
+  var det = []; R.forEach(function(x){ cdfFlat(x, false).forEach(function(o){ det.push(Object.assign({ 'N° Odoo':x.num }, o)); }); });
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(syn), 'Par facture Odoo'); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(det), 'Lignes');
   saveXlsx(wb, fileBase()+' controle detaille factures.xlsx');
 }
 function pickModal(){
@@ -3655,7 +3709,7 @@ document.addEventListener('click', function(e){
   var d = t.dataset;
   if (d.cmenu){ if (ST.ctlMenu && ST.ctlMenu.id === d.cmenu){ ST.ctlMenu = null; render(); return; } var rc = t.getBoundingClientRect(); ST.ctlMenu = { id:d.cmenu, x:Math.max(8, Math.round(rc.right - 260)), y:Math.round(rc.bottom + 4) }; render(); return; }
   if (t.closest('.cmenu')) ST.ctlMenu = null;
-  if (d.gocdf){ ST.sub = 'cdf'; ST.cdfHl = d.gocdf; ST.ctlMenu = null; var cx = cdfRows().filter(function(r){ return r.p.id === d.gocdf; })[0]; ST.modal = { cdf:{ pdf:d.gocdf, all:!(cx && cx.bad.length) } }; render(); window.scrollTo(0,0); setTimeout(function(){ var r = document.getElementById('cdf-'+d.gocdf); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
+  if (d.gocdf){ ST.sub = 'cdf'; ST.cdfHl = d.gocdf; ST.ctlMenu = null; ST.modal = { cdf:{ pdf:d.gocdf, all:false } }; render(); window.scrollTo(0,0); setTimeout(function(){ var r = document.getElementById('cdf-'+d.gocdf); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
   if (d.cdfall !== undefined){ ST.modal.cdf.all = !ST.modal.cdf.all; renderModal(); return; }
   if (d.cdfx){ cdfExport(d.cdfx); return; }
