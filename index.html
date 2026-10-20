@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.24 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.25 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1612,11 +1612,14 @@ var PDFCHECK = (function () {
   /* Rapprochement avec les factures calculées */
   /* Factures regroupées par contremaître (AG 58 : Contrats / FHR) : les PDF Odoo ne portent ni affaire ni appareil.
      Indices, par ordre de force : code contremaître, nom du contremaître (destinataire), n° de commande des lignes, type Contrats / FHR, total HT. */
+  // Correspondance n° de facture Odoo → contremaître (fichier fourni par l'ADV, ex. AG 58 septembre 2026) : complète ce que le PDF ne dit pas
+  function applyInvCm(parsed, map) { var m = map && parsed && parsed.numero ? map[String(parsed.numero).toUpperCase()] : null; if (!m) return parsed; if (m.code && parsed.cmCodes.indexOf(String(m.code)) < 0) parsed.cmCodes.push(String(m.code)); if (m.nom) parsed.cmName = m.nom; parsed.cmSrc = 'correspondance'; return parsed; }
   function cmTokens(name) { return norm(name).toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(function (t) { return t.length >= 3; }); }
   function cmEvidence(parsed, I) {
     var C = parsed.compact || '', ev = { code: false, name: false, cmds: 0, cmdsTot: 0, type: true, ht: false, score: 0 };
     ev.code = Object.keys(I.cmCodes || {}).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; });
-    ev.name = (I._cmNames || []).some(function (n) { var t = cmTokens(n); return t.length > 0 && t.every(function (x) { return C.indexOf(x) >= 0; }); });
+    var pn = parsed.cmName ? cmTokens(parsed.cmName) : [];
+    ev.name = (I._cmNames || []).some(function (n) { var t = cmTokens(n); return t.length > 0 && (t.every(function (x) { return C.indexOf(x) >= 0; }) || (pn.length && t.every(function (x) { return pn.indexOf(x) >= 0; }))); });
     var cm = (I._cmds || []).map(function (c) { return String(c).toUpperCase().replace(/[^0-9A-Z]/g, ''); }).filter(function (c) { return c.length >= 5 && c !== 'FHR'; });
     ev.cmdsTot = cm.length; ev.cmds = cm.filter(function (c) { return C.indexOf(c) >= 0; }).length;
     if (I.split === 'cm_fhr') ev.type = parsed.fhr === !!I.fhr;
@@ -1678,6 +1681,7 @@ var PDFCHECK = (function () {
     return extractLines(buffer).then(function (ex) {
       if (!ex.lines.length) return { v: 6, status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
       var parsed = parse(ex.lines, ctx.known);
+      applyInvCm(parsed, ctx.invCm);
       var I = match(parsed, ctx.invoices);
       if (!I) return { v: 6, status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
       var checks = compare(parsed, I, ctx.month, ctx.famTotals);
@@ -1686,7 +1690,7 @@ var PDFCHECK = (function () {
     });
   }
 
-  return { extractLines: extractLines, parse: parse, match: match, compare: compare, analyse: analyse, cmEvidence: cmEvidence, TOL: TOL };
+  return { extractLines: extractLines, parse: parse, match: match, compare: compare, analyse: analyse, cmEvidence: cmEvidence, applyInvCm: applyInvCm, TOL: TOL };
 })();
 if (typeof module !== 'undefined') module.exports = PDFCHECK;
 
@@ -2840,7 +2844,7 @@ function pdfCtx(){
   var known = { affaires:{}, appareils:{}, cm:{} };
   prepCm();
   ST.R.invoices.forEach(function(I){ if (I.split==='affaire') known.affaires[I.sub] = 1; Object.keys(I.appareils).forEach(function(a){ known.appareils[a] = 1; }); Object.keys(I.cmCodes).forEach(function(c){ known.cm[c] = 1; }); });
-  return { known:known, invoices:ST.R.invoices, month:ST.month, famTotals:famTotals };
+  return { known:known, invoices:ST.R.invoices, month:ST.month, famTotals:famTotals, invCm:ST.ov.invCm || null };
 }
 var PCHK = { verifier:'À vérifier', encours:'En cours', ok:'OK', anomalie:'Anomalie(s)' };
 function dlt(v){ if (v === null || v === undefined) return '<span class="muted">—</span>'; var z = Math.abs(v) <= PDFCHECK.TOL; return '<span class="'+(z ? 'muted' : 'dko')+'">'+(v > 0 && !z ? '+' : '')+n2(z ? 0 : v)+'</span>'; }
@@ -2909,7 +2913,7 @@ function assocReasons(p, keys){
     if (P){
       if (I.split === 'affaire' && P.affaires.indexOf(I.sub) < 0) why.push('affaire '+I.sub+' absente du PDF (affaires lues : '+(P.affaires.join(', ') || 'aucune')+')');
       if (I.split === 'appareil' && P.appareils.indexOf(I.sub) < 0) why.push('appareil '+I.sub+' absent du PDF');
-      if (I.split === 'cm' || I.split === 'cm_fhr'){ prepCm(); var ev = PDFCHECK.cmEvidence(P, I);
+      if (I.split === 'cm' || I.split === 'cm_fhr'){ prepCm(); PDFCHECK.applyInvCm(P, ST.ov.invCm); var ev = PDFCHECK.cmEvidence(P, I);
         if (!ev.code && !ev.name && !ev.po) why.push('le PDF ne porte ni le nom ni le code du contremaître '+((I._cmNames||[]).join(', ') || '—')+(P.po && P.po.length ? ' ; seul le n° de commande OTIS '+P.po.join(', ')+' l\'identifie : il sera mémorisé pour ce contremaître ('+(I.fhr ? 'FHR' : 'Contrats')+') et servira au rapprochement automatique des mois suivants' : ''));
         if (ev.cmdsTot && ev.cmds < ev.cmdsTot && !I.fhr && !(P.po && P.po.length)) why.push(ev.cmds+' n° de commande sur '+ev.cmdsTot+' retrouvé(s) dans le PDF'); }
       if (I.split === 'cm_fhr' && P.fhr !== I.fhr) why.push('type de facture différent : PDF « '+(P.fhr ? 'FHR' : 'Contrats')+' », facture calculée « '+(I.fhr ? 'FHR' : 'Contrats')+' »');
@@ -3121,7 +3125,7 @@ function invCm(L){ var n = [], c = []; L.forEach(function(I){ Object.keys(I.cms 
   if (!n.length && !c.length) return '<span class="zero">—</span>'; return codesCell(n).replace(/^/, '')+(c.length ? '<br><span class="muted small mono">'+esc(c.join(', '))+'</span>' : ''); }
 // Diagnostic d'un PDF non rapproché pour les agences facturées par contremaître (AG 58) : indices trouvés pour les meilleures factures candidates
 function cmDiag(p){
-  var P = (p.result || {}).parsed; if (!P || !ST.R) return null; prepCm();
+  var P = (p.result || {}).parsed; if (!P || !ST.R) return null; prepCm(); PDFCHECK.applyInvCm(P, ST.ov.invCm);
   var C = ST.R.invoices.filter(function(I){ return I.split === 'cm' || I.split === 'cm_fhr'; }); if (!C.length) return null;
   var sc = C.map(function(I){ return { I:I, ev:PDFCHECK.cmEvidence(P, I) }; }).sort(function(a, b){ return b.ev.score - a.ev.score; });
   var names = sc.filter(function(x){ return x.ev.name || x.ev.code; }).map(function(x){ return (x.I._cmNames || []).join(', '); });
@@ -3150,6 +3154,7 @@ function vControl(){
   var tabs = [['ok','Factures associées', linked.length],['odoo','Odoo non associées', orphan.length],['calc','Calculées non associées', missing.length]];
   h += '<div class="card2"'+(!ro ? ' id="pdrop"' : '')+'><div class="h2"><span class="seg2">'+tabs.map(function(t){ return '<button class="'+(tab===t[0]?'on':'')+'" data-ctab="'+t[0]+'">'+t[1]+' · '+t[2]+'</button>'; }).join('')+'</span><div class="r">'+
     (!ro ? '<label class="btn sm">Déposer des PDF<input type="file" id="pin" multiple accept="application/pdf,.pdf" hidden></label>' : '')+
+    (!ro && ST.R.invoices.some(function(I){ return I.split === 'cm' || I.split === 'cm_fhr'; }) ? '<label class="btn sm" data-tip="Fichier Excel : n° de facture Odoo, code contremaître, nom (colonnes « Numéro », « Code Contremaître », « Nom »)">'+(ST.ov.invCm ? 'Correspondance contremaîtres · '+Object.keys(ST.ov.invCm).length : 'Correspondance factures ↔ contremaîtres')+'<input type="file" id="cmmapin" accept=".xlsx,.xls,.csv" hidden></label>' : '')+
     (P.length && !ro ? '<button class="btn sm g" data-a="pdfRerun">Relancer</button>' : '')+'<button class="btn sm g" data-a="xlsCtl"'+(canSave()?'':' disabled')+'>Exporter</button></div></div>';
   function menuBtn(id){ return '<button class="cm-b" data-cmenu="'+esc(id)+'" aria-label="Autres actions">⋯</button>'; }
   if (tab === 'ok'){
@@ -3378,7 +3383,20 @@ function pdfDetail(p, r, I){
   if (r.parsed && r.parsed.warnings && r.parsed.warnings.length) h += '<p class="small neg">Lecture : '+esc(r.parsed.warnings.join(' · '))+'</p>';
   return h + '</div></div>';
 }
+function cmMapAdd(file){
+  readBuf(file).then(function(buf){
+    var wb = XLSX.read(new Uint8Array(buf), { type:'array' }), map = {}, n = 0;
+    wb.SheetNames.forEach(function(sn){ var rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header:1, raw:true, defval:null }), hi = -1, ix = {};
+      for (var i = 0; i < Math.min(rows.length, 15) && hi < 0; i++){ var h = (rows[i] || []).map(advNorm); var a = h.findIndex(function(x){ return /^num(ero)?$|n facture|numero facture/.test(x); }), c = h.findIndex(function(x){ return /code contre/.test(x); }), nm = h.findIndex(function(x){ return /^nom$|contremaitre$/.test(x) && !/code/.test(x); }); if (a >= 0 && (c >= 0 || nm >= 0)){ hi = i; ix = { a:a, c:c, n:nm }; } }
+      if (hi < 0) return;
+      rows.slice(hi + 1).forEach(function(r){ var num = r && r[ix.a] ? String(r[ix.a]).trim().toUpperCase() : ''; if (!/^[A-Z]{2,5}[\/\-]?\d/.test(num)) return; map[num] = { code:ix.c >= 0 && r[ix.c] !== null ? String(r[ix.c]).replace(/\.0$/,'').trim() : '', nom:ix.n >= 0 && r[ix.n] ? String(r[ix.n]).trim() : '' }; n++; }); });
+    if (!n) throw new Error('colonnes « Numéro » et « Code contremaître » / « Nom » introuvables');
+    ST.ov.invCm = map; persist('Correspondance factures Odoo ↔ contremaîtres : '+n+' facture(s) ('+file.name+')'); toast(n+' facture(s) Odoo rattachée(s) à un contremaître : nouveau contrôle des PDF'); render();
+    if (ST.pdfs.length) rerunPdfs();
+  }).catch(function(e){ toast(file.name+' refusé : '+e.message); });
+}
 function bindPdfDrop(){
+  var cmi = $('cmmapin'); if (cmi) cmi.onchange = function(){ if (cmi.files[0]) cmMapAdd(cmi.files[0]); cmi.value = ''; };
   var d = $('pdrop'), i = $('pin'); if (!d) return;
   if (i) i.onchange = function(){ addPdfs(i.files); i.value=''; };
   d.ondragover = function(e){ e.preventDefault(); d.classList.add('over'); };
