@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.23 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.24 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -685,6 +685,7 @@ table.ct2 td.icg .icb:hover{border-color:#999;background:#fff}
 .mbox-cdf table.cdf-col th.bh{text-align:center;color:#111;border-bottom:2px solid #1c1c1c}
 .mbox-cdf table.cdf-col .fE{background:#f6f8fb}.mbox-cdf table.cdf-col .fS{background:#f8f6fb}.mbox-cdf table.cdf-col .fK{background:#f6faf6}
 .mbox-cdf table.cdf-col .b0{border-left:2px solid #9a9a98}.mbox-cdf table.cdf-col .b1{border-right:2px solid #9a9a98}
+.ct2 .prop{color:#222;margin-bottom:4px}.ct2 .prop .btn{margin-left:6px}
 </style>
 </head>
 <body>
@@ -1553,7 +1554,7 @@ var PDFCHECK = (function () {
 
   /* Lecture structurée. known = { affaires:{code:1}, appareils:{code:1} } issus du mois calculé */
   function parse(lines, known) {
-    var txt = lines.join('\n'), n = norm(txt), out = { v: 5, numero: '', agence: '', affaires: [], appareils: [], cmCodes: [], periodes: [], fam: { E: null, S: null, STK: null }, famLines: { E: [], S: [], STK: [] }, totalHT: null, tva: null, ttc: null, warnings: [] };
+    var txt = lines.join('\n'), n = norm(txt), out = { v: 6, numero: '', agence: '', affaires: [], appareils: [], cmCodes: [], periodes: [], fam: { E: null, S: null, STK: null }, famLines: { E: [], S: [], STK: [] }, totalHT: null, tva: null, ttc: null, warnings: [] };
     var m = txt.match(/(?:facture|invoice)\s*(?:n[°o]\.?|num[ée]ro)?\s*[:#]?\s*([A-Z]{2,5}[\/\-]?\d{2,4}[\/\-]?\d{2,6}[A-Z0-9\/\-]*)/i);
     if (m) out.numero = m[1];
     m = txt.match(/\bAG\s*(\d{2,3})\b/i); if (m) out.agence = m[1];
@@ -1576,6 +1577,9 @@ var PDFCHECK = (function () {
     (n.match(/\b(0[1-9]|1[0-2])[\/.](20[2-9]\d)\b/g) || []).forEach(function (p) { var q = p.split(/[\/.]/); out.periodes.push(q[1] + '-' + q[0]); });
     out.periodes = uniq(out.periodes);
     // AG 58 : facture « FHR » (objet et n° de commande « FHR ») ou « Contrats »
+    // N° de commande OTIS (bon de commande « OJ… ») et n° de devis LEGAA : seuls identifiants des factures par contremaître (AG 58)
+    out.po = uniq(txt.toUpperCase().match(/\b[A-Z]{2}\d{7,9}\b/g) || []).filter(function (x) { return !/^(FR|FA)/.test(x); });
+    var dv = txt.match(/\bD-\d{2}-\d{3,6}\b/); out.devis = dv ? dv[0] : '';
     var TU = txt.toUpperCase(); out.fhr = /CONTRATS?\b/.test(TU) ? false : /\bFHR\b/.test(TU);
     // Lignes de facture : zone entre l'en-tête du tableau (Description / Désignation) et le total HT.
     // Famille : mot-clé de la ligne portant le montant, sinon des lignes de description qui la suivent (libellé produit puis description), sinon qui la précèdent.
@@ -1617,14 +1621,15 @@ var PDFCHECK = (function () {
     ev.cmdsTot = cm.length; ev.cmds = cm.filter(function (c) { return C.indexOf(c) >= 0; }).length;
     if (I.split === 'cm_fhr') ev.type = parsed.fhr === !!I.fhr;
     ev.ht = parsed.totalHT !== null && Math.abs(I.totals.HT - parsed.totalHT) <= TOL;
-    ev.score = (ev.code ? 100 : 0) + (ev.name ? 80 : 0) + Math.min(60, ev.cmds * 15) + (ev.ht ? 60 : 0) - (ev.type ? 0 : 1000) - (parsed.agence && I.ag && parsed.agence !== I.ag ? 1000 : 0);
+    ev.po = (parsed.po || []).some(function (x) { return (I._po || []).indexOf(x) >= 0; });
+    ev.score = (ev.po ? 150 : 0) + (ev.code ? 100 : 0) + (ev.name ? 80 : 0) + Math.min(60, ev.cmds * 15) + (ev.ht ? 60 : 0) - (ev.type ? 0 : 1000) - (parsed.agence && I.ag && parsed.agence !== I.ag ? 1000 : 0);
     return ev;
   }
   function match(parsed, invoices) {
     var cmInv = invoices.filter(function (I) { return I.split === 'cm' || I.split === 'cm_fhr'; });
     if (cmInv.length) {
       var sc = cmInv.map(function (I) { return { I: I, ev: cmEvidence(parsed, I) }; }).filter(function (x) { return x.ev.score >= 60; }).sort(function (a, b) { return b.ev.score - a.ev.score; });
-      if (sc.length && (sc.length === 1 || sc[0].ev.score > sc[1].ev.score)) { var strong = sc[0].ev.code || sc[0].ev.name || sc[0].ev.cmds || sc[0].ev.ht; if (strong) return sc[0].I; }
+      if (sc.length && (sc.length === 1 || sc[0].ev.score > sc[1].ev.score)) { var strong = sc[0].ev.po || sc[0].ev.code || sc[0].ev.name || sc[0].ev.cmds || sc[0].ev.ht; if (strong) return sc[0].I; }
     }
     var cands = invoices.filter(function (I) {
       if (I.split === 'affaire') return parsed.affaires.indexOf(I.sub) >= 0;
@@ -1653,8 +1658,9 @@ var PDFCHECK = (function () {
     if (I.split === 'affaire') chk('Affaire', parsed.affaires.join(', ') || '—', I.sub, parsed.affaires.indexOf(I.sub) >= 0);
     if (I.split === 'cm_fhr') chk('Type de facture', parsed.fhr ? 'FHR' : 'Contrats', I.fhr ? 'FHR' : 'Contrats', parsed.fhr === I.fhr);
     if (I.split === 'cm' || I.split === 'cm_fhr') { var ev = cmEvidence(parsed, I);
-      chk('Contremaître', ev.code ? 'code ' + parsed.cmCodes.join(', ') : ev.name ? 'nom trouvé' : '—', (I._cmNames || []).join(', ') + (Object.keys(I.cmCodes).length ? ' (' + Object.keys(I.cmCodes).join(', ') + ')' : ''), ev.code || ev.name, ev.code || ev.name ? '' : 'Ni le code ni le nom du contremaître dans le PDF');
-      if (ev.cmdsTot) chk('N° de commande', ev.cmds + ' trouvé(s)', ev.cmdsTot + ' sur la facture calculée', I.fhr ? true : ev.cmds === ev.cmdsTot, I.fhr || ev.cmds === ev.cmdsTot ? '' : (ev.cmdsTot - ev.cmds) + ' n° de commande de la facture calculée absent(s) du PDF'); }
+      chk('Contremaître', ev.po ? 'commande ' + parsed.po.join(', ') : ev.code ? 'code ' + parsed.cmCodes.join(', ') : ev.name ? 'nom trouvé' : '—', (I._cmNames || []).join(', ') + (Object.keys(I.cmCodes).length ? ' (' + Object.keys(I.cmCodes).join(', ') + ')' : ''), ev.po || ev.code || ev.name, ev.po || ev.code || ev.name ? '' : 'Contremaître non identifiable dans le PDF (ni code, ni nom, ni n° de commande OTIS mémorisé)');
+      if (parsed.po && parsed.po.length) chk('N° de commande OTIS', parsed.po.join(', '), (I._po || []).join(', ') || 'non mémorisé', true, ev.po ? '' : 'Mémorisé pour ce contremaître à la validation de l\'association');
+      else if (ev.cmdsTot) chk('N° de commande', ev.cmds + ' trouvé(s)', ev.cmdsTot + ' sur la facture calculée', I.fhr ? true : ev.cmds === ev.cmdsTot, I.fhr || ev.cmds === ev.cmdsTot ? '' : (ev.cmdsTot - ev.cmds) + ' n° de commande de la facture calculée absent(s) du PDF'); }
     if (parsed.agence) chk('Agence', 'AG ' + parsed.agence, I.agLabel, parsed.agence === I.ag);
     else chk('Agence', '—', I.agLabel, false, 'Agence non trouvée dans le PDF');
     chk('Période', parsed.periodes.join(', ') || '—', month, parsed.periodes.indexOf(month) >= 0, parsed.periodes.length ? '' : 'Mois de facturation non trouvé dans le PDF');
@@ -1670,13 +1676,13 @@ var PDFCHECK = (function () {
   /* Analyse complète d'un PDF */
   function analyse(buffer, ctx) {
     return extractLines(buffer).then(function (ex) {
-      if (!ex.lines.length) return { v: 5, status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
+      if (!ex.lines.length) return { v: 6, status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
       var parsed = parse(ex.lines, ctx.known);
       var I = match(parsed, ctx.invoices);
-      if (!I) return { v: 5, status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
+      if (!I) return { v: 6, status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
       var checks = compare(parsed, I, ctx.month, ctx.famTotals);
       var bad = checks.filter(function (c) { return !c.ok; });
-      return { v: 5, status: bad.length ? 'ecart' : 'conforme', invKey: I.key, invNum: I.num, lines: ex.lines, parsed: parsed, checks: checks, note: bad.length ? bad.length + ' point(s) en écart' : 'Tous les contrôles sont conformes' };
+      return { v: 6, status: bad.length ? 'ecart' : 'conforme', invKey: I.key, invNum: I.num, lines: ex.lines, parsed: parsed, checks: checks, note: bad.length ? bad.length + ' point(s) en écart' : 'Tous les contrôles sont conformes' };
     });
   }
 
@@ -2832,7 +2838,7 @@ var PST = { conforme:['p-ok','Conforme'], ecart:['p-bloquant','Écart'], non_rap
 function famTotals(I){ return { E:I.totals.E, S:I.totals.S, STK:E.r2(I.totals.STK + I.totals.MIN) }; }
 function pdfCtx(){
   var known = { affaires:{}, appareils:{}, cm:{} };
-  ST.R.invoices.forEach(function(I){ I._cmNames = Object.keys(I.cms || {}); I._cmds = invCmds(I); });
+  prepCm();
   ST.R.invoices.forEach(function(I){ if (I.split==='affaire') known.affaires[I.sub] = 1; Object.keys(I.appareils).forEach(function(a){ known.appareils[a] = 1; }); Object.keys(I.cmCodes).forEach(function(c){ known.cm[c] = 1; }); });
   return { known:known, invoices:ST.R.invoices, month:ST.month, famTotals:famTotals };
 }
@@ -2865,10 +2871,12 @@ function mergeInv(L){
   var t = { E:0, S:0, STK:0, MIN:0, HT:0 }, ap = {}, cm = {};
   L.forEach(function(I){ Object.keys(t).forEach(function(k){ t[k] = E.r2(t[k] + (I.totals[k] || 0)); }); Object.keys(I.appareils).forEach(function(a){ ap[a] = 1; }); Object.keys(I.cmCodes).forEach(function(c){ cm[c] = 1; }); });
   var ags = uniqA(L.map(function(I){ return I.ag; }));
-  return { _cmNames:uniqA([].concat.apply([], L.map(function(I){ return I._cmNames || []; }))), _cmds:uniqA([].concat.apply([], L.map(function(I){ return I._cmds || []; }))), key:L.map(function(I){ return I.key; }).join('+'), num:L.map(function(I){ return I.num; }).join(' + '), split:'multi', sub:L.map(function(I){ return I.sub; }).join(', '), totals:t, appareils:ap, cmCodes:cm, ag:ags.length === 1 ? ags[0] : null, agLabel:uniqA(L.map(function(I){ return I.agLabel; })).join(', '), fhr:L[0].fhr };
+  return { _po:uniqA([].concat.apply([], L.map(function(I){ return I._po || []; }))), _cmNames:uniqA([].concat.apply([], L.map(function(I){ return I._cmNames || []; }))), _cmds:uniqA([].concat.apply([], L.map(function(I){ return I._cmds || []; }))), key:L.map(function(I){ return I.key; }).join('+'), num:L.map(function(I){ return I.num; }).join(' + '), split:'multi', sub:L.map(function(I){ return I.sub; }).join(', '), totals:t, appareils:ap, cmCodes:cm, ag:ags.length === 1 ? ags[0] : null, agLabel:uniqA(L.map(function(I){ return I.agLabel; })).join(', '), fhr:L[0].fhr };
 }
 // Contrôle d'un PDF contre une ou plusieurs factures (mêmes règles que le contrôle automatique, montants additionnés)
-function prepCm(){ if (ST.R && ST.R.invoices.length && !ST.R.invoices[0]._cmds) ST.R.invoices.forEach(function(I){ I._cmNames = Object.keys(I.cms || {}); I._cmds = invCmds(I); }); }
+function poMapOf(ag){ var a = ST.cfg.agencies[ag]; return (a && a.poMap) || {}; }
+function invPo(I){ var M = poMapOf(I.ag), names = Object.keys(I.cms || {}); return Object.keys(M).filter(function(po){ var m = M[po]; return !!m.fhr === !!I.fhr && (m.cms || []).some(function(n){ return names.indexOf(n) >= 0; }); }); }
+function prepCm(){ if (ST.R) ST.R.invoices.forEach(function(I){ I._cmNames = Object.keys(I.cms || {}); I._cmds = I._cmds || invCmds(I); I._po = invPo(I); }); }
 function compareMulti(parsed, L){
   prepCm();
   if (L.length === 1) return PDFCHECK.compare(parsed, L[0], ST.month, famTotals);
@@ -2902,8 +2910,8 @@ function assocReasons(p, keys){
       if (I.split === 'affaire' && P.affaires.indexOf(I.sub) < 0) why.push('affaire '+I.sub+' absente du PDF (affaires lues : '+(P.affaires.join(', ') || 'aucune')+')');
       if (I.split === 'appareil' && P.appareils.indexOf(I.sub) < 0) why.push('appareil '+I.sub+' absent du PDF');
       if (I.split === 'cm' || I.split === 'cm_fhr'){ prepCm(); var ev = PDFCHECK.cmEvidence(P, I);
-        if (!ev.code && !ev.name) why.push('contremaître '+((I._cmNames||[]).join(', ') || '—')+' (code '+(Object.keys(I.cmCodes).join(', ') || '—')+') absent du PDF');
-        if (ev.cmdsTot && ev.cmds < ev.cmdsTot && !I.fhr) why.push(ev.cmds+' n° de commande sur '+ev.cmdsTot+' retrouvé(s) dans le PDF'); }
+        if (!ev.code && !ev.name && !ev.po) why.push('le PDF ne porte ni le nom ni le code du contremaître '+((I._cmNames||[]).join(', ') || '—')+(P.po && P.po.length ? ' ; seul le n° de commande OTIS '+P.po.join(', ')+' l\'identifie : il sera mémorisé pour ce contremaître ('+(I.fhr ? 'FHR' : 'Contrats')+') et servira au rapprochement automatique des mois suivants' : ''));
+        if (ev.cmdsTot && ev.cmds < ev.cmdsTot && !I.fhr && !(P.po && P.po.length)) why.push(ev.cmds+' n° de commande sur '+ev.cmdsTot+' retrouvé(s) dans le PDF'); }
       if (I.split === 'cm_fhr' && P.fhr !== I.fhr) why.push('type de facture différent : PDF « '+(P.fhr ? 'FHR' : 'Contrats')+' », facture calculée « '+(I.fhr ? 'FHR' : 'Contrats')+' »');
       if (P.agence && P.agence !== I.ag) why.push('agence différente : PDF AG '+P.agence+', facture '+I.agLabel);
       if (P.totalHT !== null && P.totalHT !== undefined && Math.abs(P.totalHT - I.totals.HT) > TOL) why.push('total HT différent : facture '+n2(I.totals.HT)+' €, PDF '+n2(P.totalHT)+' €');
@@ -2943,10 +2951,19 @@ function assocOpen(id){
   var p = ST.pdfs.filter(function(x){ return x.id === id; })[0]; if (!p) return; var sel = {};
   ctlLinks(p).forEach(function(k){ sel[k] = 1; }); ST.modal = { assoc:{ pdf:id, sel:sel, q:'' } }; renderModal();
 }
+// Association validée sur une facture par contremaître : le n° de commande OTIS lu dans le PDF est mémorisé pour ce contremaître et ce type (Contrats / FHR)
+function poLearn(p, keys){
+  var P = (p.result || {}).parsed; if (!P || !P.po || !P.po.length) return; var L = keys.map(invByKey).filter(function(I){ return I && (I.split === 'cm' || I.split === 'cm_fhr'); }); if (!L.length) return;
+  var a = ST.cfg.agencies[L[0].ag]; if (!a) return; if (!isAdmin()){ toast('N° de commande OTIS non mémorisé : réservé à un administrateur'); return; } a.poMap = a.poMap || {}; var ch = [];
+  P.po.forEach(function(po){ var cur = a.poMap[po], cms = uniqA([].concat.apply([], L.map(function(I){ return Object.keys(I.cms || {}); }))); var v = { cms:cms, fhr:!!L[0].fhr, at:new Date().toISOString().slice(0, 10), by:ST.user ? ST.user.name : '' };
+    if (!cur || JSON.stringify(cur.cms) !== JSON.stringify(cms) || cur.fhr !== v.fhr){ a.poMap[po] = v; ch.push(po+' → '+cms.join(', ')+(v.fhr ? ' (FHR)' : ' (Contrats)')); } });
+  if (ch.length){ prepCm(); saveCfg((a.label || a.code)+' : n° de commande OTIS mémorisé(s) '+ch.join(' ; ')); }
+}
 function assocSave(){
   var A = ST.modal.assoc, p = ST.pdfs.filter(function(x){ return x.id === A.pdf; })[0], keys = Object.keys(A.sel).filter(function(k){ return A.sel[k]; }); if (!p || !keys.length) return;
   ST.ov.plink = ST.ov.plink || {}; ST.ov.plinkBy = ST.ov.plinkBy || {};
   (ST.pdfs || []).forEach(function(o){ if (o.id === p.id) return; var cur = ctlLinks(o); if (cur.some(function(k){ return keys.indexOf(k) >= 0; })){ ST.ov.plink[o.id] = cur.filter(function(k){ return keys.indexOf(k) < 0; }); ST.ov.plinkBy[o.id] = { who:ST.user ? ST.user.name : '', at:new Date().toLocaleDateString('fr-FR') }; } });
+  poLearn(p, keys);
   ST.ov.plink[p.id] = keys; ST.ov.plinkBy[p.id] = { who:ST.user ? ST.user.name : '', at:new Date().toLocaleDateString('fr-FR') };
   ST.modal = null; renderModal(); render();
   persist('Association '+p.name+' → '+keys.map(function(k){ return invByKey(k).num; }).join(', ')); toast('Association enregistrée');
@@ -3109,7 +3126,11 @@ function cmDiag(p){
   var sc = C.map(function(I){ return { I:I, ev:PDFCHECK.cmEvidence(P, I) }; }).sort(function(a, b){ return b.ev.score - a.ev.score; });
   var names = sc.filter(function(x){ return x.ev.name || x.ev.code; }).map(function(x){ return (x.I._cmNames || []).join(', '); });
   var ok = function(b){ return b ? '✓' : '✗'; };
-  return { names:uniqA(names), lines:sc.slice(0, 2).map(function(x){ var e = x.ev; return x.I.num+' ('+((x.I._cmNames||[]).join(', ') || '—')+', '+(x.I.fhr ? 'FHR' : 'Contrats')+') : nom '+ok(e.name)+' · code '+ok(e.code)+' · commandes '+e.cmds+'/'+e.cmdsTot+' · total '+ok(e.ht)+' · type '+ok(e.type); }), type:P.fhr ? 'FHR' : 'Contrats' };
+  // proposition par les montants Entrées / Sorties / Stockage (même type, facture calculée sans PDF)
+  var own = ctlOwner(), F = P.fam || {}, prop = null;
+  if (typeof P.totalHT === 'number') C.filter(function(I){ return !own[I.key] && (I.split !== 'cm_fhr' || !!I.fhr === !!P.fhr); }).forEach(function(I){ var f = famTotals(I), d = Math.abs((F.E||0) - f.E) + Math.abs((F.S||0) - f.S) + Math.abs((F.STK||0) - f.STK); if (!prop || d < prop.d) prop = { I:I, d:E.r2(d), dHT:E.r2(P.totalHT - I.totals.HT) }; });
+  if (prop && prop.d > Math.max(50, P.totalHT * 0.25)) prop = null;
+  return { prop:prop, po:P.po || [], names:uniqA(names), lines:sc.slice(0, 2).map(function(x){ var e = x.ev; return x.I.num+' ('+((x.I._cmNames||[]).join(', ') || '—')+', '+(x.I.fhr ? 'FHR' : 'Contrats')+') : nom '+ok(e.name)+' · code '+ok(e.code)+' · commandes '+e.cmds+'/'+e.cmdsTot+' · total '+ok(e.ht)+' · type '+ok(e.type); }), type:P.fhr ? 'FHR' : 'Contrats' };
 }
 function invAps(I){ return Object.keys(I.appareils).filter(function(a){ return /^[0-9A-Z]{6,10}$/.test(a) && !(I.split === 'affaire' && a === I.sub); }).sort(); }
 function invAffs(I){ var a = invAffaires(I); return a.length ? a : (I.split === 'affaire' ? [I.sub] : []); }
@@ -3149,7 +3170,7 @@ function vControl(){
     var s2 = 0; orphan.forEach(function(p){ var v = p.result && p.result.parsed && p.result.parsed.totalHT; if (typeof v === 'number') s2 = E.r2(s2 + v); });
     h += '<div class="tw"><table class="ct2"><thead><tr><th>N° Odoo</th><th>Fichier</th><th>Contremaître lu</th><th>Affaire lue</th><th>Appareils lus</th><th class="n">HT Odoo</th><th>Statut</th><th>Motif / diagnostic</th><th class="c">PDF</th><th></th></tr><tr class="tot"><td>'+orphan.length+' facture'+(orphan.length>1?'s':'')+'</td><td colspan="4"></td><td class="n">'+n2(s2)+'</td><td colspan="4"></td></tr></thead><tbody>';
     orphan.forEach(function(p){ var r = p.result || {}, ev = EV[p.id], Q = r.parsed, dg = cmDiag(p);
-      h += '<tr><td class="mono">'+esc(Q && Q.numero ? Q.numero : '—')+'</td><td>'+esc(p.name)+'</td><td class="small">'+(dg ? (dg.names.length ? codesCell(dg.names) : '<span class="zero">non trouvé</span>')+'<br><span class="muted small">'+dg.type+'</span>' : '<span class="zero">—</span>')+'</td><td class="mono">'+codesCell(Q ? Q.affaires : [])+'</td><td class="mono">'+codesCell(Q ? Q.appareils.filter(function(a){ return Q.affaires.indexOf(a) < 0; }) : [])+'</td><td class="n">'+(Q && typeof Q.totalHT === 'number' ? n2(Q.totalHT) : '—')+'</td><td>'+sdot(ev.status)+'</td><td class="muted small">'+esc(ev.note || '')+(dg ? '<br>'+dg.lines.map(esc).join('<br>') : '')+'</td>'+
+      h += '<tr><td class="mono">'+esc(Q && Q.numero ? Q.numero : '—')+'</td><td>'+esc(p.name)+'</td><td class="small">'+(dg ? (dg.names.length ? codesCell(dg.names) : '<span class="zero">non trouvé</span>')+'<br><span class="muted small">'+dg.type+(dg.po.length ? ' · commande '+esc(dg.po.join(', ')) : '')+'</span>' : '<span class="zero">—</span>')+'</td><td class="mono">'+codesCell(Q ? Q.affaires : [])+'</td><td class="mono">'+codesCell(Q ? Q.appareils.filter(function(a){ return Q.affaires.indexOf(a) < 0; }) : [])+'</td><td class="n">'+(Q && typeof Q.totalHT === 'number' ? n2(Q.totalHT) : '—')+'</td><td>'+sdot(ev.status)+'</td><td class="muted small">'+(dg && dg.prop ? '<div class="prop">Proposition par les montants : <b>'+esc(dg.prop.I.num)+'</b> · '+esc((dg.prop.I._cmNames||[]).join(', '))+' · '+(dg.prop.I.fhr ? 'FHR' : 'Contrats')+' · écart HT '+n2(dg.prop.dHT)+' €'+(!ro ? ' <button class="btn sm" data-asq="'+esc(p.id)+'" data-asqi="'+esc(dg.prop.I.key)+'">Associer</button>' : '')+'</div>' : '')+esc(ev.note || '')+(dg ? '<br>'+dg.lines.map(esc).join('<br>') : '')+'</td>'+
         '<td class="c icg">'+icb('data-pvo="'+esc(p.id)+'"', IC_PDF+'<span>Odoo</span>', 'Voir le PDF Odoo')+'</td><td class="c icg">'+(!ro ? icb('data-pas="'+esc(p.id)+'"', IC_LINK, 'Associer à des factures calculées') : '')+menuBtn('p:'+p.id)+'</td></tr>'; });
     if (!orphan.length) h += '<tr><td colspan="10" class="muted">Toutes les factures Odoo sont associées.</td></tr>';
     h += '</tbody></table></div>';
@@ -3295,7 +3316,7 @@ function pickModal(){
 function autoRerun(){
   var id = monthId(); ST.rerunDone = ST.rerunDone || {};
   if (ST.busy || ST.rerunDone[id] || !canEdit() || monthClosed()) return;
-  if (!ST.pdfs.some(function(p){ return !p.result || p.result.v !== 5; })) return;
+  if (!ST.pdfs.some(function(p){ return !p.result || p.result.v !== 6; })) return;
   ST.rerunDone[id] = 1; setTimeout(rerunPdfs, 0);
 }
 // Contrôle → C · Factures : ligne de la facture mise en évidence, montants cliquables pour l'audit colis par colis
@@ -3798,6 +3819,7 @@ document.addEventListener('click', function(e){
   if (d.cmenu){ if (ST.ctlMenu && ST.ctlMenu.id === d.cmenu){ ST.ctlMenu = null; render(); return; } var rc = t.getBoundingClientRect(); ST.ctlMenu = { id:d.cmenu, x:Math.max(8, Math.round(rc.right - 260)), y:Math.round(rc.bottom + 4) }; render(); return; }
   if (t.closest('.cmenu')) ST.ctlMenu = null;
   if (d.gocdf){ ST.sub = 'cdf'; ST.cdfHl = d.gocdf; ST.ctlMenu = null; ST.modal = { cdf:{ pdf:d.gocdf, all:false } }; render(); window.scrollTo(0,0); setTimeout(function(){ var r = document.getElementById('cdf-'+d.gocdf); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
+  if (d.asq){ assocOpen(d.asq); if (ST.modal && ST.modal.assoc){ ST.modal.assoc.sel = {}; ST.modal.assoc.sel[d.asqi] = 1; renderModal(); } return; }
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
   if (d.cdfall !== undefined){ ST.modal.cdf.all = !ST.modal.cdf.all; renderModal(); return; }
   if (d.cdfx){ cdfExport(d.cdfx); return; }
