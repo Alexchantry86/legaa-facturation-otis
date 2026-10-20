@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.27 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.28 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -3019,7 +3019,7 @@ function advParse(buf, name){
       if (!col && amt === null && !famCols) continue;
       var fam = famVal(g('op')) || famVal(g('fam')) || famVal(g('famv')) || (stockSheet ? 'STK' : null);
       var pc = g('cmd') !== null ? E.parseCmd(g('cmd')) : { appareil:null, affaire:null };
-      var base = { sheet:sn, line:r + 1, colis:col, op:g('op') === null ? '' : String(g('op')), br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, produit:g('produit') === null ? '' : String(g('produit')) };
+      var base = { sheet:sn, line:r + 1, colis:col, cmdRaw:g('cmd') === null ? '' : String(g('cmd')), op:g('op') === null ? '' : String(g('op')), br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, produit:g('produit') === null ? '' : String(g('produit')) };
       if (famCols){ var emitted = 0;
         [['E','amtE'],['S','amtS'],['STK','amtK']].forEach(function(fc){ var v = idx[fc[1]] === undefined ? null : advNum(row[idx[fc[1]]]); if ((v === null || v === 0) && fam !== fc[0]) return;
           var ln = Object.assign({}, base, { fam:fc[0], amt:v === null ? 0 : v, col:fc[1] });
@@ -3027,7 +3027,7 @@ function advParse(buf, name){
           if (fc[0] !== 'STK' && fam === fc[0] && !v) ln.warn = 'type « '+base.op+' » sans montant '+(fc[0] === 'E' ? 'entrée' : 'sortie');
           lines.push(ln); emitted++; n++; });
         continue; }
-      lines.push({ sheet:sn, line:r + 1, colis:col, fam:fam, amt:amt, br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, produit:g('produit') === null ? '' : String(g('produit')) }); n++; }
+      lines.push({ sheet:sn, line:r + 1, colis:col, cmdRaw:g('cmd') === null ? '' : String(g('cmd')), fam:fam, amt:amt, br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, produit:g('produit') === null ? '' : String(g('produit')) }); n++; }
     sheets.push({ name:sn, used:true, n:n, amtH:famCols ? 'montants entrée / sortie / stockage' : (idx.amtH || ''), hasColis:idx.colis !== undefined, note:idx.colis === undefined ? 'sans colonne n° de colis' : '' });
   });
   // une feuille détaillée par colis existe : les feuilles de synthèse (sans n° de colis) sont ignorées pour ne pas compter deux fois
@@ -3227,17 +3227,41 @@ var CDF_ST = { ok:['d-ok','Identique'], diff:['d-ko','Montant différent'], odoo
 var FAMLBL = { E:'Entrées', S:'Sorties', STK:'Stockage' };
 var CDF_TOL = 0.05;
 function cdfSrc(){ return ST.adv && ST.adv.lines && !ST.adv.error ? 'adv' : 'prix'; }
+/* Rattachement des lignes du fichier de calcul à une facture, avec les règles de découpage de l'agence appliquées aux colonnes du fichier
+   (code contremaître, n° de commande → affaire / appareil / FHR). Ainsi « fichier » = ce que l'ADV a facturé sur cette facture,
+   indépendamment de la facture sur laquelle l'outil a mis le même colis. */
+function fileInvIndex(){ var X = {}; ST.R.invoices.forEach(function(I){
+  if (I.split === 'affaire') X['A|'+I.sub] = I; else if (I.split === 'appareil') X['P|'+I.sub] = I;
+  else if (I.split === 'cm' || I.split === 'cm_fhr') Object.keys(I.cmCodes || {}).forEach(function(c){ X['C|'+c+(I.split === 'cm_fhr' ? '|'+(I.fhr ? 1 : 0) : '')] = I; }); }); return X; }
+function fileInvOf(l, X, split){
+  if (split === 'affaire' && l.affaire) return X['A|'+l.affaire] || null;
+  if (split === 'appareil' && l.appareil) return X['P|'+l.appareil] || null;
+  if ((split === 'cm' || split === 'cm_fhr') && l.cmCode) return X['C|'+l.cmCode+(split === 'cm_fhr' ? '|'+(/FHR/i.test(l.cmdRaw || '') ? 1 : 0) : '')] || null;
+  return undefined; // pas d'attribut exploitable : rattachement par la ligne de l'outil
+}
 function cdfFamLines(L){
-  var keys = {}, out = { E:[], S:[], STK:[] }, src = cdfSrc(), advBy = {}, advOnly = [];
+  var keys = {}, out = { E:[], S:[], STK:[] }, src = cdfSrc();
   L.forEach(function(I){ keys[I.key] = 1; });
-  if (src === 'adv'){ var C = advCompare(); (C ? C.rows : []).forEach(function(x){ if (x.r){ if (x.l) advBy[x.r.key] = x; } else if (x.I && keys[x.I.key] && x.fam) advOnly.push(x); }); }
+  var famOfR = function(r){ return r.kind === 'manut' ? r.op : 'STK'; }, invOfK = {}; ST.R.invoices.forEach(function(I){ I.lineList.forEach(function(ln){ ln.keys.forEach(function(k){ invOfK[k] = I; }); }); });
+  var toolAmt = function(r){ var ex = ST.ov.exclude[r.key]; return r.billable && !ex ? E.r2(r.amount) : 0; };
+  if (src === 'adv'){
+    var C = advCompare(), X = fileInvIndex(), split = L[0] && L[0].split, used = {};
+    (C ? C.rows : []).forEach(function(x){ if (!x.l) return; var l = x.l, fi = fileInvOf(l, X, split), r = x.r, ri = r ? invOfK[r.key] : null;
+      var mine = fi === undefined ? (ri && keys[ri.key]) : (fi && keys[fi.key]); if (!mine) return;
+      var f = l.fam || (r ? famOfR(r) : null); if (!out[f]) return;
+      var inL = r && ri && keys[ri.key], calc = inL ? toolAmt(r) : 0; if (inL) used[r.key] = 1;
+      var why = !r ? 'colis '+l.colis+' introuvable dans les exports Odoo du mois' : !inL ? (ri ? 'l\'outil facture ce colis sur '+ri.num+' ('+(Object.keys(ri.cms || {}).join(', ') || ri.sub)+')' : 'colis non facturé par l\'outil') : (ST.ov.exclude[r.key] ? 'exclue dans l\'outil' : '');
+      if (!(l.amt || 0) && !calc) return;
+      out[f].push({ I:inL ? ri : null, r:r, l:l, fam:f, odoo:l.amt || 0, calc:calc, why:why }); });
+    var lOf = {}; (C ? C.rows : []).forEach(function(x){ if (x.r && x.l) lOf[x.r.key] = x.l; });
+    L.forEach(function(I){ I.lineList.forEach(function(ln){ ln.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (!r || r.kind === 'min30' || used[k]) return; var calc = toolAmt(r); if (!calc) return;
+      var l = lOf[k], fi = l ? fileInvOf(l, X, split) : null;
+      out[famOfR(r)].push({ I:I, r:r, l:null, fam:famOfR(r), odoo:0, calc:calc, why:l ? 'dans le fichier, ce colis est facturé '+(fi ? 'sur la facture de '+(Object.keys(fi.cms || {}).join(', ') || fi.sub)+' ('+fi.num+')' : 'hors de cette facture')+' (ligne '+l.line+')' : 'absent du fichier' }); }); }); });
+    return out;
+  }
   L.forEach(function(I){ I.lineList.forEach(function(ln){ ln.keys.forEach(function(k){ var r = ST.R.byKey[k]; if (!r || r.kind === 'min30') return;
-    var ex = ST.ov.exclude[k], calc = r.billable && !ex ? E.r2(r.amount) : 0, f = r.kind === 'manut' ? r.op : 'STK';
-    var ax = src === 'adv' ? advBy[k] : null, o = src === 'adv' ? (ax ? ax.adv : null) : (r.odooPrix === null || r.odooPrix === undefined || isNaN(r.odooPrix) ? null : E.r2(r.odooPrix));
-    if (src === 'adv' && o === null) o = 0; // fichier déposé : ligne absente du fichier = 0
-    if (!calc && !o) return; // ni facturée par l'outil ni montant côté fichier / Odoo : sans objet
-    out[f] && out[f].push({ I:I, r:r, l:ax ? ax.l : null, fam:f, odoo:o, calc:calc, why:ex ? 'exclue dans l\'outil ('+ex+')' : '' }); }); }); });
-  advOnly.forEach(function(x){ if (out[x.fam] && x.adv) out[x.fam].push({ I:x.I, r:null, l:x.l, fam:x.fam, odoo:x.adv, calc:0, why:x.why }); });
+    var calc = toolAmt(r), f = famOfR(r), o = r.odooPrix === null || r.odooPrix === undefined || isNaN(r.odooPrix) ? null : E.r2(r.odooPrix);
+    if (!calc && !o) return; out[f].push({ I:I, r:r, l:null, fam:f, odoo:o, calc:calc, why:ST.ov.exclude[k] ? 'exclue dans l\'outil' : '' }); }); }); });
   return out;
 }
 function cdfRows(){
@@ -3280,23 +3304,23 @@ function cdfColis(fam){
   ['E','S','STK'].forEach(function(k){ var F = fam[k]; if (!F.rec) return; F.lines.forEach(function(y){ var key = colisKey(y.r ? y.r.colis : (y.l ? y.l.colis : '')) || '(sans n° de colis)';
     var c = C[key] = C[key] || { colis:y.r ? y.r.colis : (y.l ? y.l.colis : key), produit:'', I:{}, refs:[], src:[], E:{ f:0, o:0, nf:0, no:0 }, S:{ f:0, o:0, nf:0, no:0 }, STK:{ f:0, o:0, nf:0, no:0 }, warn:[] };
     if (y.r && !c.produit) c.produit = y.r.produit; if (y.I) c.I[y.I.num] = 1;
-    var b = c[k]; b.f = E.r2(b.f + (y.odoo || 0)); b.o = E.r2(b.o + y.calc); if (y.l) { b.nf++; c.refs.push(y.l.sheet+' · '+y.l.line); if (y.l.warn) c.warn.push('ligne '+y.l.line+' : '+y.l.warn); } if (y.r){ b.no++; c.src.push((y.r.kind === 'manut' ? (y.r.op === 'E' ? 'entrée' : 'sortie') : 'stock')+' l. '+y.r.line); } }); });
+    var b = c[k]; b.f = E.r2(b.f + (y.odoo || 0)); b.o = E.r2(b.o + y.calc); if (y.l) { b.nf++; c.refs.push(y.l.sheet+' · '+y.l.line); if (y.l.warn) c.warn.push('ligne '+y.l.line+' : '+y.l.warn); } if (y.why) c.warn.push(y.why); if (y.r && y.I){ b.no++; c.src.push((y.r.kind === 'manut' ? (y.r.op === 'E' ? 'entrée' : 'sortie') : 'stock')+' l. '+y.r.line); } }); });
   return Object.keys(C).map(function(key){ var c = C[key], bad = false;
     ['E','S','STK'].forEach(function(k){ var b = c[k]; b.d = E.r2(b.f - b.o); if (Math.abs(b.d) > 0.01) bad = true;
       var lb = k === 'E' ? 'entrée' : k === 'S' ? 'sortie' : 'stockage';
       if (b.nf > b.no && b.no) c.warn.push(b.nf+' lignes '+lb+' dans le fichier pour '+b.no+' dans l\'outil');
-      if (b.nf && !b.no && b.f) c.warn.push(lb+' facturée dans le fichier, absente de l\'outil');
-      if (b.no && !b.nf && b.o) c.warn.push(lb+' facturée par l\'outil, absente du fichier'); });
-    c.refs = uniqA(c.refs); c.bad = bad || c.warn.length > 0; return c; }).sort(function(a, b){ return String(a.colis).localeCompare(String(b.colis)); });
+    });
+    c.warn = uniqA(c.warn); c.refs = uniqA(c.refs); c.bad = bad || c.warn.length > 0; return c; }).sort(function(a, b){ return String(a.colis).localeCompare(String(b.colis)); });
 }
 function cdfModal(){
   var x = cdfRows().filter(function(r){ return r.p.id === ST.modal.cdf.pdf; })[0]; if (!x) return '';
   var only = !ST.modal.cdf.all, src = cdfSrc(), anyRec = ['E','S','STK'].some(function(k){ return x.fam[k].rec; });
   var CL = x.colis.filter(function(c){ return !only || c.bad; });
   var h = '<div class="mbox mbox-cdf" role="dialog" aria-modal="true"><div class="mhead"><div><span class="lbl">Contrôle détaillé · '+esc(x.L.map(function(I){ return I.num; }).join(' + '))+'</span><h2>Facture Odoo '+esc(x.num)+' · écart '+(x.ecart === null ? '—' : (x.ecart > 0 ? '+' : '')+n2(x.ecart)+' €')+'</h2></div><div class="row"><button class="btn sm" data-cdfall>'+(only ? 'Tous les colis' : 'Colis en écart seulement')+'</button><button class="btn sm" data-cdfx="pdf"'+(canSave()?'':' disabled')+'>Export PDF</button><button class="btn sm" data-cdfx="xlsx"'+(canSave()?'':' disabled')+'>Export Excel</button><button class="btn" data-mclose>Fermer</button></div></div><div class="mbody">';
-  h += '<table class="ct2 cdf-sum"><thead><tr><th></th><th class="n">Odoo (PDF)</th><th class="n">'+(src === 'adv' ? 'Fichier' : 'Prix Odoo')+'</th><th class="n">Outil</th><th class="n">Écart Odoo − outil</th><th class="n">Colis en écart</th></tr></thead><tbody>'+
+  h += '<table class="ct2 cdf-sum"><thead><tr><th></th><th class="n">Odoo (PDF)</th><th class="n">'+(src === 'adv' ? 'Fichier' : 'Prix Odoo')+'</th><th class="n">Outil</th><th class="n">Écart Odoo − outil</th><th class="n">dont Odoo − fichier</th><th class="n">dont fichier − outil<br><span class="muted">(détail par colis)</span></th><th class="n">Colis en écart</th></tr></thead><tbody>'+
     ['E','S','STK'].map(function(k){ var F = x.fam[k], fs = E.r2(F.lines.reduce(function(s2, y){ return s2 + (y.odoo || 0); }, 0)), nb = x.colis.filter(function(c){ return Math.abs(c[k].d) > 0.01; }).length;
-      return '<tr><td><b>'+FAMLBL[k]+'</b></td><td class="n">'+(F.odoo === null ? '—' : n2(F.odoo))+'</td><td class="n">'+(F.rec ? n2(fs) : '<span class="zero" data-tip="'+esc(F.have ? 'Prix ligne à ligne ('+n2(F.srcSum)+') différents du montant facturé : non comparés' : 'Pas de montant ligne à ligne')+'">non comparé</span>')+'</td><td class="n">'+n2(F.calc)+'</td><td class="n">'+dEur(F.odoo === null ? null : E.r2(F.odoo - F.calc))+'</td><td class="n">'+(F.rec ? nb : '—')+'</td></tr>'; }).join('')+'</tbody></table>';
+      return '<tr><td><b>'+FAMLBL[k]+'</b></td><td class="n">'+(F.odoo === null ? '—' : n2(F.odoo))+'</td><td class="n">'+(F.rec ? n2(fs) : '<span class="zero" data-tip="'+esc(F.have ? 'Prix ligne à ligne ('+n2(F.srcSum)+') différents du montant facturé : non comparés' : 'Pas de montant ligne à ligne')+'">non comparé</span>')+'</td><td class="n">'+n2(F.calc)+'</td><td class="n">'+dEur(F.odoo === null ? null : E.r2(F.odoo - F.calc))+'</td><td class="n">'+(F.rec && F.odoo !== null ? dEur(E.r2(F.odoo - fs)) : '—')+'</td><td class="n">'+(F.rec ? dEur(E.r2(fs - F.calc)) : '—')+'</td><td class="n">'+(F.rec ? nb : '—')+'</td></tr>'; }).join('')+'</tbody></table>'+
+    (src === 'adv' ? '<p class="small muted" style="margin:-6px 0 12px">Écart Odoo − outil = (Odoo − fichier) + (fichier − outil). « Odoo − fichier » : le PDF Odoo ne reprend pas les lignes du fichier rattachées à cette facture (code contremaître / n° de commande du fichier). « Fichier − outil » : expliqué colis par colis ci-dessous.</p>' : '');
   if (!anyRec){ h += '<p class="small muted">Pas de montant ligne à ligne exploitable : déposer le fichier de calcul (onglet DATA) pour le contrôle par colis.</p></div></div>'; return h; }
   if (!CL.length){ h += '<p class="small">Aucun colis en écart : chaque colis a les mêmes montants d\'entrée, de sortie et de stockage dans le fichier et dans l\'outil.</p></div></div>'; return h; }
   var lab = src === 'adv' ? 'Fichier' : 'Odoo';
