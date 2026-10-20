@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.25 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.26 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -3053,14 +3053,27 @@ function advRemove(){
   STORE.deleteImport(advId(), a.meta).then(function(){ ST.adv = null; render(); toast('Fichier ADV supprimé'); }, function(e){ toast('Suppression impossible : '+e.message); });
 }
 var ADV_ST = { ok:['p-ok','Identique'], diff:['p-bloquant','Montant différent'], present:['p-info','Présente (sans montant)'], absent_calc:['p-verifier','Absente du calcul'], non_fact:['p-verifier','Non facturée par l\'outil'], absent_adv:['p-verifier','Absente du fichier ADV'] };
+/* Plusieurs feuilles détaillées par colis dans le fichier (ex. « DATA » et « MOdif data ») : une seule est retenue, sinon chaque colis compte deux fois.
+   Choix de l'ADV (menu de l'onglet E) ou, par défaut, la feuille dont les totaux par facture sont les plus proches des factures Odoo déposées. */
+function advDetailSheets(){ var A = ST.adv; return A && A.sheets ? A.sheets.filter(function(s){ return s.used && s.hasColis; }).map(function(s){ return s.name; }) : []; }
+function advSheet(){
+  var A = ST.adv, S = advDetailSheets(); if (S.length < 2) return S[0] || null;
+  if (ST.ov.advSheet && S.indexOf(ST.ov.advSheet) >= 0) return ST.ov.advSheet;
+  var key = S.join('|')+'#'+(ST.pdfs||[]).length+'#'+(ST.R ? ST.R.invoices.length : 0); if (A._auto && A._auto.key === key) return A._auto.sheet;
+  var best = null; S.forEach(function(sn){ A._only = sn; var C = advCompare(); A._only = null; if (!C) return; var tot = {}; C.rows.forEach(function(x){ if (x.I && x.adv) tot[x.I.key] = (tot[x.I.key] || 0) + x.adv; });
+    var sc = 0, n = 0; (ST.pdfs || []).forEach(function(p){ var L = ctlLinks(p), v = p.result && p.result.parsed && p.result.parsed.totalHT; if (!L.length || typeof v !== 'number') return; n++; sc += Math.abs(v - L.reduce(function(s2, k){ return s2 + (tot[k] || 0); }, 0)); });
+    if (!n) sc = /^data$/i.test(sn) ? 0 : 1; if (!best || sc < best.sc) best = { sn:sn, sc:sc }; });
+  A._auto = { key:key, sheet:best ? best.sn : S[0] }; return A._auto.sheet;
+}
+function advLines(){ var A = ST.adv, sn = A._only || advSheet(), S = advDetailSheets(); return S.length < 2 ? A.lines : A.lines.filter(function(l){ return l.sheet === sn; }); }
 function advCompare(){
-  var A = ST.adv, R = ST.R; if (!A || !R || A.error) return null;
+  var A = ST.adv, R = ST.R; if (!A || !R || A.error) return null; var AL = advLines();
   var invOf = {}; R.invoices.forEach(function(I){ I.lineList.forEach(function(l){ l.keys.forEach(function(k){ invOf[k] = I; }); }); });
   var famOf = function(r){ return r.kind === 'manut' ? r.op : 'STK'; };
   var idxR = {}; R.records.forEach(function(r){ if (!r.colis || (r.kind !== 'manut' && r.kind !== 'stock')) return; var k = famOf(r)+'|'+colisKey(r.colis); (idxR[k] = idxR[k] || []).push(r); });
   var used = {}, rows = [], cover = {};
   function calcAmt(r){ var I = invOf[r.key], ex = ST.ov.exclude[r.key]; if (!I || ex || !r.billable) return { I:I, amt:0, why:ex ? 'exclue dans l\'outil ('+ex+')' : !r.billable ? 'non facturable : '+(r.applied || r.formula || 'règle de facturation') : (r.eff ? 'autre agence ('+r.eff.agLabel+')' : 'non rattachée à une agence') }; return { I:I, amt:E.r2(r.amount), why:'' }; }
-  A.lines.forEach(function(l){
+  AL.forEach(function(l){
     var cand = null, fams = l.fam ? [l.fam] : ['STK','E','S'], ck = colisKey(l.colis), pool = [];
     if (ck) fams.forEach(function(f){ (idxR[f+'|'+ck] || []).forEach(function(r){ if (!used[r.key]) pool.push(r); }); });
     // même colis sur plusieurs lignes (stockage, entrée, sortie) : priorité à la ligne de l'outil de même montant
@@ -3070,14 +3083,14 @@ function advCompare(){
     else { if (l.fam) cover[l.fam] = 1; var I = R.invoices.filter(function(I){ return (l.affaire && I.split === 'affaire' && I.sub === l.affaire) || (l.appareil && I.split === 'appareil' && I.sub === l.appareil) || (l.cmCode && I.cmCodes[l.cmCode] && (I.split === 'cm' || I.split === 'cm_fhr')); })[0] || null;
       rows.push({ st:'absent_calc', l:l, r:null, I:I, fam:l.fam, adv:l.amt, calc:0, d:l.amt, why:l.colis ? 'colis '+l.colis+(l.fam ? ' ('+({E:'entrée',S:'sortie',STK:'stock'})[l.fam]+')' : '')+' introuvable dans les exports Odoo du mois' : 'ligne sans n° de colis' }); }
   });
-  if (A.lines.some(function(l){ return l.colis; })) R.invoices.forEach(function(I){ I.lineList.forEach(function(ln){ ln.keys.forEach(function(k){ var r = R.byKey[k]; if (!r || used[k] || r.kind === 'min30' || !cover[famOf(r)] || ST.ov.exclude[k] || !r.billable) return;
+  if (AL.some(function(l){ return l.colis; })) R.invoices.forEach(function(I){ I.lineList.forEach(function(ln){ ln.keys.forEach(function(k){ var r = R.byKey[k]; if (!r || used[k] || r.kind === 'min30' || !cover[famOf(r)] || ST.ov.exclude[k] || !r.billable) return;
     rows.push({ st:'absent_adv', l:null, r:r, I:I, fam:famOf(r), adv:0, calc:E.r2(r.amount), d:E.r2(-r.amount), why:'ligne facturée par l\'outil, absente du fichier ADV' }); }); }); });
   var by = {}, tot = { adv:0, calc:0 }, cnt = {};
   rows.forEach(function(x){ cnt[x.st] = (cnt[x.st] || 0) + 1; var k = x.I ? x.I.key : '_'; var b = by[k] = by[k] || { I:x.I, adv:{ E:0, S:0, STK:0, T:0 }, calc:{ E:0, S:0, STK:0, T:0 }, n:0, ne:0 };
     var f = x.fam || 'T'; if (x.adv) { if (f !== 'T') b.adv[f] = E.r2(b.adv[f] + x.adv); b.adv.T = E.r2(b.adv.T + x.adv); tot.adv = E.r2(tot.adv + x.adv); }
     if (x.calc) { b.calc[f] = E.r2(b.calc[f] + x.calc); b.calc.T = E.r2(b.calc.T + x.calc); tot.calc = E.r2(tot.calc + x.calc); }
     b.n++; if (x.st !== 'ok' && x.st !== 'present') b.ne++; });
-  var hasAmt = A.lines.some(function(l){ return l.amt !== null; });
+  var hasAmt = AL.some(function(l){ return l.amt !== null; });
   return { rows:rows, by:by, tot:tot, cnt:cnt, hasAmt:hasAmt, cover:Object.keys(cover) };
 }
 function vAdv(ro){
@@ -3239,7 +3252,9 @@ function cdfRows(){
 function vCdf(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les exports Odoo.</div>';
   var ro = !canEdit() || monthClosed(), R = cdfRows(), A = ST.adv && !ST.adv.error ? ST.adv : null;
-  var h = '<div class="card2"><div class="h2"><span class="muted small">Prix Odoo ligne à ligne : '+(A ? 'fichier de calcul <b>'+esc(A.name)+'</b>'+(A.meta && A.meta.at ? ' (déposé le '+esc(dt(A.meta.at))+')' : '') : 'colonne « Prix » des exports Odoo')+'</span><div class="r">'+
+  var DS = A ? advDetailSheets() : [], cur = DS.length > 1 ? advSheet() : null;
+  var h = '<div class="card2"><div class="h2"><span class="muted small">Prix Odoo ligne à ligne : '+(A ? 'fichier de calcul <b>'+esc(A.name)+'</b>'+(A.meta && A.meta.at ? ' (déposé le '+esc(dt(A.meta.at))+')' : '') : 'colonne « Prix » des exports Odoo')+'</span>'+
+    (DS.length > 1 ? '<span class="small">Feuille utilisée <select id="advsheet" class="chk2" style="border-color:#cfcfcc">'+DS.map(function(sn){ return '<option'+(sn === cur ? ' selected' : '')+'>'+esc(sn)+'</option>'; }).join('')+'</select>'+(ST.ov.advSheet ? '' : ' <span class="muted">(choix automatique : la plus proche des factures Odoo)</span>')+'</span>' : '')+'<div class="r">'+
     (!ro ? '<label class="btn sm">'+(A ? 'Remplacer le fichier de calcul' : 'Déposer le fichier de calcul')+'<input type="file" id="advin" accept=".xlsx,.xls,.xlsm,.csv" hidden></label>' : '')+(A && A.meta ? '<button class="btn sm g" data-advdl>Télécharger</button>'+(!ro ? '<button class="btn sm g" data-advrm>Supprimer</button>' : '') : '')+'<button class="btn sm g" data-a="xlsCdf"'+(canSave()?'':' disabled')+'>Exporter</button></div></div>';
   if (ST.adv && ST.adv.error) h += '<p class="pb neg small">'+esc(ST.adv.error)+'</p>';
   var t = { E:{o:0,c:0}, S:{o:0,c:0}, STK:{o:0,c:0}, T:{o:0,c:0} };
@@ -3971,6 +3986,7 @@ document.addEventListener('change', function(e){
   if (t.dataset.dqown !== undefined && t.type === 'checkbox'){ DQ.owners = DQ.owners.filter(function(x){ return x !== t.value; }); if (t.checked) DQ.owners.push(t.value); var fl0 = document.querySelector('#fpop .fpop-l'), st1 = fl0 ? fl0.scrollTop : 0; dqRun(); render(); fl0 = document.querySelector('#fpop .fpop-l'); if (fl0) fl0.scrollTop = st1; return; }
   if (t.id === 'dqmsel'){ dqSelect(DQ.co, t.value); return; }
   if (t.dataset && t.dataset.asinv && ST.modal && ST.modal.assoc){ ST.modal.assoc.sel[t.dataset.asinv] = t.checked ? 1 : 0; renderModal(); return; }
+  if (t.id === 'advsheet'){ ST.ov.advSheet = t.value; persist('Contrôle détaillé : feuille « '+t.value+' » du fichier de calcul'); render(); return; }
   if (t.id === 'dqcl'){ DQ.synCli = t.value; render(); return; }
   if (t.id === 'dqfrom' || t.id === 'dqto'){ DQ[t.id === 'dqfrom' ? 'from' : 'to'] = t.value; DQ.billCache = null; dqRun(); render(); return; }
   if (d.fchk){ var FF = ST.invF = ST.invF || {}, arr = FF[d.fchk] = (FF[d.fchk] || []).filter(function(x){ return x !== t.value; }); if (t.checked) arr.push(t.value); var fl = document.querySelector('#fpop .fpop-l'), st0 = fl ? fl.scrollTop : 0; render(); fl = document.querySelector('#fpop .fpop-l'); if (fl) fl.scrollTop = st0; return; }
