@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.26 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v2.27 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -686,6 +686,7 @@ table.ct2 td.icg .icb:hover{border-color:#999;background:#fff}
 .mbox-cdf table.cdf-col .fE{background:#f6f8fb}.mbox-cdf table.cdf-col .fS{background:#f8f6fb}.mbox-cdf table.cdf-col .fK{background:#f6faf6}
 .mbox-cdf table.cdf-col .b0{border-left:2px solid #9a9a98}.mbox-cdf table.cdf-col .b1{border-right:2px solid #9a9a98}
 .ct2 .prop{color:#222;margin-bottom:4px}.ct2 .prop .btn{margin-left:6px}
+.cmenu{overflow:auto}
 </style>
 </head>
 <body>
@@ -1803,7 +1804,7 @@ function render(){
   else h = vFactures();
   m.innerHTML = h;
   renderModal();
-  placePop(); if (ST.module === 'dq') bindDQ();
+  placePop(); placeCmenu(); if (ST.module === 'dq') bindDQ();
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if (ST.module === 'trp' && ST.ttab === 'new') calcTransport();
@@ -3204,6 +3205,9 @@ function vControl(){
   if (ST.ctlMenu) h += ctlMenuHtml(ro);
   return h;
 }
+// menu ⋯ : ouvert au-dessus du bouton quand il n'y a pas la place en dessous, toujours entièrement visible
+function placeCmenu(){ var m = document.querySelector('.cmenu'); if (!m || !ST.ctlMenu) return; var h = m.offsetHeight, vh = window.innerHeight, y = ST.ctlMenu.y;
+  if (y + h > vh - 8) y = ST.ctlMenu.top - h - 4; if (y < 8) y = 8; m.style.top = y+'px'; m.style.maxHeight = (vh - 16)+'px'; }
 function ctlMenuHtml(ro){
   var m = ST.ctlMenu, id = m.id.slice(2), it = [];
   if (m.id[0] === 'p'){ var p = ST.pdfs.filter(function(x){ return x.id === id; })[0]; if (!p) return ''; var ev = ctlEval(p);
@@ -3849,7 +3853,7 @@ document.addEventListener('click', function(e){
   var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
   if (!t || t.disabled) return;
   var d = t.dataset;
-  if (d.cmenu){ if (ST.ctlMenu && ST.ctlMenu.id === d.cmenu){ ST.ctlMenu = null; render(); return; } var rc = t.getBoundingClientRect(); ST.ctlMenu = { id:d.cmenu, x:Math.max(8, Math.round(rc.right - 260)), y:Math.round(rc.bottom + 4) }; render(); return; }
+  if (d.cmenu){ if (ST.ctlMenu && ST.ctlMenu.id === d.cmenu){ ST.ctlMenu = null; render(); return; } var rc = t.getBoundingClientRect(); ST.ctlMenu = { id:d.cmenu, x:Math.max(8, Math.round(rc.right - 260)), y:Math.round(rc.bottom + 4), top:Math.round(rc.top) }; render(); placeCmenu(); return; }
   if (t.closest('.cmenu')) ST.ctlMenu = null;
   if (d.gocdf){ ST.sub = 'cdf'; ST.cdfHl = d.gocdf; ST.ctlMenu = null; ST.modal = { cdf:{ pdf:d.gocdf, all:false } }; render(); window.scrollTo(0,0); setTimeout(function(){ var r = document.getElementById('cdf-'+d.gocdf); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
   if (d.asq){ assocOpen(d.asq); if (ST.modal && ST.modal.assoc){ ST.modal.assoc.sel = {}; ST.modal.assoc.sel[d.asqi] = 1; renderModal(); } return; }
