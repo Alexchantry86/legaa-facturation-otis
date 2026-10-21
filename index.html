@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v3.6 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v3.7 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -766,6 +766,17 @@ body{overflow-x:hidden}
 #tabs .enttab{font-size:15px;padding:0 14px 0 0}
 main{max-width:none;padding-inline:clamp(16px,3vw,40px)}
 #entbook{margin-left:6px}
+/* ---- v6.5 : sous-menus Factures logistiques mis en avant (étapes) ---- */
+.subtabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;border-bottom:0;margin:14px 0 18px}
+.subtabs .stb{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #cfd6e0;border-radius:6px;padding:14px 16px;font-family:var(--f-label);font-size:16px;font-weight:600;color:#14233d;cursor:pointer;text-align:left;position:relative;box-shadow:0 1px 2px rgba(20,35,61,.06);margin:0}
+.subtabs .stb:hover{border-color:#14233d}
+.subtabs .stb .stl{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e7ebf1;color:#14233d;font-weight:800;font-size:15px}
+.subtabs .stb .stx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.2}
+.subtabs .stb[aria-selected="true"]{background:#14233d;border-color:#14233d;color:#fff;box-shadow:0 3px 10px rgba(20,35,61,.25)}
+.subtabs .stb[aria-selected="true"] .stl{background:#fff;color:#14233d}
+.subtabs .stb[aria-selected="true"]::after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:#14233d}
+.subtabs .stb .cnt{font-size:12px}
+@media (max-width:900px){.subtabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -2474,7 +2485,7 @@ function vFactures(){
   else {
     var blk = ST.R ? ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0) : 0;
     var pb = ST.pdfs.filter(function(p){ return p.result && p.result.status !== 'conforme'; }).length;
-    h += '<nav class="subtabs">'+[['imp','A · Import'],['ano','B · Anomalies'+(blk?' <span class="cnt">'+blk+'</span>':'')],['fac','C · Factures'],['ctl','D · Contrôle factures'+(pb?' <span class="cnt w">'+pb+'</span>':'')],['cdf','E · Contrôle détaillé factures']].map(function(t){ return '<button class="stb" data-sub="'+t[0]+'" aria-selected="'+(ST.sub===t[0])+'">'+t[1]+'</button>'; }).join('')+'</nav>';
+    h += '<nav class="subtabs">'+[['imp','A · Import'],['ano','B · Anomalies'+(blk?' <span class="cnt">'+blk+'</span>':'')],['fac','C · Factures'],['ctl','D · Contrôle factures'+(pb?' <span class="cnt w">'+pb+'</span>':'')],['cdf','E · Contrôle détaillé factures']].map(function(t){ var lb = t[1].replace(/^([A-E]) · /, ''), le = t[1].charAt(0); return '<button class="stb" data-sub="'+t[0]+'" aria-selected="'+(ST.sub===t[0])+'"><span class="stl">'+le+'</span><span class="stx">'+lb+'</span></button>'; }).join('')+'</nav>';
     h += ST.sub === 'imp' ? vImport() : ST.sub === 'ano' ? vAnomalies() : ST.sub === 'fac' ? vInvoices() : ST.sub === 'cdf' ? vCdf() : vControl();
   }
   return h + '</div></section>';
