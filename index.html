@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v3.7 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v3.8 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -777,6 +777,18 @@ main{max-width:none;padding-inline:clamp(16px,3vw,40px)}
 .subtabs .stb[aria-selected="true"]::after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-8px;border:8px solid transparent;border-bottom:0;border-top-color:#14233d}
 .subtabs .stb .cnt{font-size:12px}
 @media (max-width:900px){.subtabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* ---- v6.6 : sélection de la période mise en avant ---- */
+.perstrip{background:#fff;border:1.5px solid #cfd6e0;border-radius:6px;padding:14px 18px;gap:12px 18px;box-shadow:0 1px 2px rgba(20,35,61,.06)}
+.perstrip .lbl{font-size:13px;font-weight:700;color:#14233d;letter-spacing:.06em}
+.perstrip .persel{display:inline-flex;align-items:center;gap:8px}
+.perstrip .persel .btn{width:44px;height:44px;padding:0;font-size:22px;line-height:1;border:1.5px solid #14233d;color:#14233d;background:#fff;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+.perstrip .persel .btn:hover:not([disabled]){background:#14233d;color:#fff}
+.perstrip .persel .btn[disabled]{opacity:.35}
+.perstrip #persel{height:44px;min-width:230px;font-size:19px;font-weight:700;color:#fff;background:#14233d;border:1.5px solid #14233d;border-radius:6px;padding:0 14px;cursor:pointer}
+.perstrip #persel option{background:#fff;color:#14233d;font-weight:500}
+.perstrip .pill{font-size:12px;padding:4px 10px}
+.perstrip .muted{font-size:14px}
+.perstrip #persel{-webkit-appearance:none;appearance:none;padding-right:40px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 </style>
 </head>
 <body>
@@ -2502,7 +2514,7 @@ function monthHead(ags){
   var idx = {}; ST.monthsIndex.forEach(function(m){ idx[m.id] = m; });
   var L = last18(), i = L.indexOf(ST.month); if (i < 0){ L.push(ST.month); L.sort().reverse(); i = L.indexOf(ST.month); }
   var opts = L.map(function(m){ var dd = idx[ST.ag+'_'+m], s2 = dd ? (dd.status||'ouvert') : 'vide', ht = (ST.month===m && ST.R) ? ST.R.totals.HT : (dd && dd.summary ? dd.summary.HT : null); return '<option value="'+m+'"'+(m===ST.month?' selected':'')+'>'+monthLabel(m)+'</option>'; }).join('');
-  var h = '<div class="strip">'+agMenu(ags || agencies())+'<span class="lbl">Période</span><span class="persel"><button class="btn sm" data-mon="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="persel" class="bigsel" aria-label="Période de facturation">'+opts+'</select><button class="btn sm" data-mon="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
+  var h = '<div class="strip perstrip">'+agMenu(ags || agencies())+'<span class="lbl">Période</span><span class="persel"><button class="btn sm" data-mon="'+(L[i+1]||'')+'"'+(L[i+1]?'':' disabled')+' aria-label="Mois précédent">‹</button><select id="persel" class="bigsel" aria-label="Période de facturation">'+opts+'</select><button class="btn sm" data-mon="'+(L[i-1]||'')+'"'+(i>0?'':' disabled')+' aria-label="Mois suivant">›</button></span><span class="pill '+(st==='clos'?'p-ok':st==='ouvert'?'p-verifier':'p-info')+'">'+STATUS[st]+'</span>';
   if (st === 'clos') h += '<span class="muted">clôturé le '+esc(d.closedAt ? new Date(d.closedAt).toLocaleDateString('fr-FR') : '')+' par '+esc(d.closedBy||'')+' · montants et grille figés</span>';
   else h += '<span class="muted" id="save">'+(d.updatedAt ? 'Enregistré le '+dt(d.updatedAt)+' par '+esc(d.updatedBy||'') : '')+'</span>';
   if (st === 'clos' && isAdmin()) h += '<span class="sp"><button class="btn" data-a="reopen">Rouvrir le mois</button></span>';
