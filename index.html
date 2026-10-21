@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>Facturation OTIS LEGAA</title>
-<!-- Version : v2.28 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<title>Pilotage Logistique · LEGAA</title>
+<!-- Version : v3.0 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -687,13 +687,52 @@ table.ct2 td.icg .icb:hover{border-color:#999;background:#fff}
 .mbox-cdf table.cdf-col .b0{border-left:2px solid #9a9a98}.mbox-cdf table.cdf-col .b1{border-right:2px solid #9a9a98}
 .ct2 .prop{color:#222;margin-bottom:4px}.ct2 .prop .btn{margin-left:6px}
 .cmenu{overflow:auto}
+/* ---- v6.0 : Pilotage Logistique · entités, roue crantée, connaissance ---- */
+.ent-home{background:#14233d;color:#fff;margin:-16px -24px 0;min-height:calc(100vh - 60px);padding:48px 24px}
+.ent-in{max-width:1100px;margin:0 auto}
+.ent-hello{margin:0 0 4px;color:#b8c3d6;font-size:15px}
+.ent-home h2{margin:0 0 26px;font-size:26px;font-weight:700;color:#fff}
+.ent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.ent-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.28);border-radius:6px;padding:20px 18px;color:#fff;cursor:pointer;text-align:left;font:inherit;transition:background .15s,border-color .15s}
+.ent-card:hover,.ent-card:focus{background:rgba(255,255,255,.14);border-color:#fff;outline:none}
+.ent-ico{color:#fff}.ent-ico svg{display:block}
+.ent-name{font-size:18px;font-weight:800;letter-spacing:.01em}
+.ent-sub{font-size:12px;color:#b8c3d6}
+.ent-empty{color:#d6dbe4}
+.ent-more{margin-top:34px;border-top:1px solid rgba(255,255,255,.18);padding-top:20px}
+.ent-alt{display:inline-flex;align-items:center;gap:10px;background:none;border:1px solid rgba(255,255,255,.3);color:#e3e8f0;border-radius:4px;padding:8px 14px;cursor:pointer;font:inherit}
+.ent-alt svg{width:22px;height:22px}
+.ent-alt:hover{border-color:#fff;color:#fff}
+.gearwrap{position:relative;display:inline-flex}
+.gearbtn{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:4px;padding:5px 8px;cursor:pointer;display:inline-flex;align-items:center}
+.gearbtn.on,.gearbtn:hover{background:rgba(255,255,255,.15)}
+.gearpop{position:absolute;right:0;top:calc(100% + 6px);z-index:80;width:290px;background:#fff;color:#222;border:1px solid #d6d6d3;border-radius:4px;box-shadow:0 10px 28px rgba(0,0,0,.2);padding:4px 0}
+.gearpop button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 14px;cursor:pointer;font:inherit}
+.gearpop button b{display:block;font-size:14px}.gearpop button span{font-size:12px;color:#777}
+.gearpop button:hover{background:#f3f3f1}
+#tabs .enttab{background:none;border:0;color:#b8c3d6;cursor:pointer;font:inherit;font-size:13px;padding:0 10px 0 0}
+#tabs .enttab:hover{color:#fff}
+#tabs .entname{color:#fff;font-weight:800;font-size:15px;margin-right:14px;white-space:nowrap}
+#tabs .modseg{display:inline-flex;border:1px solid rgba(255,255,255,.4);border-radius:4px;overflow:hidden;margin-right:18px}
+#tabs .modseg button{background:none;border:0;color:#d6dbe4;padding:5px 14px;cursor:pointer;font:inherit;font-weight:600}
+#tabs .modseg button.on{background:#fff;color:#14233d}
+#tabs{align-items:center}
+.entlbl{font-weight:700;font-size:15px;padding:6px 4px}
+.kn-l{display:grid;gap:0}
+.kn-c{display:flex;gap:14px;align-items:center;padding:12px 14px;border-bottom:1px solid #f0f0ee}
+.kn-t{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.kn-a{display:flex;gap:6px;flex-shrink:0}
+.kn-f{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.kn-f input{flex:1 1 200px;min-width:0}
+.card2+.card2{margin-top:14px}
+table.afft th.c{white-space:normal;min-width:70px;font-size:10.5px}
 </style>
 </head>
 <body>
 <!--DEMO_BANNER-->
 <section class="login" id="login" hidden>
   <div class="login-card">
-    <div class="hd"><h1>Facturation OTIS</h1><span style="opacity:.7;font-family:var(--f-label)">LEGAA · accès réservé</span></div>
+    <div class="hd"><h1>Pilotage Logistique</h1><span style="opacity:.7;font-family:var(--f-label)">LEGAA · accès réservé</span></div>
     <form id="loginForm" autocomplete="on">
       <div class="fld"><label class="lbl" for="lg_email">E-mail</label><input id="lg_email" type="email" autocomplete="username" required></div>
       <div class="fld"><label class="lbl" for="lg_pw">Mot de passe</label><input id="lg_pw" type="password" autocomplete="current-password" required></div>
@@ -705,10 +744,11 @@ table.ct2 td.icg .icb:hover{border-color:#999;background:#fff}
 <div id="app" hidden>
 <header class="top">
   <div class="top-in">
-    <button class="brand" data-home title="Accueil"><h1>Facturation OTIS</h1><span>LEGAA</span></button>
+    <button class="brand" data-home title="Accueil : choix de l'entité"><h1>Pilotage Logistique</h1><span>LEGAA</span></button>
     <span class="modname" id="modname"></span>
     <span id="src" class="num" style="opacity:.7;margin-left:auto"></span>
     <button class="chatbtn" id="chatbtn" data-a="chat" title="Discussion avec les utilisateurs connectés" aria-label="Discussion"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 3h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg><span>Discussion</span><b id="chatn" hidden></b></button>
+    <span class="gearwrap"><button class="gearbtn" id="gearbtn" data-a="gear" title="Paramétrage" aria-label="Paramétrage" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg></button><div id="gearpop"></div></span>
     <button class="who" id="who" data-acc title="Mon compte"></button>
   </div>
   <nav class="tabs" role="tablist" id="tabs" hidden></nav>
@@ -1769,7 +1809,8 @@ function monthId(){ return ST.ag + '_' + ST.month; }
 function blankOv(){ return { assign:{}, exclude:{}, affaire:{}, affMap:{}, status:{}, pchk:{} }; }
 function deepMerge(base, over){ if (!over || typeof over !== 'object' || Array.isArray(over)) return over === undefined ? base : over; var o = clone(base || {}); Object.keys(over).forEach(function(k){ o[k] = (base && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) ? deepMerge(base[k], over[k]) : over[k]; }); return o; }
 function last18(){ var o = [], d = new Date(); d.setDate(1); for (var i=0;i<18;i++){ o.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); d.setMonth(d.getMonth()-1); } return o; }
-function agencies(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.code).localeCompare(String(b.code), 'fr', { numeric:true }); }); }
+function agencies(all){ var L = agenciesAll(all); return ST.ent && (ST.module === 'log' || ST.module === 'trp') ? L.filter(function(a){ return a.code === ST.ent; }) : L; }
+function agenciesAll(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.code).localeCompare(String(b.code), 'fr', { numeric:true }); }); }
 function agLabel(code){ if (/^DQ/.test(String(code))){ var k = String(code).slice(2); return 'Contrôle données '+((DQ_CO[k]||{}).label||k); } var a = ST.cfg.agencies[code]; return a ? (a.label || 'AG '+code) : 'AG '+code; }
 function kpi(l,v,s){ return '<div class="kpi"><span class="lbl">'+esc(l)+'</span><span class="v">'+esc(v)+'</span><span class="s">'+esc(s||'')+'</span></div>'; }
 function uniqA(a){ return a.filter(function(x,i){ return a.indexOf(x)===i; }); }
@@ -1777,16 +1818,20 @@ var GEAR = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><
 
 /* ============ NAVIGATION ============ */
 function renderTop(){
-  var mod = ST.module, tabs = [];
-  if (mod === 'log'){
-    tabs = [['par','Paramètres'],['fac','Factures logistiques'],['syn','Synthèse']];
-    if (isAdmin()) tabs.push(['adm','Administration']);
-    tabs.push(['sui','Suivi des anomalies']);
-  } else if (mod === 'trp') tabs = [['new','Nouveau transport'],['hist','Historique des transports']];
-  var cur = mod === 'log' ? ST.ltab : ST.ttab;
-  $('tabs').innerHTML = tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+(mod==='log'?'ltab':'ttab')+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
-  $('tabs').hidden = !tabs.length;
-  $('modname').textContent = mod === 'log' ? 'Logistique' : mod === 'trp' ? 'Transport' : mod === 'acc' ? 'Mon compte' : mod === 'dq' ? 'Contrôle des données' : '';
+  var mod = ST.module, tabs = [], att = 'ltab', cur = '';
+  if ((mod === 'log' || mod === 'trp') && !ST.ent && ST.ag) ST.ent = ST.ag;
+  var ent = (mod === 'log' || mod === 'trp') && ST.ent ? ST.cfg.agencies[ST.ent] : null;
+  if (mod === 'log'){ tabs = [['par','Paramètres'],['fac','Factures logistiques'],['sui','Suivi des anomalies'],['syn','Synthèse'],['con','Connaissance']]; cur = ST.ltab; att = 'ltab'; }
+  else if (mod === 'trp'){ tabs = [['new','Nouveau transport'],['hist','Historique des transports']]; cur = ST.ttab; att = 'ttab'; }
+  else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
+  var h = '';
+  if (ent){ var sc = entScreens(ent); h += '<button class="enttab" data-home title="Changer d\'entité">← Entités</button><span class="entname">'+esc(ent.label || ent.code)+'</span>';
+    h += '<span class="modseg">'+(sc.log ? '<button class="'+(mod==='log'?'on':'')+'" data-entmod="log">Logistique</button>' : '')+(sc.trp ? '<button class="'+(mod==='trp'?'on':'')+'" data-entmod="trp">Transport</button>' : '')+'</span>'; }
+  h += tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+att+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
+  $('tabs').innerHTML = h; $('tabs').hidden = !h;
+  var gb = $('gearbtn'); if (gb){ gb.hidden = !isAdmin(); gb.classList.toggle('on', mod === 'cfg' || !!ST.gearOpen); }
+  var gp = $('gearpop'); if (gp) gp.innerHTML = gearMenu();
+  $('modname').textContent = mod === 'acc' ? 'Mon compte' : mod === 'dq' ? 'Contrôle des données' : mod === 'cfg' ? 'Paramétrage' : '';
   if (ST.user) $('who').textContent = ST.user.name + ' · ' + ({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role];
   $('src').textContent = STORE.mode === 'demo' ? 'mode démo' : '';
 }
@@ -1796,10 +1841,11 @@ function render(){
   if (ST.module === 'home') h = vLanding();
   else if (ST.module === 'acc') h = vAccount();
   else if (ST.module === 'dq') h = vDQ();
+  else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : vAdmin();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vTransport();
+  else if (ST.ltab === 'con') h = vKnow();
   else if (ST.ltab === 'par') h = vParams();
   else if (ST.ltab === 'syn') h = vSynth();
-  else if (ST.ltab === 'adm') h = vAdmin();
   else if (ST.ltab === 'sui') h = vSuivi();
   else h = vFactures();
   m.innerHTML = h;
@@ -2152,13 +2198,102 @@ function exportDQ(){
   loadStyledXlsx().then(function(X){ build(X, true); }, function(){ build(XLSX, false); });
 }
 
-function vLanding(){
-  return '<section class="landing"><h2>'+esc(ST.user ? 'Bonjour '+ST.user.name.split(' ')[0] : 'Bonjour')+'</h2><div class="choices">'+
-    '<button class="choice c-log" data-mod="log"><span class="ico">'+ICO_LOG+'</span><span class="k">Logistique</span><span class="go">Entrer →</span></button>'+
-    '<button class="choice c-trp" data-mod="trp"><span class="ico">'+ICO_TRP+'</span><span class="k">Transport</span><span class="go">Entrer →</span></button>'+
-    '<button class="choice c-dq" data-mod="dq"><span class="ico">'+ICO_DQ+'</span><span class="k">Contrôle des données</span><span class="go">Entrer →</span></button>'+
-    '</div>'+(isAdmin() ? '<p class="adm-l"><button class="lnk" data-mod="log" data-ltabgo="adm">Administration des accès</button></p>' : '')+'</section>';
+/* ============ ENTITÉS · ACCUEIL · PARAMÉTRAGE (roue crantée) ============ */
+var ICO_ENT = '<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><path d="M6 42V18l18-11 18 11v24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linejoin="round"/><path d="M15 42V27h18v15M15 34h18" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linejoin="round"/></svg>';
+var ICO_GEAR = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg>';
+var DEF_KNOW = [
+  { id:'k1', title:'Synthèse des ateliers agences OTIS et préconisations', url:'https://claude.ai/artifact/Rx4B5EguEXFCJtk1VX4QSJ', desc:'8 ateliers avec Fethi (AG 495, AG 496, Tour Link, Tour Triangle, NSA, GDN, OTIS FRANCE, CRA) · 3 modèles de facturation · points ouverts.' },
+  { id:'k2', title:'Books de passation ADV (un onglet par flux)', url:'https://claude.ai/artifact/UKbr6KcCiyutUjGiVMNsxn', desc:'Mode opératoire de facturation par entité OTIS, à l\'usage des ADV qui reprennent les comptes.' }
+];
+function allAgencies(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.label||a.code).localeCompare(String(b.label||b.code), 'fr', { numeric:true }); }); }
+function entScreens(a){ var s = (a && a.screens) || {}; return { log:s.log !== false, trp:s.trp !== false }; }
+function myEnts(){
+  var L = allAgencies(); if (!ST.user || isAdmin()) return L;
+  var A = (ST.cfg.assign || {})[String(ST.user.email || '').toLowerCase()];
+  return A && A.length ? L.filter(function(a){ return A.indexOf(a.code) >= 0; }) : L;
 }
+function enterEnt(code, mod){
+  var a = ST.cfg.agencies[code]; if (!a) return; var sc = entScreens(a);
+  ST.ent = code; ST.parAg = code; ST.synAgs = [code]; ST.trF = ST.trF || {}; ST.trF.ag = code; ST.agMenu = false; ST.gearOpen = false;
+  ST.module = mod || (sc.log ? 'log' : 'trp'); if (ST.module === 'log' && (!ST.ltab || ST.ltab === 'adm')) ST.ltab = 'fac';
+  if (ST.module === 'trp' && !ST.transports) loadTransports();
+  if (ST.ag !== code || !ST.R) selectMonth(code, ST.month || defaultMonth()); else render();
+  window.scrollTo(0, 0);
+}
+function vLanding(){
+  var L = myEnts(), first = ST.user ? ST.user.name.split(' ')[0] : '';
+  var h = '<section class="ent-home"><div class="ent-in"><p class="ent-hello">'+esc(first ? 'Bonjour '+first : 'Bonjour')+'</p><h2>Choisir l\'entité</h2><div class="ent-grid">'+
+    L.map(function(a){ var sc = entScreens(a); return '<button class="ent-card" data-ent="'+esc(a.code)+'"><span class="ent-ico">'+ICO_ENT+'</span><span class="ent-name">'+esc(a.label || 'AG '+a.code)+'</span><span class="ent-sub">'+[sc.log ? 'Logistique' : '', sc.trp ? 'Transport' : ''].filter(Boolean).join(' · ')+'</span></button>'; }).join('')+
+    (L.length ? '' : '<p class="ent-empty">Aucune entité affectée à votre compte. Contacter un administrateur.</p>')+'</div>';
+  if (role() !== 'lecture') h += '<div class="ent-more"><button class="ent-alt" data-mod="dq">'+ICO_DQ+'<span>Contrôle des données Odoo · LEGAA / CAP\'EMBAL</span></button></div>';
+  return h + '</div></section>';
+}
+function gearMenu(){
+  if (!ST.gearOpen) return '';
+  return '<div class="gearpop" role="menu">'+[['adm','Administration','Utilisateurs, journal, données'],['aff','Affectation','ADV ↔ entités (import Excel)'],['par','Paramétrage','Écrans Logistique / Transport par entité']].map(function(x){ return '<button role="menuitem" data-cfgtab="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>'; }).join('')+'</div>';
+}
+/* Paramétrage : écrans par entité */
+function vEntParams(){
+  if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
+  var L = allAgencies(true), h = '<section class="view onecol">';
+  if (ST.newAg) return h + newAgForm() + '</section>';
+  h += '<div class="card2"><div class="h2"><b>Entités et écrans disponibles</b><span class="muted small">Cocher les écrans proposés à l\'entrée de chaque entité.</span><div class="r"><button class="btn sm pri" data-newag>+ Créer une entité</button></div></div>'+
+    '<div class="tw"><table class="ct2"><thead><tr><th>Entité</th><th class="w1">Code</th><th>Client Odoo</th><th class="c">Logistique</th><th class="c">Transport</th><th class="c">Active</th><th></th></tr></thead><tbody>'+
+    L.map(function(a){ var sc = entScreens(a); return '<tr><td><b>'+esc(a.label || a.code)+'</b></td><td class="mono">'+esc(a.code)+'</td><td class="small muted">'+esc(a.match || '')+'</td>'+
+      '<td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|log"'+(sc.log?' checked':'')+'></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|trp"'+(sc.trp?' checked':'')+'></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|active"'+(a.active !== false?' checked':'')+'></td>'+
+      '<td class="c"><button class="btn sm" data-entpar="'+esc(a.code)+'">Paramètres de facturation</button></td></tr>'; }).join('')+'</tbody></table></div></div>';
+  return h + '</section>';
+}
+/* Affectation : ADV ↔ entités */
+function vAffect(){
+  if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
+  if (!ST.users){ STORE.listUsers().then(function(u){ ST.users = u.sort(function(a,b){ return (a.name||a.email).localeCompare(b.name||b.email); }); render(); }, function(e){ toast('Utilisateurs inaccessibles : '+e.message); ST.users = []; render(); }); return '<section class="view"><div class="panel empty">Chargement des utilisateurs…</div></section>'; }
+  var L = allAgencies(), A = ST.cfg.assign || {}, U = ST.users.filter(function(u){ return !u.remove; });
+  var h = '<section class="view onecol"><div class="card2"><div class="h2"><b>Affectation des entités aux ADV</b><span class="muted small">Un ADV sans affectation voit toutes les entités ; les administrateurs voient toujours tout.</span><div class="r"><label class="btn sm">Importer un fichier Excel<input type="file" id="affin" accept=".xlsx,.xls,.csv" hidden></label><button class="btn sm g" data-a="affmodel">Modèle</button></div></div>';
+  if (ST.affNote) h += '<p class="pb small">'+esc(ST.affNote)+'</p>';
+  h += '<div class="tw"><table class="ct2 afft"><thead><tr><th>ADV</th><th>E-mail</th><th>Rôle</th>'+L.map(function(a){ return '<th class="c">'+esc(a.label || a.code)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    U.map(function(u){ var em = String(u.email || '').toLowerCase(), mine = A[em] || []; return '<tr><td><b>'+esc(u.name || '')+'</b></td><td class="small">'+esc(u.email || '')+'</td><td class="small muted">'+esc(({admin:'administrateur',adv:'ADV',lecture:'lecture'})[u.role] || u.role || '')+'</td>'+
+      L.map(function(a){ return '<td class="c"><input type="checkbox" data-asg="'+esc(em)+'|'+esc(a.code)+'"'+(mine.indexOf(a.code) >= 0 ? ' checked' : '')+(u.role === 'admin' ? ' disabled title="Administrateur : accès à toutes les entités"' : '')+'></td>'; }).join('')+'</tr>'; }).join('')+
+    (U.length ? '' : '<tr><td colspan="'+(3 + L.length)+'" class="muted">Aucun utilisateur : les créer dans Administration.</td></tr>')+'</tbody></table></div>'+
+    '<p class="pb small muted" style="margin:0">Fichier Excel : une colonne « ADV » (e-mail ou nom de l\'utilisateur) et une colonne « Compte » (code ou libellé de l\'entité, plusieurs séparés par des virgules possibles). L\'import remplace les affectations des ADV présents dans le fichier.</p></div></section>';
+  return h;
+}
+function affImport(file){
+  readBuf(file).then(function(buf){
+    var wb = XLSX.read(new Uint8Array(buf), { type:'array' }), rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' }), hi = -1, ia = -1, ic = -1;
+    for (var i = 0; i < Math.min(rows.length, 10) && hi < 0; i++){ var h = rows[i].map(advNorm); ia = h.findIndex(function(x){ return /\badv\b|utilisateur|e ?mail|collaborat/.test(x); }); ic = h.findIndex(function(x){ return /compte|entite|agence|client/.test(x); }); if (ia >= 0 && ic >= 0) hi = i; }
+    if (hi < 0) throw new Error('colonnes « ADV » et « Compte » introuvables');
+    var U = (ST.users || []), L = allAgencies(true), byUser = {}, miss = [];
+    var findU = function(v){ var n = advNorm(v); return U.filter(function(u){ return advNorm(u.email) === n || advNorm(u.name) === n || (n && advNorm(u.name).indexOf(n) >= 0); })[0]; };
+    var findA = function(v){ var n = advNorm(v).replace(/^ag /, 'ag '); return L.filter(function(a){ return advNorm(a.code) === n || advNorm(a.label) === n || advNorm('AG '+a.code) === n || (n.length > 3 && advNorm(a.label).indexOf(n) >= 0); })[0]; };
+    rows.slice(hi + 1).forEach(function(r){ if (!r[ia] && !r[ic]) return; var u = findU(r[ia]); if (!u){ miss.push('ADV « '+r[ia]+' »'); return; } var em = String(u.email).toLowerCase(); byUser[em] = byUser[em] || [];
+      String(r[ic]).split(/[,;\/\n]+/).map(function(x){ return x.trim(); }).filter(Boolean).forEach(function(c){ var a = findA(c); if (a) { if (byUser[em].indexOf(a.code) < 0) byUser[em].push(a.code); } else miss.push('compte « '+c+' »'); }); });
+    ST.cfg.assign = ST.cfg.assign || {}; Object.keys(byUser).forEach(function(em){ ST.cfg.assign[em] = byUser[em]; });
+    var n = Object.keys(byUser).length; ST.affNote = n+' ADV affecté(s) depuis '+file.name+(miss.length ? ' · non reconnus : '+uniqA(miss).join(', ') : '');
+    saveCfg('Affectation des entités importée ('+file.name+')'); render();
+  }).catch(function(e){ toast(file.name+' refusé : '+e.message); });
+}
+/* Connaissance : documents de travail partagés et documents de l'entité */
+function vKnow(){
+  var a = ST.cfg.agencies[ST.ent] || {}, G = ST.cfg.knowledge || DEF_KNOW, K = a.know || [], adm = isAdmin();
+  function card(d, scope){ var file = d.file; return '<div class="kn-c"><div class="kn-t"><b>'+esc(d.title)+'</b>'+(d.desc ? '<span class="small muted">'+esc(d.desc)+'</span>' : '')+'</div><div class="kn-a">'+(d.url ? '<a class="btn sm" href="'+esc(d.url)+'" target="_blank" rel="noopener">Ouvrir</a>' : '')+(file ? '<button class="btn sm" data-kdl="'+esc(scope+'|'+d.id)+'">Télécharger</button>' : '')+(adm ? '<button class="btn sm g" data-krm="'+esc(scope+'|'+d.id)+'" title="Retirer">✕</button>' : '')+'</div></div>'; }
+  var h = '<section class="view onecol">';
+  h += '<div class="card2"><div class="h2"><b>Documents de travail OTIS</b><span class="muted small">Communs à toutes les entités</span></div><div class="kn-l">'+(G.length ? G.map(function(d){ return card(d, 'G'); }).join('') : '<p class="muted small">Aucun document.</p>')+'</div></div>';
+  var ref = DOCK.filter(function(k){ return a.docs && a.docs[k[0]]; });
+  h += '<div class="card2"><div class="h2"><b>Documents de l\'entité · '+esc(a.label || ST.ent)+'</b><span class="muted small">Grille, contremaîtres, principes de facturation, documents propres à l\'entité</span></div><div class="kn-l">'+
+    ref.map(function(k){ return '<div class="kn-c"><div class="kn-t"><b>'+esc(k[1])+'</b><span class="small muted">'+esc(a.docs[k[0]].name)+'</span></div><div class="kn-a"><button class="btn sm" data-docdl="'+esc(k[0])+'">Télécharger</button></div></div>'; }).join('')+
+    K.map(function(d){ return card(d, 'E'); }).join('')+(ref.length || K.length ? '' : '<p class="muted small">Aucun document pour cette entité.</p>')+'</div></div>';
+  if (adm) h += '<div class="card2"><div class="h2"><b>Ajouter un document</b></div><div class="pb kn-f"><input id="kn_t" placeholder="Titre"><input id="kn_u" placeholder="Lien (https://…) — ou fichier ci-contre"><input id="kn_d" placeholder="Description (facultatif)"><select id="kn_s"><option value="E">Pour '+esc(a.label || ST.ent)+'</option><option value="G">Pour toutes les entités</option></select><label class="btn sm">Fichier…<input type="file" id="kn_f" hidden></label><button class="btn sm pri" data-a="knadd">Ajouter</button></div><p class="pb small muted" style="margin:0">Les liens claude.ai ne s\'ouvrent que pour les personnes avec qui le document a été partagé.</p></div>';
+  return h + '</section>';
+}
+function knAdd(){
+  var a = ST.cfg.agencies[ST.ent], t = ($('kn_t').value || '').trim(), u = ($('kn_u').value || '').trim(), ds = ($('kn_d').value || '').trim(), sc = $('kn_s').value, f = $('kn_f').files[0];
+  if (!t){ toast('Donner un titre'); return; } if (!u && !f){ toast('Indiquer un lien ou choisir un fichier'); return; } if (u && !/^https?:\/\//.test(u)){ toast('Lien : commencer par https://'); return; }
+  var d = { id:'k'+Date.now().toString(36), title:t, url:u, desc:ds, at:new Date().toISOString().slice(0,10), by:ST.user ? ST.user.name : '' };
+  var save = function(){ if (sc === 'G'){ ST.cfg.knowledge = (ST.cfg.knowledge || DEF_KNOW.slice()).concat([d]); } else { a.know = (a.know || []).concat([d]); } saveCfg('Connaissance : '+t); render(); };
+  if (f) STORE.uploadAgencyDoc(sc === 'G' ? '_global' : a.code, 'know_'+d.id, f).then(function(meta){ d.file = meta; save(); }, function(e){ toast('Fichier refusé : '+e.message); }); else save();
+}
+function knFind(ref){ var p = ref.split('|'), list = p[0] === 'G' ? (ST.cfg.knowledge || DEF_KNOW) : ((ST.cfg.agencies[ST.ent] || {}).know || []); return { list:list, scope:p[0], d:list.filter(function(x){ return x.id === p[1]; })[0] }; }
 
 /* ============ LOGISTIQUE · PARAMÈTRES ============ */
 function cfIn(path, val, type, extra){ return '<input type="'+(type||'text')+'" data-cf="'+esc(path)+'" value="'+esc(val === undefined || val === null ? '' : val)+'"'+(type==='number'?' step="any"':'')+ADM()+(extra||'')+'>'; }
@@ -2172,7 +2307,7 @@ function vParams(){
   if (!isAdmin()) h += '<p class="note">Consultation : seuls les administrateurs modifient les paramètres.</p>';
   h = '<section class="view onecol">' + (isAdmin() ? '' : '<p class="note">Consultation : seuls les administrateurs modifient les paramètres.</p>');
   h += '<div class="selbar"><label class="lbl" for="parsel">Agence</label><select id="parsel" class="bigsel"'+(ST.newAg?' disabled':'')+'>'+ags.map(function(a){ return '<option value="'+esc(a.code)+'"'+(ST.parAg===a.code?' selected':'')+'>'+esc(a.label||'AG '+a.code)+' · '+esc(a.code)+(a.active===false?' · archivée':'')+'</option>'; }).join('')+'</select>'+
-    (isAdmin() && !ST.newAg ? '<button class="btn pri" data-newag>+ Créer une agence</button>' : '')+'</div>';
+    (isAdmin() && !ST.newAg && !ST.ent ? '<button class="btn pri" data-newag>+ Créer une agence</button>' : '')+'</div>';
   if (ST.newAg) h += newAgForm();
   else if (ST.parAg && ST.cfg.agencies[ST.parAg]) h += agEditor(ST.cfg.agencies[ST.parAg]);
   else h += '<div class="panel empty">Aucune agence. Créer la première agence.</div>';
@@ -2277,6 +2412,7 @@ function vFactures(){
 }
 var BURGER = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 5h14v1.8H3zM3 9.1h14v1.8H3zM3 13.2h14V15H3z"/></svg>';
 function agMenu(ags){
+  if (ST.ent) return '<span class="entlbl">'+esc(agLabel(ST.ag))+'</span>';
   var h = '<span class="agwrap"><button class="agbtn" data-a="agmenu" aria-haspopup="true" aria-expanded="'+(!!ST.agMenu)+'" title="Choisir l\'agence">'+BURGER+'<strong>'+esc(agLabel(ST.ag))+'</strong><span class="caret">▾</span></button>';
   if (ST.agMenu) h += '<div class="agpop" role="menu"><span class="lbl">Agences ('+ags.length+')</span>'+ags.map(function(a){ return '<button role="menuitem" class="agitem'+(a.code===ST.ag?' cur':'')+'" data-agsel="'+esc(a.code)+'">'+esc(a.label||'AG '+a.code)+'</button>'; }).join('')+'</div>';
   return h + '</span>';
@@ -2348,7 +2484,7 @@ function agCountIn(p, code){
   (p.records||[]).forEach(function(r){ var raw = (r.clientRaw||'').toUpperCase(); var mine = m ? raw.indexOf(m) === 0 : r.ag === code; if (mine) n++; else if (r.ag || raw !== 'FALSE'){ var oa = matchAg(r); if (oa) others[oa] = (others[oa]||0)+1; } });
   return { n:n, others:others };
 }
-function matchAg(r){ var raw = (r.clientRaw||'').toUpperCase(), best = null; agencies(true).forEach(function(a){ if (a.match && raw.indexOf(a.match.toUpperCase()) === 0 && (!best || a.match.length > ST.cfg.agencies[best].match.length)) best = a.code; }); return best || (r.ag ? 'AG '+r.ag+' (non paramétrée)' : null); }
+function matchAg(r){ var raw = (r.clientRaw||'').toUpperCase(), best = null; agenciesAll(true).forEach(function(a){ if (a.match && raw.indexOf(a.match.toUpperCase()) === 0 && (!best || a.match.length > ST.cfg.agencies[best].match.length)) best = a.code; }); return best || (r.ag ? 'AG '+r.ag+' (non paramétrée)' : null); }
 function vImport(){
   var h = '';
   if (ST.pending) h += pendingBox();
@@ -3583,8 +3719,8 @@ function vSynth(){
   var rows = synthRows(), ags = {};
   rows.forEach(function(r){ if (r.s) Object.keys(r.s.byAg).forEach(function(k){ ags[k] = r.s.byAg[k].label; }); });
   var miss = agencies().filter(function(a){ return !ags[a.code]; });
-  var ag = ST.synAgs = (ST.synAgs || []).filter(function(k){ return ags[k]; }), data = rows.map(function(r){ return { id:r.id, status:r.status, v:pick(r.s, ag) }; });
-  var h = '<section class="view"><div class="chipbar"><span class="lbl">Agences</span><button class="chip'+(!ag.length?' on':'')+'" data-synag="all" aria-pressed="'+(!ag.length)+'">Toutes</button>'+Object.keys(ags).sort().map(function(k){ var on = ag.indexOf(k) >= 0; return '<button class="chip'+(on?' on':'')+'" data-synag="'+esc(k)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(ags[k])+'</button>'; }).join('')+miss.map(function(a){ return '<span class="chip off" title="Aucune facture générée pour cette agence sur les 18 derniers mois">'+esc(a.label||a.code)+'</span>'; }).join('')+'<span class="muted">'+(ag.length ? ag.length+' agence'+(ag.length>1?'s':'')+' sélectionnée'+(ag.length>1?'s':'') : 'Cliquer pour sélectionner une ou plusieurs agences')+'</span></div>'+
+  var ag = ST.synAgs = ST.ent ? [ST.ent] : (ST.synAgs || []).filter(function(k){ return ags[k]; }), data = rows.map(function(r){ return { id:r.id, status:r.status, v:pick(r.s, ag) }; });
+  var h = '<section class="view"><div class="chipbar"'+(ST.ent ? ' hidden' : '')+'><span class="lbl">Agences</span><button class="chip'+(!ag.length?' on':'')+'" data-synag="all" aria-pressed="'+(!ag.length)+'">Toutes</button>'+Object.keys(ags).sort().map(function(k){ var on = ag.indexOf(k) >= 0; return '<button class="chip'+(on?' on':'')+'" data-synag="'+esc(k)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(ags[k])+'</button>'; }).join('')+miss.map(function(a){ return '<span class="chip off" title="Aucune facture générée pour cette agence sur les 18 derniers mois">'+esc(a.label||a.code)+'</span>'; }).join('')+'<span class="muted">'+(ag.length ? ag.length+' agence'+(ag.length>1?'s':'')+' sélectionnée'+(ag.length>1?'s':'') : 'Cliquer pour sélectionner une ou plusieurs agences')+'</span></div>'+
     (miss.length ? '<p class="note syn-miss">Grisées : agences sans factures générées ('+esc(miss.map(function(a){ return a.label||a.code; }).join(', '))+'). La synthèse reprend les montants enregistrés à la génération des factures : ouvrir l\'agence dans Factures logistiques, puis « Générer les factures ».</p>' : '');
   var filled = data.filter(function(d){ return d.v; });
   if (!filled.length) return h + '<div class="panel empty">Aucun mois facturé sur les 18 derniers mois.</div></section>';
@@ -3731,7 +3867,7 @@ var TRST = { valide:'Validé', facture:'Facturé', annule:'Annulé' };
 function vTrHistory(){
   if (!ST.transports){ loadTransports(); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
   var L = ST.transports, months = uniqA(L.map(function(t){ return (t.date||'').slice(0,7); }).filter(Boolean)).sort().reverse();
-  var F = L.filter(function(t){ return (!ST.trF.month || (t.date||'').slice(0,7) === ST.trF.month) && (!ST.trF.ag || t.ag === ST.trF.ag); });
+  var F = L.filter(function(t){ return (!ST.ent || t.ag === ST.ent) && (!ST.trF.month || (t.date||'').slice(0,7) === ST.trF.month) && (!ST.trF.ag || t.ag === ST.trF.ag); });
   var tot = F.filter(function(t){ return t.status !== 'annule'; }).reduce(function(s, t){ return E.r2(s + t.total); }, 0);
   var h = '<section class="view"><div class="kpis">'+kpi('Transports', F.filter(function(t){ return t.status !== 'annule'; }).length, 'hors annulés')+kpi('Montant HT', eur(tot), '')+kpi('À facturer', F.filter(function(t){ return t.status === 'valide'; }).length, 'validés, non facturés')+kpi('Facturés', F.filter(function(t){ return t.status === 'facture'; }).length, '')+'</div>';
   h += '<div class="panel"><div class="ph"><h2>Transports validés</h2><span class="muted">Cas 1 : un devis par livraison, facturé après validation OTIS</span><div class="sp"><select id="trf_m"><option value="">Tous les mois</option>'+months.map(function(m){ return '<option value="'+m+'"'+(ST.trF.month===m?' selected':'')+'>'+monthLabel(m)+'</option>'; }).join('')+'</select><select id="trf_a"><option value="">Toutes les agences</option>'+agencies(true).map(function(a){ return '<option value="'+esc(a.code)+'"'+(ST.trF.ag===a.code?' selected':'')+'>'+esc(a.label)+'</option>'; }).join('')+'</select><button class="btn" data-a="xlsTr"'+(F.length&&canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div>';
@@ -3864,6 +4000,7 @@ function changeMyPassword(){
 /* ============ ÉVÉNEMENTS ============ */
 document.addEventListener('click', function(e){
   if (ST.agMenu && !e.target.closest('.agwrap')){ ST.agMenu = false; render(); if (!e.target.closest('button,[data-mod],tr[data-pdf]')) return; }
+  if (ST.gearOpen && !e.target.closest('#gearpop,#gearbtn')){ ST.gearOpen = false; renderTop(); }
   if (ST.ctlMenu && !e.target.closest('.cmenu,[data-cmenu]')){ ST.ctlMenu = null; render(); if (!e.target.closest('button,[data-mod],tr[data-pdf]')) return; }
   if (ST.fOpen && !e.target.closest('.mfilt')){ ST.fOpen = null; render(); if (!e.target.closest('button,[data-mod],tr[data-pdf]')) return; }
   if (e.target.closest('select,.fpop label')) return;
@@ -3887,7 +4024,13 @@ document.addEventListener('click', function(e){
   if (d.ctab){ ST.ctlTab = d.ctab; ST.ctlMenu = null; render(); return; }
   if (d.ipick){ ST.ctlMenu = null; ST.modal = { pick:{ inv:d.ipick } }; render(); return; }
   if (d.pickpdf){ var pk = ST.modal && ST.modal.pick ? ST.modal.pick.inv : null; assocOpen(d.pickpdf); if (pk && ST.modal && ST.modal.assoc) ST.modal.assoc.sel[pk] = 1; renderModal(); return; }
-  if (d.home !== undefined){ ST.module = 'home'; ST.modal = null; if (!ST.transports) loadTransports(); render(); return; }
+  if (d.ent){ enterEnt(d.ent); return; }
+  if (d.entmod){ enterEnt(ST.ent, d.entmod); return; }
+  if (d.cfgtab){ ST.module = 'cfg'; ST.cfgTab = d.cfgtab; ST.gearOpen = false; ST.newAg = false; render(); window.scrollTo(0,0); if (d.cfgtab === 'adm') loadAdmin(); return; }
+  if (d.entpar){ enterEnt(d.entpar, 'log'); ST.ltab = 'par'; render(); return; }
+  if (d.kdl){ var kf = knFind(d.kdl); if (kf.d && kf.d.file) STORE.getFileBytes(kf.d.file).then(function(b){ saveBlob(kf.d.file.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
+  if (d.krm){ var kr = knFind(d.krm); if (kr.d && isAdmin()){ if (kr.scope === 'G') ST.cfg.knowledge = kr.list.filter(function(x){ return x !== kr.d; }); else ST.cfg.agencies[ST.ent].know = kr.list.filter(function(x){ return x !== kr.d; }); saveCfg('Connaissance : document retiré ('+kr.d.title+')'); render(); } return; }
+  if (d.home !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'home'; ST.modal = null; if (!ST.transports) loadTransports(); render(); return; }
   if (d.acc !== undefined){ ST.module = 'acc'; render(); return; }
   if (d.mod){ ST.module = d.mod; if (d.ltabgo) ST.ltab = d.ltabgo; render(); window.scrollTo(0,0); if (ST.module==='log' && ST.ltab==='adm') loadAdmin(); return; }
   if (d.ltab){ ST.ltab = d.ltab; ST.modal = null; render(); window.scrollTo(0,0); if (d.ltab==='adm') loadAdmin(); return; }
@@ -3976,6 +4119,9 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsAnom') exportAnomalies();
   else if (a === 'xlsDQ') exportDQ();
   else if (a === 'xlsBill') exportBill();
+  else if (a === 'gear'){ ST.gearOpen = !ST.gearOpen; renderTop(); }
+  else if (a === 'knadd') knAdd();
+  else if (a === 'affmodel'){ var wbm = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wbm, XLSX.utils.aoa_to_sheet([['ADV','Compte']].concat((ST.users||[]).filter(function(u){ return u.role !== 'admin'; }).map(function(u){ return [u.email, ((ST.cfg.assign||{})[String(u.email).toLowerCase()]||[]).join(', ')]; }))), 'Affectation'); saveXlsx(wbm, 'Affectation ADV entites.xlsx'); }
   else if (a === 'xlsAdv') exportAdv();
   else if (a === 'xlsCdf') exportCdf();
   else if (a === 'xlsDQS') exportDQSyn();
@@ -4015,6 +4161,9 @@ document.addEventListener('change', function(e){
   if (t.id === 'dqmsel'){ dqSelect(DQ.co, t.value); return; }
   if (t.dataset && t.dataset.asinv && ST.modal && ST.modal.assoc){ ST.modal.assoc.sel[t.dataset.asinv] = t.checked ? 1 : 0; renderModal(); return; }
   if (t.id === 'advsheet'){ ST.ov.advSheet = t.value; persist('Contrôle détaillé : feuille « '+t.value+' » du fichier de calcul'); render(); return; }
+  if (t.dataset && t.dataset.scr && isAdmin()){ var sp = t.dataset.scr.split('|'), ea = ST.cfg.agencies[sp[0]]; if (ea){ if (sp[1] === 'active') ea.active = t.checked; else { ea.screens = entScreens(ea); ea.screens[sp[1]] = t.checked; if (!ea.screens.log && !ea.screens.trp){ ea.screens[sp[1]] = true; toast('Au moins un écran par entité'); } } saveCfg((ea.label||ea.code)+' : écrans '+[ea.screens && ea.screens.log !== false ? 'Logistique' : '', ea.screens && ea.screens.trp !== false ? 'Transport' : ''].filter(Boolean).join(' + ')); render(); } return; }
+  if (t.dataset && t.dataset.asg && isAdmin()){ var sg = t.dataset.asg.split('|'); ST.cfg.assign = ST.cfg.assign || {}; var cur2 = ST.cfg.assign[sg[0]] || []; ST.cfg.assign[sg[0]] = t.checked ? uniqA(cur2.concat([sg[1]])) : cur2.filter(function(x){ return x !== sg[1]; }); saveCfg('Affectation '+sg[0]+' : '+(ST.cfg.assign[sg[0]].join(', ') || 'toutes les entités')); return; }
+  if (t.id === 'affin'){ if (t.files[0]) affImport(t.files[0]); t.value = ''; return; }
   if (t.id === 'dqcl'){ DQ.synCli = t.value; render(); return; }
   if (t.id === 'dqfrom' || t.id === 'dqto'){ DQ[t.id === 'dqfrom' ? 'from' : 'to'] = t.value; DQ.billCache = null; dqRun(); render(); return; }
   if (d.fchk){ var FF = ST.invF = ST.invF || {}, arr = FF[d.fchk] = (FF[d.fchk] || []).filter(function(x){ return x !== t.value; }); if (t.checked) arr.push(t.value); var fl = document.querySelector('#fpop .fpop-l'), st0 = fl ? fl.scrollTop : 0; render(); fl = document.querySelector('#fpop .fpop-l'); if (fl) fl.scrollTop = st0; return; }
@@ -4066,7 +4215,7 @@ function createAgency(){
   if (ST.cfg.agencies[code]){ toast('Ce code existe déjà'); return; }
   if (!label || !match){ toast('Renseigner le libellé et le client Odoo'); return; }
   var gk = 'G'+code; ST.cfg.grids[gk] = clone(E.DEFAULT_CONFIG.grids[tpl]); ST.cfg.grids[gk].label = 'Grille '+label+' (base '+(tpl==='STD'?'OTIS 2022':'Tours')+')';
-  ST.cfg.agencies[code] = { code:code, label:label, match:match, address:'', grid:gk, template:tpl, split:'affaire', cas:2, annexe:false, active:true, docs:{}, cmList:[] };
+  ST.cfg.agencies[code] = { code:code, label:label, match:match, address:'', grid:gk, template:tpl, split:'affaire', cas:2, annexe:false, active:true, docs:{}, cmList:[], screens:{ log:true, trp:true } };
   applyAgencyRules(ST.cfg);
   ST.newAg = false; ST.parAg = code; saveCfg('Agence créée : '+label); render();
 }
