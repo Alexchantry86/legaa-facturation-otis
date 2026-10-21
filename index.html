@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v3.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v3.4 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1849,7 +1849,8 @@ function renderTop(){
   else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
   var h = '';
   if (ent){ var sc = entScreens(ent); h += '<button class="enttab" data-home title="Changer d\'entité">← Entités</button>';
-    if (mod !== 'entchoice' && sc.log && sc.trp) h += '<span class="modseg">'+(sc.log ? '<button class="'+(mod==='log'?'on':'')+'" data-entmod="log">Logistique</button>' : '')+(sc.trp ? '<button class="'+(mod==='trp'?'on':'')+'" data-entmod="trp">Transport</button>' : '')+'</span>'; }
+    if (mod !== 'entchoice' && sc.log && sc.trp) h += '<button class="enttab" data-entchoice title="Revenir au choix Logistique / Transport">← Activités</button>';
+    if (mod === 'log' || mod === 'trp') h += '<span class="entname">'+(mod === 'log' ? 'Logistique' : 'Transport')+'</span>'; }
   h += tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+att+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
   $('tabs').innerHTML = h; $('tabs').hidden = !h;
   var bt = document.querySelector('.brand h1'), bs = document.querySelector('.brand span'); if (bt){ bt.textContent = ent ? (ent.label || ent.code) : 'Pilotage Logistique'; } if (bs) bs.textContent = ent ? 'Pilotage Logistique · LEGAA' : 'LEGAA';
@@ -4073,6 +4074,7 @@ document.addEventListener('click', function(e){
   if (d.pickpdf){ var pk = ST.modal && ST.modal.pick ? ST.modal.pick.inv : null; assocOpen(d.pickpdf); if (pk && ST.modal && ST.modal.assoc) ST.modal.assoc.sel[pk] = 1; renderModal(); return; }
   if (d.ent){ enterEnt(d.ent); return; }
   if (d.entmod){ enterEnt(ST.ent, d.entmod); return; }
+  if (d.entchoice !== undefined){ ST.module = 'entchoice'; ST.modal = null; render(); window.scrollTo(0,0); return; }
   if (d.entgear !== undefined){ if (ST.ent){ ST.ltab = 'par'; enterEnt(ST.ent, 'log'); ST.ltab = 'par'; render(); } return; }
   if (d.cfgtab){ ST.module = 'cfg'; ST.cfgTab = d.cfgtab; ST.gearOpen = false; ST.newAg = false; render(); window.scrollTo(0,0); if (d.cfgtab === 'adm') loadAdmin(); return; }
   if (d.entpar){ enterEnt(d.entpar, 'log'); ST.ltab = 'par'; render(); return; }
