@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v3.8 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v3.9 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1013,7 +1013,7 @@ var STORE = (function () {
     }).then(function (m) {
       meta = m;
       var p = { files: FV.arrayUnion(meta), updatedAt: TS(), updatedBy: profile.email };
-      if (!existed) { p.status = 'ouvert'; p.ov = {}; p.ag = month.split('_')[0]; p.month = month.split('_')[1]; }
+      if (!existed) { p.status = 'ouvert'; p.ov = {}; var mi = /^(.+)_(\d{4}-\d{2})$/.exec(month) || [null, month.split('_')[0], month.split('_')[1]]; p.ag = mi[1]; p.month = mi[2]; }
       return ref.set(p, { merge: true });
     }).then(function () { return log('import', file.name + ' · SHA-256 ' + meta.sha256.slice(0, 16), month); }).then(function () { return meta; });
   }
@@ -1270,11 +1270,27 @@ var ENGINE = (function () {
     return m ? m[1] + ' / ' + m[2] : (s || '(sans n° de commande)');
   }
   // N° de commande Odoo = « APPAREIL / AFFAIRE » (ex. 45K1BZY5 / 45KRXI9F), suffixes éventuels ignorés
+  // Code OTIS = 7 à 12 caractères alphanumériques mêlant lettres et chiffres (appareils 45K1BZY5, R5K7C325, R5N7A728… ; affaires 45KRXI9F, 100MMEO…)
+  function isOtisCode(c) { return /^[0-9A-Z]{7,12}$/.test(c) && /\d/.test(c) && /[A-Z]/.test(c); }
+  // Affaire OTIS au format 45K/45N (RX, F4, A2) ; tout autre code isolé est un appareil
+  function isAffCode(c) { return /^45[KN](RX|F4|A2)[0-9A-Z]{2,4}$/.test(c); }
   function parseCmd(raw) {
     var s = String(raw === null || raw === undefined ? '' : raw).trim().toUpperCase().replace(/\s+/g, ' ');
     var m = s.match(/^(.+?)\s*[\/\-]\s*([0-9A-Z]{6,10})\b\s*(.*)$/);
-    if (m && !/^RETOUR/.test(s)) return { appareil: m[1].trim(), affaire: m[2], suffix: m[3].replace(/^[\/\s(]+|[)\s]+$/g, ''), fmt: /^[0-9A-Z]{6,}$/.test(m[1].trim()) };
-    if (/^[0-9A-Z]{7,10}$/.test(s)) return { appareil: s, affaire: null, suffix: '', fmt: true };
+    if (m && !/^RETOUR/.test(s)) {
+      var a = m[1].trim(), fa = /^[0-9A-Z]{6,}$/.test(a), sx = m[3].replace(/^[\/\s(]+|[)\s]+$/g, '');
+      // « NSA - R5N7A728 », « OUTILLAGE / R5K7C325 » : le 1er terme n'est pas un code, le 2nd est un code qui n'est pas une affaire 45K → appareil
+      if (!isOtisCode(a) && isOtisCode(m[2]) && !isAffCode(m[2])) return { appareil: m[2], affaire: null, suffix: (a + (sx ? ' ' + sx : '')).trim(), fmt: true };
+      // « R5N7A728 - OUTILLAGE » : le 2nd terme ne contient aucun chiffre, ce n'est pas une affaire (mention ignorée)
+      if (fa && !/\d/.test(m[2])) return { appareil: a, affaire: null, suffix: (m[2] + (sx ? ' ' + sx : '')).trim(), fmt: true };
+      return { appareil: a, affaire: m[2], suffix: sx, fmt: fa };
+    }
+    if (/^[0-9A-Z]{7,10}$/.test(s) && /\d/.test(s)) return { appareil: s, affaire: null, suffix: '', fmt: true };
+    // Code OTIS au milieu d'un libellé (« NSA R5N7A728 », « R5K7C325 OUTILLAGE ») : affaire si format 45K, sinon appareil
+    if (!/^RETOUR/.test(s)) {
+      var cs = (s.match(/\b[0-9A-Z]{7,12}\b/g) || []).filter(isOtisCode), af = cs.filter(isAffCode)[0] || null, ap = cs.filter(function (c) { return !isAffCode(c); })[0] || null;
+      if (ap || af) return { appareil: ap, affaire: af, suffix: s, fmt: true };
+    }
     return { appareil: null, affaire: null, suffix: s, fmt: false };
   }
   function isAppareil(c) { return /^[0-9A-Z]{6,} \/ [0-9A-Z]{5,}$/.test(c) || /^[0-9A-Z]{8,}$/.test(c); }
@@ -1601,7 +1617,7 @@ var ENGINE = (function () {
   }
   function fmt3(x) { return (Math.round(x * 1000) / 1000).toString(); }
 
-  return { DEFAULT_CONFIG: DEFAULT_CONFIG, parseFile: parseFile, build: build, detectMonth: detectMonth, r2: r2, frDate: frDate, TIER_LABEL: TIER_LABEL, parseCmd: parseCmd, monthBounds: monthBounds, normCmd: normCmd };
+  return { DEFAULT_CONFIG: DEFAULT_CONFIG, isOtisCode: isOtisCode, isAffCode: isAffCode, parseFile: parseFile, build: build, detectMonth: detectMonth, r2: r2, frDate: frDate, TIER_LABEL: TIER_LABEL, parseCmd: parseCmd, monthBounds: monthBounds, normCmd: normCmd };
 })();
 if (typeof module !== 'undefined') module.exports = ENGINE;
 
@@ -1660,7 +1676,7 @@ var PDFCHECK = (function () {
 
   /* Lecture structurée. known = { affaires:{code:1}, appareils:{code:1} } issus du mois calculé */
   function parse(lines, known) {
-    var txt = lines.join('\n'), n = norm(txt), out = { v: 6, numero: '', agence: '', affaires: [], appareils: [], cmCodes: [], periodes: [], fam: { E: null, S: null, STK: null }, famLines: { E: [], S: [], STK: [] }, totalHT: null, tva: null, ttc: null, warnings: [] };
+    var txt = lines.join('\n'), n = norm(txt), out = { v: 7, numero: '', agence: '', affaires: [], appareils: [], cmCodes: [], periodes: [], fam: { E: null, S: null, STK: null }, famLines: { E: [], S: [], STK: [] }, totalHT: null, tva: null, ttc: null, warnings: [] };
     var m = txt.match(/(?:facture|invoice)\s*(?:n[°o]\.?|num[ée]ro)?\s*[:#]?\s*([A-Z]{2,5}[\/\-]?\d{2,4}[\/\-]?\d{2,6}[A-Z0-9\/\-]*)/i);
     if (m) out.numero = m[1];
     m = txt.match(/\bAG\s*(\d{2,3})\b/i); if (m) out.agence = m[1];
@@ -1678,6 +1694,12 @@ var PDFCHECK = (function () {
     Object.keys(known.appareils).forEach(function (c) { if (/^[0-9A-Z]{7,10}$/.test(c) && out.appareils.indexOf(c) < 0 && out.compact.indexOf(c) >= 0) out.appareils.push(c); });
     uniq(txt.match(/\b\d{4,6}\b/g) || []).forEach(function (c) { if (known.cm && known.cm[c]) out.cmCodes.push(c); });
     if (!out.affaires.length) codes.forEach(function (c) { if (/^45[KN](RX|F4|A2)[0-9A-Z]{2,4}$/.test(c)) out.affaires.push(c); });
+    // Texte en mots (majuscules, sans accents) : recherche d'un libellé entier (agence « NSA », facture « OUTILLAGE »)
+    out.wtxt = ' ' + norm(txt).toUpperCase().replace(/[^0-9A-Z]+/g, ' ') + ' ';
+    // Appareil porté par l'objet (NSA : « LOGISTIQUE SEPTEMBRE 2026 - R5N7A728 ») : relevé même s'il est inconnu du mois calculé, pour le signaler
+    out.objCodes = [];
+    lines.forEach(function (l) { if (!/^\s*objet\b/i.test(norm(l)) && !/\blogistique\b.*\b20[2-9]\d\b/i.test(norm(l))) return; (l.toUpperCase().match(/\b[0-9A-Z]{7,12}\b/g) || []).forEach(function (c) { if (/\d/.test(c) && /[A-Z]/.test(c) && !/^45[KN](RX|F4|A2)/.test(c) && out.objCodes.indexOf(c) < 0) out.objCodes.push(c); }); });
+    if (!out.appareils.length) out.objCodes.forEach(function (c) { out.appareils.push(c); });
     // Période : « AOUT 2026 » (objet) ou mm/aaaa ; années antérieures à 2020 ignorées (mentions légales : « loi n° 2014-626 du 18 juin 2014 »)
     MOIS.forEach(function (mo, i) { var re = new RegExp(mo + '\\s+(20[2-9]\\d)', 'g'), r; while ((r = re.exec(n))) out.periodes.push(r[1] + '-' + String(i + 1).padStart(2, '0')); });
     (n.match(/\b(0[1-9]|1[0-2])[\/.](20[2-9]\d)\b/g) || []).forEach(function (p) { var q = p.split(/[\/.]/); out.periodes.push(q[1] + '-' + q[0]); });
@@ -1734,6 +1756,11 @@ var PDFCHECK = (function () {
     ev.score = (ev.po ? 150 : 0) + (ev.code ? 100 : 0) + (ev.name ? 80 : 0) + Math.min(60, ev.cmds * 15) + (ev.ht ? 60 : 0) - (ev.type ? 0 : 1000) - (parsed.agence && I.ag && parsed.agence !== I.ag ? 1000 : 0);
     return ev;
   }
+  // Facture par appareil : n° d'appareil lu dans le PDF ; libellé non codé (« OUTILLAGE ») cherché comme mot entier
+  function hasSub(parsed, I) { var s = String(I.sub || '').toUpperCase(); if (!s) return false; if (parsed.appareils.indexOf(s) >= 0) return true; return !/^[0-9A-Z]{7,12}$/.test(s) && s.length >= 4 && (parsed.wtxt || '').indexOf(' ' + norm(s).toUpperCase().replace(/[^0-9A-Z]+/g, ' ').trim() + ' ') >= 0; }
+  // Agence sans « AG nnn » sur la facture (NSA, GDN, Tours…) : un mot distinctif du libellé de l'agence présent en mot entier
+  var AG_STOP = { OTIS: 1, AGENCE: 1, LOGISTIQUE: 1, FRANCE: 1, ENVOI: 1, FACTURES: 1, TOUR: 1, TOURS: 1 };
+  function agByName(parsed, I) { var w = parsed.wtxt || ''; return norm(I.agLabel || '').toUpperCase().replace(/[^0-9A-Z]+/g, ' ').split(' ').filter(function (t) { return t.length >= 3 && !/^\d+$/.test(t) && !AG_STOP[t]; }).filter(function (t) { return w.indexOf(' ' + t + ' ') >= 0; }); }
   function match(parsed, invoices) {
     var cmInv = invoices.filter(function (I) { return I.split === 'cm' || I.split === 'cm_fhr'; });
     if (cmInv.length) {
@@ -1742,11 +1769,12 @@ var PDFCHECK = (function () {
     }
     var cands = invoices.filter(function (I) {
       if (I.split === 'affaire') return parsed.affaires.indexOf(I.sub) >= 0;
-      if (I.split === 'appareil') return parsed.appareils.indexOf(I.sub) >= 0;
+      if (I.split === 'appareil') return hasSub(parsed, I);
       if (I.split === 'cm') return Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; });
       if (I.split === 'cm_fhr') return parsed.fhr === I.fhr && Object.keys(I.cmCodes).some(function (c) { return parsed.cmCodes.indexOf(c) >= 0; });
       return false;
     });
+    if (cands.length > 1 && !parsed.agence) { var byN = cands.filter(function (I) { return agByName(parsed, I).length; }); if (byN.length) cands = byN; }
     if (cands.length > 1 && parsed.agence) cands = cands.filter(function (I) { return I.ag === parsed.agence; }).length ? cands.filter(function (I) { return I.ag === parsed.agence; }) : cands;
     if (cands.length > 1 && parsed.totalHT !== null) { var x = cands.filter(function (I) { return Math.abs(I.totals.HT - parsed.totalHT) <= TOL; }); if (x.length) cands = x; }
     if (!cands.length && parsed.totalHT !== null) cands = invoices.filter(function (I) { return Math.abs(I.totals.HT - parsed.totalHT) <= TOL; }).length === 1 ? invoices.filter(function (I) { return Math.abs(I.totals.HT - parsed.totalHT) <= TOL; }) : [];
@@ -1770,13 +1798,17 @@ var PDFCHECK = (function () {
       chk('Contremaître', ev.po ? 'commande ' + parsed.po.join(', ') : ev.code ? 'code ' + parsed.cmCodes.join(', ') : ev.name ? 'nom trouvé' : '—', (I._cmNames || []).join(', ') + (Object.keys(I.cmCodes).length ? ' (' + Object.keys(I.cmCodes).join(', ') + ')' : ''), ev.po || ev.code || ev.name, ev.po || ev.code || ev.name ? '' : 'Contremaître non identifiable dans le PDF (ni code, ni nom, ni n° de commande OTIS mémorisé)');
       if (parsed.po && parsed.po.length) chk('N° de commande OTIS', parsed.po.join(', '), (I._po || []).join(', ') || 'non mémorisé', true, ev.po ? '' : 'Mémorisé pour ce contremaître à la validation de l\'association');
       else if (ev.cmdsTot) chk('N° de commande', ev.cmds + ' trouvé(s)', ev.cmdsTot + ' sur la facture calculée', I.fhr ? true : ev.cmds === ev.cmdsTot, I.fhr || ev.cmds === ev.cmdsTot ? '' : (ev.cmdsTot - ev.cmds) + ' n° de commande de la facture calculée absent(s) du PDF'); }
+    var agN = parsed.agence ? [] : agByName(parsed, I);
     if (parsed.agence) chk('Agence', 'AG ' + parsed.agence, I.agLabel, parsed.agence === I.ag);
+    else if (agN.length) chk('Agence', agN.join(', '), I.agLabel, true);
     else chk('Agence', '—', I.agLabel, false, 'Agence non trouvée dans le PDF');
+    if (I.split === 'appareil') chk('Appareil', parsed.appareils.join(', ') || (hasSub(parsed, I) ? I.sub : '—'), I.sub, hasSub(parsed, I), hasSub(parsed, I) ? '' : 'N° d\'appareil de la facture calculée absent du PDF');
     chk('Période', parsed.periodes.join(', ') || '—', month, parsed.periodes.indexOf(month) >= 0, parsed.periodes.length ? '' : 'Mois de facturation non trouvé dans le PDF');
     if (I.split === 'cm' || I.split === 'cm_fhr') return checks; // factures par contremaître : pas d'appareils sur la facture Odoo
-    var apsCalc = Object.keys(I.appareils).filter(function (a) { return /^[0-9A-Z]{7,10}$/.test(a); }).sort();
+    var apsCalc = Object.keys(I.appareils).filter(function (a) { return /^[0-9A-Z]{7,10}$/.test(a) && /\d/.test(a); }).sort();
     var miss = apsCalc.filter(function (a) { return parsed.appareils.indexOf(a) < 0 && !(parsed.compact && parsed.compact.indexOf(a) >= 0); });
     var extra = parsed.appareils.filter(function (a) { return apsCalc.indexOf(a) < 0 && !(I.split === 'affaire' && a === I.sub); });
+    if (I.split === 'appareil' && apsCalc.length === 1 && apsCalc[0] === I.sub) return checks; // appareil déjà contrôlé ci-dessus
     chk('N° d\'appareils', (apsCalc.length - miss.length) + ' trouvé(s)', apsCalc.length + ' attendu(s)', !miss.length && !extra.length,
       (miss.length ? 'Absents du PDF : ' + miss.join(', ') + '. ' : '') + (extra.length ? 'En trop : ' + extra.join(', ') : ''));
     return checks;
@@ -1785,18 +1817,18 @@ var PDFCHECK = (function () {
   /* Analyse complète d'un PDF */
   function analyse(buffer, ctx) {
     return extractLines(buffer).then(function (ex) {
-      if (!ex.lines.length) return { v: 6, status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
+      if (!ex.lines.length) return { v: 7, status: 'illisible', lines: [], parsed: null, checks: [], note: 'Aucun texte dans le PDF (document scanné) : il faut le PDF généré par le logiciel de facturation, pas un scan.' };
       var parsed = parse(ex.lines, ctx.known);
       applyInvCm(parsed, ctx.invCm);
       var I = match(parsed, ctx.invoices);
-      if (!I) return { v: 6, status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
+      if (!I) return { v: 7, status: 'non_rapprochee', lines: ex.lines, parsed: parsed, checks: [], note: 'Aucune facture calculée ne correspond (affaire ' + (parsed.affaires.join(', ') || 'introuvable') + ', total HT ' + (parsed.totalHT === null ? 'introuvable' : parsed.totalHT) + ').' };
       var checks = compare(parsed, I, ctx.month, ctx.famTotals);
       var bad = checks.filter(function (c) { return !c.ok; });
-      return { v: 6, status: bad.length ? 'ecart' : 'conforme', invKey: I.key, invNum: I.num, lines: ex.lines, parsed: parsed, checks: checks, note: bad.length ? bad.length + ' point(s) en écart' : 'Tous les contrôles sont conformes' };
+      return { v: 7, status: bad.length ? 'ecart' : 'conforme', invKey: I.key, invNum: I.num, lines: ex.lines, parsed: parsed, checks: checks, note: bad.length ? bad.length + ' point(s) en écart' : 'Tous les contrôles sont conformes' };
     });
   }
 
-  return { extractLines: extractLines, parse: parse, match: match, compare: compare, analyse: analyse, cmEvidence: cmEvidence, applyInvCm: applyInvCm, TOL: TOL };
+  return { extractLines: extractLines, parse: parse, match: match, compare: compare, analyse: analyse, cmEvidence: cmEvidence, applyInvCm: applyInvCm, hasSub: hasSub, agByName: agByName, TOL: TOL };
 })();
 if (typeof module !== 'undefined') module.exports = PDFCHECK;
 
@@ -2566,7 +2598,9 @@ function persist(what){
     }, function(e){ toast('Enregistrement impossible : '+e.message); });
   }, 700);
 }
-function setMonthsIndex(L){ DQ.index = L.filter(function(m){ return /^DQ/.test(String(m.id)); }); ST.monthsIndex = L.filter(function(m){ return !/^(DQ|ADV)/.test(String(m.id)); }); return ST.monthsIndex; }
+/* Agence et mois relus depuis l'identifiant « <code agence>_<AAAA-MM> » : un code agence contenant « _ » (ex. TOUR_TRIANGLE) faussait les champs ag / month enregistrés */
+function monthKey(id){ var m = /^(.+)_(\d{4}-\d{2})$/.exec(String(id)); return m ? { ag:m[1], month:m[2] } : null; }
+function setMonthsIndex(L){ DQ.index = L.filter(function(m){ return /^DQ/.test(String(m.id)); }); ST.monthsIndex = L.filter(function(m){ return !/^(DQ|ADV)/.test(String(m.id)); }); ST.monthsIndex.forEach(function(d){ var k = monthKey(d.id); if (k){ d.ag = k.ag; d.month = k.month; } }); return ST.monthsIndex; }
 function refreshIndex(){ return STORE.listMonths().then(function(L){ L = setMonthsIndex(L); if (ST.module==='log' && (ST.ltab==='fac' || ST.ltab==='syn')) render(); }); }
 
 /* A · Import : 2 fichiers */
@@ -3141,7 +3175,7 @@ function assocReasons(p, keys){
     var why = [];
     if (P){
       if (I.split === 'affaire' && P.affaires.indexOf(I.sub) < 0) why.push('affaire '+I.sub+' absente du PDF (affaires lues : '+(P.affaires.join(', ') || 'aucune')+')');
-      if (I.split === 'appareil' && P.appareils.indexOf(I.sub) < 0) why.push('appareil '+I.sub+' absent du PDF');
+      if (I.split === 'appareil' && !PDFCHECK.hasSub(P, I)) why.push('appareil '+I.sub+' absent du PDF (appareils lus : '+(P.appareils.join(', ') || 'aucun')+')');
       if (I.split === 'cm' || I.split === 'cm_fhr'){ prepCm(); PDFCHECK.applyInvCm(P, ST.ov.invCm); var ev = PDFCHECK.cmEvidence(P, I);
         if (!ev.code && !ev.name && !ev.po) why.push('le PDF ne porte ni le nom ni le code du contremaître '+((I._cmNames||[]).join(', ') || '—')+(P.po && P.po.length ? ' ; seul le n° de commande OTIS '+P.po.join(', ')+' l\'identifie : il sera mémorisé pour ce contremaître ('+(I.fhr ? 'FHR' : 'Contrats')+') et servira au rapprochement automatique des mois suivants' : ''));
         if (ev.cmdsTot && ev.cmds < ev.cmdsTot && !I.fhr && !(P.po && P.po.length)) why.push(ev.cmds+' n° de commande sur '+ev.cmdsTot+' retrouvé(s) dans le PDF'); }
@@ -3247,7 +3281,7 @@ function advParse(buf, name){
       if (!col && amt === null && !famCols) continue;
       var fam = famVal(g('op')) || famVal(g('fam')) || famVal(g('famv')) || (stockSheet ? 'STK' : null);
       var pc = g('cmd') !== null ? E.parseCmd(g('cmd')) : { appareil:null, affaire:null };
-      var base = { sheet:sn, line:r + 1, colis:col, cmdRaw:g('cmd') === null ? '' : String(g('cmd')), op:g('op') === null ? '' : String(g('op')), br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, produit:g('produit') === null ? '' : String(g('produit')) };
+      var base = { sheet:sn, line:r + 1, colis:col, cmdRaw:g('cmd') === null ? '' : String(g('cmd')), op:g('op') === null ? '' : String(g('op')), br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, apLabel:g('appareil') ? String(g('appareil')).trim().toUpperCase() : (pc.appareil || pc.suffix || ''), produit:g('produit') === null ? '' : String(g('produit')) };
       if (famCols){ var emitted = 0;
         [['E','amtE'],['S','amtS'],['STK','amtK']].forEach(function(fc){ var v = idx[fc[1]] === undefined ? null : advNum(row[idx[fc[1]]]); if ((v === null || v === 0) && fam !== fc[0]) return;
           var ln = Object.assign({}, base, { fam:fc[0], amt:v === null ? 0 : v, col:fc[1] });
@@ -3255,7 +3289,7 @@ function advParse(buf, name){
           if (fc[0] !== 'STK' && fam === fc[0] && !v) ln.warn = 'type « '+base.op+' » sans montant '+(fc[0] === 'E' ? 'entrée' : 'sortie');
           lines.push(ln); emitted++; n++; });
         continue; }
-      lines.push({ sheet:sn, line:r + 1, colis:col, cmdRaw:g('cmd') === null ? '' : String(g('cmd')), fam:fam, amt:amt, br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, produit:g('produit') === null ? '' : String(g('produit')) }); n++; }
+      lines.push({ sheet:sn, line:r + 1, colis:col, cmdRaw:g('cmd') === null ? '' : String(g('cmd')), fam:fam, amt:amt, br:g('br') === null ? '' : String(g('br')), cmCode:g('cmCode') === null ? '' : String(g('cmCode')).replace(/\.0$/,''), affaire:g('affaire') ? String(g('affaire')).trim().toUpperCase() : pc.affaire, appareil:g('appareil') ? String(g('appareil')).trim().toUpperCase() : pc.appareil, apLabel:g('appareil') ? String(g('appareil')).trim().toUpperCase() : (pc.appareil || pc.suffix || ''), produit:g('produit') === null ? '' : String(g('produit')) }); n++; }
     sheets.push({ name:sn, used:true, n:n, amtH:famCols ? 'montants entrée / sortie / stockage' : (idx.amtH || ''), hasColis:idx.colis !== undefined, note:idx.colis === undefined ? 'sans colonne n° de colis' : '' });
   });
   // une feuille détaillée par colis existe : les feuilles de synthèse (sans n° de colis) sont ignorées pour ne pas compter deux fois
@@ -3463,7 +3497,7 @@ function fileInvIndex(){ var X = {}; ST.R.invoices.forEach(function(I){
   else if (I.split === 'cm' || I.split === 'cm_fhr') Object.keys(I.cmCodes || {}).forEach(function(c){ X['C|'+c+(I.split === 'cm_fhr' ? '|'+(I.fhr ? 1 : 0) : '')] = I; }); }); return X; }
 function fileInvOf(l, X, split){
   if (split === 'affaire' && l.affaire) return X['A|'+l.affaire] || null;
-  if (split === 'appareil' && l.appareil) return X['P|'+l.appareil] || null;
+  if (split === 'appareil' && (l.appareil || l.apLabel)) return X['P|'+(l.appareil || l.apLabel)] || null;
   if ((split === 'cm' || split === 'cm_fhr') && l.cmCode) return X['C|'+l.cmCode+(split === 'cm_fhr' ? '|'+(/FHR/i.test(l.cmdRaw || '') ? 1 : 0) : '')] || null;
   return undefined; // pas d'attribut exploitable : rattachement par la ligne de l'outil
 }
@@ -3592,7 +3626,7 @@ function pickModal(){
 function autoRerun(){
   var id = monthId(); ST.rerunDone = ST.rerunDone || {};
   if (ST.busy || ST.rerunDone[id] || !canEdit() || monthClosed()) return;
-  if (!ST.pdfs.some(function(p){ return !p.result || p.result.v !== 6; })) return;
+  if (!ST.pdfs.some(function(p){ return !p.result || p.result.v !== 7; })) return;
   ST.rerunDone[id] = 1; setTimeout(rerunPdfs, 0);
 }
 // Contrôle → C · Factures : ligne de la facture mise en évidence, montants cliquables pour l'audit colis par colis
@@ -3745,7 +3779,7 @@ function pick(s, ag){
 /* ============ 5 · SUIVI DES ANOMALIES ============ */
 var SUI = { month:null, live:{}, busy:'' };
 function suiMonth(){ return SUI.month || ST.month || defaultMonth(); }
-function suiStored(m){ var o = {}; ST.monthsIndex.forEach(function(d){ var mm = d.month || String(d.id).split('_')[1], ag = d.ag || String(d.id).split('_')[0]; if (mm === m && d.anomSummary) o[ag] = { byCode:d.anomSummary.byCode, at:d.anomSummary.at, status:d.status||'ouvert' }; }); return o; }
+function suiStored(m){ var o = {}; ST.monthsIndex.forEach(function(d){ var mk = monthKey(d.id) || {}, mm = mk.month || d.month, ag = mk.ag || d.ag; if (mm === m && d.anomSummary) o[ag] = { byCode:d.anomSummary.byCode, at:d.anomSummary.at, status:d.status||'ouvert' }; }); return o; }
 function suiData(m){ var st = suiStored(m), lv = SUI.live[m] || {}; Object.keys(lv).forEach(function(k){ st[k] = lv[k]; }); if (ST.R && ST.month === m && ST.ag){ st[ST.ag] = { byCode:anomSum(ST.R).byCode, at:new Date().toISOString(), status:(ST.doc&&ST.doc.status)||'ouvert' }; } return st; }
 /* Recalcul de toutes les agences d'un mois : chargement des exports enregistrés, calcul, enregistrement du résumé */
 function suiRefresh(){
@@ -4069,7 +4103,7 @@ function vAdmin(){
   } else {
     var ms = ST.monthsIndex.slice().sort(function(a,b){ return b.id.localeCompare(a.id); }), keep = last18();
     h += '<div class="panel"><div class="ph"><h2>Mois enregistrés</h2><span class="muted">Conservation : 18 mois glissants. Les mois plus anciens (exports, PDF, décisions) sont supprimés automatiquement à la première connexion d\'un administrateur (au plus une fois par jour).</span></div><div class="tw"><table><thead><tr><th>Agence · mois</th><th>Statut</th><th class="n">Exports</th><th class="n">Total HT</th><th>Dernière modification</th><th>Conservation</th></tr></thead><tbody>'+
-      ms.map(function(m){ return '<tr><td>'+esc(agLabel(m.ag||String(m.id).split('_')[0]))+' · '+monthLabel(m.month||String(m.id).split('_')[1])+'</td><td>'+STATUS[m.status||'ouvert']+'</td><td class="n">'+((m.files||[]).length)+'</td><td class="n">'+(m.summary?n2(m.summary.HT):'—')+'</td><td class="muted">'+esc(m.updatedAt?new Date(m.updatedAt).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'')+' '+esc(m.updatedBy||'')+'</td><td>'+(keep.indexOf(m.month||String(m.id).split('_')[1])>=0?'<span class="pill p-ok">conservé</span>':'<span class="pill p-verifier">purge au prochain passage</span>')+'</td></tr>'; }).join('')+
+      ms.map(function(m){ return '<tr><td>'+esc(agLabel((monthKey(m.id)||m).ag))+' · '+monthLabel((monthKey(m.id)||m).month)+'</td><td>'+STATUS[m.status||'ouvert']+'</td><td class="n">'+((m.files||[]).length)+'</td><td class="n">'+(m.summary?n2(m.summary.HT):'—')+'</td><td class="muted">'+esc(m.updatedAt?new Date(m.updatedAt).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'')+' '+esc(m.updatedBy||'')+'</td><td>'+(keep.indexOf(m.month||String(m.id).split('_')[1])>=0?'<span class="pill p-ok">conservé</span>':'<span class="pill p-verifier">purge au prochain passage</span>')+'</td></tr>'; }).join('')+
       (ms.length?'':'<tr><td colspan="6" class="empty">Aucun mois enregistré.</td></tr>')+'</tbody></table></div></div>';
     h += '<div class="panel pb note">Stockage : tout est dans Firestore (Europe) : exports Odoo et PDF conservés à l\'identique avec leur empreinte SHA-256, décisions de l\'ADV, clôtures, grilles et journal. Rien n\'est conservé dans le navigateur.</div>';
   }
@@ -4300,11 +4334,14 @@ window.addEventListener('scroll', function(){ if (ST.ctlMenu){ ST.ctlMenu = null
 document.addEventListener('submit', function(e){ e.preventDefault(); if (e.target.id === 'loginForm') doLogin(); });
 /* Règles d'agence validées (document « AGENCE_58.v2 ») : appliquées une fois à l'agence 58, quel que soit son code interne */
 function isAg58(a){ return /\bAG\s*0?58\b/i.test(String((a.label||'')+' '+(a.match||'')+' '+(a.code||''))) || /^0?58$/.test(String(a.code||'')); }
+function isNSA(a){ return /\bNSA\b/i.test(String((a.label||'')+' '+(a.match||'')+' '+(a.code||'')).replace(/_/g,' ')); }
 function applyAgencyRules(cfg){
   var changed = [];
   Object.keys(cfg.agencies||{}).forEach(function(k){
     var a = cfg.agencies[k];
     if (isAg58(a) && a.rule58 !== 'v2'){ a.split = 'cm_fhr'; a.cas = 1; a.annexe = false; a.rule58 = 'v2'; changed.push(a.label || k); }
+    // Process OTIS : NSA = cas 2, une facture par appareil (+ une pour l'outillage), sans annexe
+    if (isNSA(a) && a.ruleNSA !== 'v1'){ a.split = 'appareil'; a.cas = 2; a.annexe = false; a.ruleNSA = 'v1'; changed.push(a.label || k); }
   });
   return changed;
 }
@@ -4399,7 +4436,7 @@ function start(profile){
     // Clause « minimum m² par appareil » abandonnée : désactivée une fois sur toutes les grilles
     var m30 = false; if (!ST.cfg.rules.min30Off){ ST.cfg.rules.min30 = false; Object.keys(ST.cfg.grids).forEach(function(g){ ST.cfg.grids[g].min30 = 0; }); ST.cfg.rules.min30Off = '2026-10'; m30 = true; }
     if (m30 && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Minimum m² par appareil désactivé sur toutes les grilles (clause abandonnée)').catch(function(){});
-    var ch = applyAgencyRules(ST.cfg); if (ch.length && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Règle de facturation AG 58 appliquée (Contrats / FHR par contremaître, cas 1) : '+ch.join(', ')).catch(function(){});
+    var ch = applyAgencyRules(ST.cfg); if (ch.length && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Règles de facturation appliquées (AG 58 : Contrats / FHR par contremaître ; NSA : une facture par appareil) : '+ch.join(', ')).catch(function(){});
     ST.cfgM = ST.cfg; return STORE.listMonths(); })
     .then(function(L){ L = setMonthsIndex(L); var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); },
       function(e){ toast('Base de données inaccessible : '+e.message); });
