@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v3.9 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v4.0 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -789,6 +789,49 @@ main{max-width:none;padding-inline:clamp(16px,3vw,40px)}
 .perstrip .pill{font-size:12px;padding:4px 10px}
 .perstrip .muted{font-size:14px}
 .perstrip #persel{-webkit-appearance:none;appearance:none;padding-right:40px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+/* ---- v4.0 : onglet E (fichier ADV), suivi, unités KPI, assistant ---- */
+.cdf-top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:stretch}
+@media (max-width:1100px){.cdf-top{grid-template-columns:1fr}}
+.cdf-kpis{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e3e3e1;border-radius:4px;background:#fff}
+.cdf-kpis .kpi{border-right:1px solid #eeeeec;border-bottom:1px solid #eeeeec;padding:12px 16px}
+.cdf-kpis .kpi:nth-child(2n){border-right:0}.cdf-kpis .kpi:nth-child(n+3){border-bottom:0}
+.cdf-kpis .kpi .v.neg{color:#9b2c22}
+.drop.drop-adv{border:2px dashed #14233d;background:#f3f5f9;padding:30px 20px;cursor:pointer;color:#14233d;gap:8px;border-radius:6px;transition:background .15s,border-color .15s}
+.drop.drop-adv strong{font-size:17px}
+.drop.drop-adv .ic{display:inline-flex;width:54px;height:54px;border-radius:50%;background:#14233d;color:#fff;align-items:center;justify-content:center}
+.drop.drop-adv:hover,.drop.drop-adv.over{background:#e4e9f3;border-color:#0b1527}
+.drop.drop-adv.over{outline:3px solid rgba(20,35,61,.18)}
+.advbox{display:flex;gap:14px;align-items:flex-start;border:1px solid #e3e3e1;border-left:4px solid #14233d;border-radius:4px;background:#fff;padding:14px 16px;transition:background .15s}
+.advbox.over{background:#e4e9f3;outline:2px dashed #14233d}
+.advbox .ic{color:#14233d;flex:none;padding-top:2px}
+.advbox.empty-adv{border-left-color:#bbb}.advbox.empty-adv .ic{color:#999}
+.advbox .advmeta{display:grid;gap:4px;min-width:0;flex:1}
+.advbox .advmeta b.mono{font-size:15px;word-break:break-all}
+.advbox .advft b{font-weight:600}
+.advbox .advact{display:grid;gap:6px;justify-items:end;flex:none}
+.advbox select.chk2{border:1px solid #cfcfcc;border-radius:3px;padding:2px 6px;font:inherit}
+table.suit td.sv-err{color:#9b2c22;font-weight:600;cursor:help}
+.unitbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.unitbar .seg2 button{padding:7px 18px;font-size:14px;font-weight:600}
+.chat{width:min(460px,100vw)}
+.ch-tabs{display:flex;border-bottom:1px solid #e3e3e1;background:#fff}
+.ch-tabs button{flex:1;border:0;background:#fff;padding:10px 12px;font:inherit;font-weight:600;color:#666;cursor:pointer;border-bottom:3px solid transparent}
+.ch-tabs button.on{color:#14233d;border-bottom-color:#14233d}
+.ch-tabs .chn{background:#9b2c22;color:#fff;border-radius:9px;padding:0 6px;font-size:11px;margin-left:4px}
+.ai-msgs{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.ai-intro{background:#fff;border:1px solid #e3e3e1;border-radius:6px;padding:12px 14px}
+.ai-intro p{margin:6px 0 10px}
+.ai-sugg{display:flex;flex-wrap:wrap;gap:6px}
+.ai-sugg .chip{font-size:12px;text-align:left}
+.msg.ai{max-width:94%;gap:8px;border-radius:10px 10px 10px 2px}
+.ai-x{display:grid;gap:3px;padding-left:9px;border-left:3px solid #14233d}
+.ai-x+.ai-x{margin-top:4px}
+.ai-s{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.03em}
+.ai-x mark{background:#fff1b8;color:inherit;padding:0 1px}
+.ai-src{font-size:11px;color:#666;border-top:1px solid #eee;padding-top:5px}
+.ai-foot{padding:6px 14px 10px;background:var(--surface);border-top:1px solid #eee}
+.msg .mt{white-space:pre-wrap}
+.ai-x>span:last-child{white-space:pre-line}
 </style>
 </head>
 <body>
@@ -810,7 +853,7 @@ main{max-width:none;padding-inline:clamp(16px,3vw,40px)}
     <button class="brand" data-home title="Accueil : choix de l'entité"><h1>Pilotage Logistique</h1><span>LEGAA</span></button><button class="entgear" id="entgear" data-entgear title="Paramètres de l'entité" aria-label="Paramètres de l'entité" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg></button><button class="entgear" id="entbook" data-entbook title="Connaissance : documents de l'entité" aria-label="Connaissance" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4.5c2.2-.9 4.5-.9 7 .6v11c-2.5-1.5-4.8-1.5-7-.6zM17 4.5c-2.2-.9-4.5-.9-7 .6v11c2.5-1.5 4.8-1.5 7-.6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
     <span class="modname" id="modname"></span>
     <span id="src" class="num" style="opacity:.7;margin-left:auto"></span>
-    <button class="chatbtn" id="chatbtn" data-a="chat" title="Discussion avec les utilisateurs connectés" aria-label="Discussion"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 3h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg><span>Discussion</span><b id="chatn" hidden></b></button>
+    <button class="chatbtn" id="chatbtn" data-a="chat" title="Assistant documentaire et discussion avec les collègues" aria-label="Assistant et discussion"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 3h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg><span>Assistant</span><b id="chatn" hidden></b></button>
     <button class="gearbtn" id="pilbtn" data-mod="pil" title="Pilotage : suivi des anomalies et synthèse de toutes les entités" aria-label="Pilotage" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 17V9M8 17V4M13 17v-6M18 17V7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
     <button class="gearbtn" id="dqbtn" data-mod="dq" title="Contrôle des données Odoo (LEGAA / CAP'EMBAL)" aria-label="Contrôle des données" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4h9M3 8h9M3 12h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="13.5" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.8 15.3 18 17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     <span class="gearwrap"><button class="gearbtn" id="gearbtn" data-a="gear" title="Paramétrage" aria-label="Paramétrage" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg></button><div id="gearpop"></div></span>
@@ -1174,6 +1217,7 @@ var STORE = (function () {
 
   return {
     mode: 'firebase', get profile() { return profile; },
+    idToken: function () { var u = auth.currentUser; return u ? u.getIdToken() : Promise.resolve(null); },
     presenceStart: presenceStart, presenceStop: presenceStop, onPresence: onPresence, onChats: onChats, openChat: openChat, onMessages: onMessages, sendMessage: sendMessage, markRead: markRead,
     onAuth: onAuth, signIn: signIn, signOut: signOut, resetPasswordEmail: resetPasswordEmail, changeOwnPassword: changeOwnPassword,
     getConfig: getConfig, saveConfig: saveConfig,
@@ -2494,6 +2538,7 @@ function setPath(obj, path, val){ var k = path.split('.'), o = obj; for (var i=0
 function getPath(obj, path){ return path.split('.').reduce(function(o, k){ return o === undefined || o === null ? undefined : o[k]; }, obj); }
 var cfgT = null;
 function saveCfg(what){
+  if (typeof KB !== 'undefined' && KB) KB.built = false; // documents ou paramètres modifiés : l'assistant relit les ressources à la question suivante
   clearTimeout(cfgT);
   cfgT = setTimeout(function(){ STORE.saveConfig(ST.cfg, what).then(function(){ toast('Paramètre enregistré : '+what); }, function(e){ toast('Enregistrement impossible : '+e.message); }); }, 300);
   if (ST.R && !monthClosed()){ ST.cfgM = ST.cfg; rebuild(true); }
@@ -2571,7 +2616,7 @@ function selectMonth(ag, m){
     }));
   }).then(function(parsed){
     if (monthId() !== id || !parsed) return;
-    ST.files = parsed; ST.busy = ''; rebuild();
+    ST.files = parsed; ST.busy = ''; rebuild(); syncSummary(id);
     ST.adv = null; ST.advOpen = ''; ST.advInv = ''; advLoad();
     return STORE.listPdfs(id).then(function(p){ if (monthId() === id){ ST.pdfs = p; render(); } });
   }).catch(function(e){ ST.busy = ''; toast('Chargement impossible : '+e.message); render(); });
@@ -2582,6 +2627,14 @@ function rebuild(noRender){
   ST.flags = {};
   if (ST.R) ST.R.anomalies.forEach(function(a){ a.keys.forEach(function(k){ (ST.flags[k] = ST.flags[k] || []).push(a); }); });
   render();
+}
+/* Résumés (anomalies, montants) enregistrés dès l'ouverture d'un mois s'ils manquent ou ont changé : le suivi et les KPI(s) ne dépendent plus d'une modification préalable */
+function syncSummary(id){
+  if (!ST.R || !canEdit() || monthClosed() || monthId() !== id) return;
+  var a = anomSum(ST.R), d = ST.doc || {}, old = d.anomSummary ? JSON.stringify(d.anomSummary.byCode) : '';
+  if (old === JSON.stringify(a.byCode) && d.summary && d.summary.v === 4 && Math.abs((d.summary.HT || 0) - ST.R.totals.HT) < 0.005) return;
+  var sm = summarize(ST.R); d.anomSummary = a; d.summary = sm;
+  STORE.saveMonth(id, { anomSummary:a, summary:sm }).then(function(){ refreshIndex(); }, function(){});
 }
 var saveT = null, saveWhat = [];
 function persist(what){
@@ -3539,13 +3592,36 @@ function cdfRows(){
     var CL = cdfColis(fam);
     return { p:p, num:Q.numero || p.name, L:L, M:M, affs:uniqA([].concat.apply([], L.map(invAffs))), fam:fam, odoo:ho, calc:M.totals.HT, ecart:ho === null ? null : E.r2(ho - M.totals.HT), colis:CL, nbad:CL.filter(function(c){ return c.bad; }).length, anyRec:['E','S','STK'].some(function(k){ return fam[k].rec; }) }; });
 }
+var IC_UP = '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 14v5h16v-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var IC_XLS = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M6 2.5h8.5L19 7v14.5H6z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M14.5 2.5V7H19M9 11l5 6M14 11l-5 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+/* Bloc « fichier de calcul détaillé de l'ADV » : grande zone de glisser-déposer tant qu'aucun fichier n'est déposé, puis fiche du fichier (déposer un autre fichier dessus le remplace) */
+function advBox(ro, A){
+  var input = '<input type="file" id="advin" accept=".xlsx,.xls,.xlsm,.csv" hidden>';
+  if (!A){
+    if (ro) return '<div class="advbox empty-adv"><span class="ic">'+IC_XLS+'</span><div><b>Aucun fichier de calcul ADV</b><span class="muted small">Contrôle ligne à ligne sur la colonne « Prix » des exports Odoo.</span></div></div>';
+    return '<label class="drop drop-adv" id="advdrop">'+input+'<span class="ic">'+IC_UP+'</span><strong>Glisser-déposer ici le fichier de calcul détaillé de l\'ADV</strong><span>Excel (.xlsx, .xls, .xlsm) ou .csv · <u>ou cliquer pour le choisir</u></span><span class="muted small">Le fichier qui a servi à établir les factures Odoo du mois. Il permet d\'expliquer chaque écart colis par colis ; sans lui, le contrôle utilise la colonne « Prix » des exports Odoo.</span></label>';
+  }
+  var DS = advDetailSheets(), cur = DS.length > 1 ? advSheet() : null, L = advLines(), ft = { E:0, S:0, STK:0 }, nc = {};
+  L.forEach(function(l){ if (l.fam && l.amt !== null) ft[l.fam] = E.r2(ft[l.fam] + l.amt); if (l.colis) nc[colisKey(l.colis)] = 1; });
+  return '<div class="advbox" id="advdrop"><span class="ic">'+IC_XLS+'</span><div class="advmeta"><span class="lbl">Fichier de calcul ADV</span><b class="mono">'+esc(A.name)+'</b>'+
+    '<span class="muted small">'+(A.meta && A.meta.at ? 'Déposé le '+esc(dt(A.meta.at))+(A.meta.by ? ' par '+esc(A.meta.by) : '')+' · ' : '')+L.length+' lignes · '+Object.keys(nc).length+' colis'+(DS.length > 1 ? '' : (DS[0] ? ' · feuille « '+esc(DS[0])+' »' : ''))+'</span>'+
+    (DS.length > 1 ? '<span class="small">Feuille utilisée <select id="advsheet" class="chk2">'+DS.map(function(sn){ return '<option'+(sn === cur ? ' selected' : '')+'>'+esc(sn)+'</option>'; }).join('')+'</select>'+(ST.ov.advSheet ? '' : ' <span class="muted">(choix automatique : la plus proche des factures Odoo)</span>')+'</span>' : '')+
+    '<span class="advft small">Entrées <b>'+n2(ft.E)+'</b> · Sorties <b>'+n2(ft.S)+'</b> · Stockage <b>'+n2(ft.STK)+'</b> · Total <b>'+n2(E.r2(ft.E + ft.S + ft.STK))+' €</b></span></div>'+
+    '<div class="advact">'+(!ro ? '<label class="btn sm">Remplacer'+input+'</label>' : '')+(A.meta ? '<button class="btn sm g" data-advdl>Télécharger</button>'+(!ro ? '<button class="btn sm g" data-advrm>Supprimer</button>' : '') : '')+
+    (!ro ? '<span class="muted small">ou glisser un autre fichier ici</span>' : '')+'</div></div>';
+}
 function vCdf(){
   if (!ST.R) return '<div class="panel empty">Importer d\'abord les exports Odoo.</div>';
-  var ro = !canEdit() || monthClosed(), R = cdfRows(), A = ST.adv && !ST.adv.error ? ST.adv : null;
-  var DS = A ? advDetailSheets() : [], cur = DS.length > 1 ? advSheet() : null;
-  var h = '<div class="card2"><div class="h2"><span class="muted small">Prix Odoo ligne à ligne : '+(A ? 'fichier de calcul <b>'+esc(A.name)+'</b>'+(A.meta && A.meta.at ? ' (déposé le '+esc(dt(A.meta.at))+')' : '') : 'colonne « Prix » des exports Odoo')+'</span>'+
-    (DS.length > 1 ? '<span class="small">Feuille utilisée <select id="advsheet" class="chk2" style="border-color:#cfcfcc">'+DS.map(function(sn){ return '<option'+(sn === cur ? ' selected' : '')+'>'+esc(sn)+'</option>'; }).join('')+'</select>'+(ST.ov.advSheet ? '' : ' <span class="muted">(choix automatique : la plus proche des factures Odoo)</span>')+'</span>' : '')+'<div class="r">'+
-    (!ro ? '<label class="btn sm">'+(A ? 'Remplacer le fichier de calcul' : 'Déposer le fichier de calcul')+'<input type="file" id="advin" accept=".xlsx,.xls,.xlsm,.csv" hidden></label>' : '')+(A && A.meta ? '<button class="btn sm g" data-advdl>Télécharger</button>'+(!ro ? '<button class="btn sm g" data-advrm>Supprimer</button>' : '') : '')+'<button class="btn sm g" data-a="xlsCdf"'+(canSave()?'':' disabled')+'>Exporter</button></div></div>';
+  var ro = !canEdit() || monthClosed(), R0 = cdfRows(), A = ST.adv && !ST.adv.error ? ST.adv : null, F = ST.cdfF || 'all';
+  var isBad = function(x){ return (x.ecart !== null && Math.abs(x.ecart) > 0.01) || x.nbad > 0; };
+  var R = R0.filter(function(x){ return F === 'all' || (F === 'ecart' ? isBad(x) : !isBad(x)); });
+  var eT = E.r2(R0.reduce(function(s2, x){ return s2 + (x.ecart || 0); }, 0)), nB = R0.filter(isBad).length, nC = R0.reduce(function(s2, x){ return s2 + x.nbad; }, 0);
+  var h = '<div class="cdf-top">'+advBox(ro, A)+'<div class="cdf-kpis">'+
+    kpi('Factures Odoo associées', R0.length, 'contrôlées dans cet onglet')+
+    '<div class="kpi"><span class="lbl">Écart total HT</span><span class="v '+(Math.abs(eT) > 0.01 ? 'neg' : '')+'">'+(eT > 0.01 ? '+' : '')+n2(eT)+' €</span><span class="s">Odoo − outil</span></div>'+
+    kpi('Factures en écart', nB+' / '+R0.length, 'montant ou colis')+kpi('Colis en écart', nC, A ? 'fichier ADV ≠ outil' : 'prix Odoo ≠ outil')+'</div></div>';
+  h += '<div class="card2"><div class="h2"><div class="seg2">'+[['all','Toutes ('+R0.length+')'],['ecart','En écart ('+nB+')'],['ok','Conformes ('+(R0.length - nB)+')']].map(function(o){ return '<button class="'+(F === o[0] ? 'on' : '')+'" data-cdff="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>'+
+    '<span class="muted small">Prix ligne à ligne : '+(A ? 'fichier de calcul ADV' : 'colonne « Prix » des exports Odoo')+'</span><div class="r"><button class="btn sm g" data-a="xlsCdf"'+(canSave()?'':' disabled')+'>Exporter</button></div></div>';
   if (ST.adv && ST.adv.error) h += '<p class="pb neg small">'+esc(ST.adv.error)+'</p>';
   var t = { E:{o:0,c:0}, S:{o:0,c:0}, STK:{o:0,c:0}, T:{o:0,c:0} };
   R.forEach(function(x){ ['E','S','STK'].forEach(function(k){ t[k].o = E.r2(t[k].o + (x.fam[k].odoo || 0)); t[k].c = E.r2(t[k].c + x.fam[k].calc); }); t.T.o = E.r2(t.T.o + (x.odoo || 0)); t.T.c = E.r2(t.T.c + x.calc); });
@@ -3746,11 +3822,14 @@ function anomSum(R, ov){
   return { at:new Date().toISOString(), byCode:o };
 }
 function summarize(R){
-  var out = { HT:R.totals.HT, at:new Date().toISOString(), byAg:{} };
+  var out = { v:4, HT:R.totals.HT, at:new Date().toISOString(), byAg:{} };
   R.invoices.forEach(function(I){
-    var a = out.byAg[I.ag] = out.byAg[I.ag] || { label:I.agLabel, inv:0, HT:0, E:{n:0,up:0,eur:0}, S:{n:0,up:0,eur:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0} };
+    var a = out.byAg[I.ag] = out.byAg[I.ag] || { label:I.agLabel, inv:0, HT:0, E:{n:0,up:0,eur:0,m3:0,m2:0}, S:{n:0,up:0,eur:0,m3:0,m2:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0,m3:0,sol:0} };
     a.inv++; a.HT = E.r2(a.HT + I.totals.HT);
     I.lineList.forEach(function(l){
+      // v4.0 : volumes (m³) et surfaces au sol (m²) des colis facturés, pour le choix d'unité des KPI(s)
+      var F = l.fam === 'E' || l.fam === 'S' ? a[l.fam] : l.fam === 'STK' ? a.STK : null;
+      if (F) (l.keys || []).forEach(function(k){ var r = R.byKey[k]; if (!r) return; F.m3 = Math.round((F.m3 + (r.vol || 0))*1000)/1000; if (l.fam === 'STK') F.sol = Math.round((F.sol + (r.surf || 0))*1000)/1000; else F.m2 = Math.round((F.m2 + (r.surf || 0))*1000)/1000; });
       if (l.fam==='E' || l.fam==='S'){ a[l.fam].n += l.n; a[l.fam].up = Math.round((a[l.fam].up + l.qty)*1000)/1000; a[l.fam].eur = E.r2(a[l.fam].eur + l.amount); }
       else if (l.fam==='STK'){ a.STK.n += l.n; a.STK.m2 = Math.round((a.STK.m2 + l.qty)*1000)/1000; a.STK.eur = E.r2(a.STK.eur + l.amount); }
       else { a.STK.minM2 = Math.round((a.STK.minM2 + l.qty)*1000)/1000; a.STK.minEur = E.r2(a.STK.minEur + l.amount); a.STK.m2 = Math.round((a.STK.m2 + l.qty)*1000)/1000; a.STK.eur = E.r2(a.STK.eur + l.amount); }
@@ -3768,11 +3847,13 @@ function synthRows(){
   return last18().slice().reverse().map(function(k){ return byM[k] || { id:k, status:'vide', s:null }; });
 }
 function pick(s, ag){
-  var z = { inv:0, HT:0, E:{n:0,up:0,eur:0}, S:{n:0,up:0,eur:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0} };
+  var z = { inv:0, HT:0, E:{n:0,up:0,eur:0,m3:0,m2:0}, S:{n:0,up:0,eur:0,m3:0,m2:0}, STK:{n:0,m2:0,eur:0,minM2:0,minEur:0,m3:0,sol:0} };
+  function addq(o, k, v){ o[k] = (o[k] === null || v === undefined || v === null) ? null : Math.round((o[k] + v)*1000)/1000; } // résumé antérieur à la v4.0 : volume / surface inconnus
   if (!s) return null;
   Object.keys(s.byAg).forEach(function(k){ if (ag && ag.length && ag.indexOf(k) < 0) return; var a = s.byAg[k];
     z.inv += a.inv; z.HT = E.r2(z.HT + a.HT);
-    ['E','S'].forEach(function(f){ z[f].n += a[f].n; z[f].up += a[f].up; z[f].eur = E.r2(z[f].eur + a[f].eur); });
+    ['E','S'].forEach(function(f){ z[f].n += a[f].n; z[f].up += a[f].up; z[f].eur = E.r2(z[f].eur + a[f].eur); addq(z[f], 'm3', a[f].m3); addq(z[f], 'm2', a[f].m2); });
+    addq(z.STK, 'm3', a.STK.m3); addq(z.STK, 'sol', a.STK.sol);
     z.STK.n += a.STK.n; z.STK.m2 += a.STK.m2; z.STK.eur = E.r2(z.STK.eur + a.STK.eur); z.STK.minM2 += a.STK.minM2; z.STK.minEur = E.r2(z.STK.minEur + a.STK.minEur); });
   return z;
 }
@@ -3782,28 +3863,40 @@ function suiMonth(){ return SUI.month || ST.month || defaultMonth(); }
 function suiStored(m){ var o = {}; ST.monthsIndex.forEach(function(d){ var mk = monthKey(d.id) || {}, mm = mk.month || d.month, ag = mk.ag || d.ag; if (mm === m && d.anomSummary) o[ag] = { byCode:d.anomSummary.byCode, at:d.anomSummary.at, status:d.status||'ouvert' }; }); return o; }
 function suiData(m){ var st = suiStored(m), lv = SUI.live[m] || {}; Object.keys(lv).forEach(function(k){ st[k] = lv[k]; }); if (ST.R && ST.month === m && ST.ag){ st[ST.ag] = { byCode:anomSum(ST.R).byCode, at:new Date().toISOString(), status:(ST.doc&&ST.doc.status)||'ouvert' }; } return st; }
 /* Recalcul de toutes les agences d'un mois : chargement des exports enregistrés, calcul, enregistrement du résumé */
-function suiRefresh(){
-  var m = suiMonth(), ags = agencies(), n = 0; SUI.live[m] = SUI.live[m] || {};
+function suiRefresh(only){
+  var m = suiMonth(), ags = agencies().filter(function(a){ return !only || only.indexOf(a.code) >= 0; }), n = 0, errs = [];
+  SUI.live[m] = SUI.live[m] || {}; SUI.err = SUI.err || {}; SUI.err[m] = SUI.err[m] || {}; SUI.auto = SUI.auto || {}; SUI.auto[m] = 1;
   SUI.busy = 'Calcul des anomalies… 0 / '+ags.length; render();
   var chain = Promise.resolve();
   ags.forEach(function(a){ chain = chain.then(function(){
     var id = a.code+'_'+m;
+    // chaque agence est calculée indépendamment : une erreur sur l'une n'interrompt plus le calcul des suivantes
     return STORE.getMonth(id).then(function(doc){
       if (!doc || !(doc.files||[]).length) return;
       var ov = deepMerge(blankOv(), doc.ov || {}), cfg = (doc.status === 'clos' && doc.cfgSnapshot) ? doc.cfgSnapshot : ST.cfg;
-      return Promise.all(doc.files.map(function(meta){ return STORE.loadImportRows(meta).then(function(rows){ return E.parseFile(meta.name, rows); }, function(){ return null; }); })).then(function(P){
-        var ok = P.filter(function(f){ return f && !f.error && f.kind; }); if (!ok.length) return;
+      return Promise.all(doc.files.map(function(meta){ return STORE.loadImportRows(meta).then(function(rows){ return E.parseFile(meta.name, rows); }, function(e){ return { error:e.message, name:meta.name }; }); })).then(function(P){
+        var ok = P.filter(function(f){ return f && !f.error && f.kind; });
+        if (!ok.length){ var why = P.filter(function(f){ return f && f.error; }).map(function(f){ return f.name+' : '+f.error; }).join(' · ') || 'aucun export lisible'; throw new Error(why); }
         var R = E.build(ok, cfg, ov, m, a.code), sum = anomSum(R, ov);
-        SUI.live[m][a.code] = { byCode:sum.byCode, at:sum.at, status:doc.status||'ouvert' };
-        if (canEdit() && (doc.status !== 'clos' || isAdmin())) return STORE.saveMonth(id, { anomSummary:sum }).catch(function(){});
+        SUI.live[m][a.code] = { byCode:sum.byCode, at:sum.at, status:doc.status||'ouvert' }; delete SUI.err[m][a.code];
+        if (canEdit() && (doc.status !== 'clos' || isAdmin())) return STORE.saveMonth(id, { anomSummary:sum, summary:summarize(R) }).catch(function(){});
       });
-    }).then(function(){ n++; SUI.busy = 'Calcul des anomalies… '+n+' / '+ags.length; render(); });
+    }).catch(function(e){ SUI.err[m][a.code] = e.message || String(e); errs.push((a.label||a.code)+' : '+(e.message||e)); })
+      .then(function(){ n++; SUI.busy = 'Calcul des anomalies… '+n+' / '+ags.length; render(); });
   }); });
-  chain.then(function(){ SUI.busy = ''; refreshIndex(); render(); toast('Anomalies recalculées pour '+monthLabel(m)); }, function(e){ SUI.busy = ''; render(); toast('Calcul interrompu : '+e.message); });
+  chain.then(function(){ SUI.busy = ''; refreshIndex(); render(); toast(errs.length ? 'Calcul impossible pour '+errs.length+' agence(s) : '+errs.join(' ; ') : 'Anomalies recalculées pour '+monthLabel(m)); });
 }
+/* Agences ayant des exports importés pour le mois mais aucun résumé d'anomalies enregistré */
+function suiMissing(m, D){ var o = []; ST.monthsIndex.forEach(function(d){ if (d.month === m && (d.files||[]).length && !D[d.ag]) o.push(d.ag); }); return o; }
+function suiHasFiles(m, code){ return ST.monthsIndex.some(function(d){ return d.month === m && d.ag === code && (d.files||[]).length; }); }
 var SEV_ORD = { bloquant:0, verifier:1, info:2 };
 function vSuivi(){
   var m = suiMonth(), ags = agencies(), D0 = suiData(m), D = {}, codes = {}; ags.forEach(function(a){ if (D0[a.code]) D[a.code] = D0[a.code]; });
+  // Exports importés mais résumé jamais enregistré (mois ouvert sans modification) : calcul lancé automatiquement, une fois par mois et par session
+  var miss = suiMissing(m, D).filter(function(c){ return ags.some(function(a){ return a.code === c; }); });
+  if (miss.length && !SUI.busy && !(SUI.auto && SUI.auto[m]) && canEdit()) setTimeout(function(){ suiRefresh(miss); }, 0);
+  var ER = (SUI.err && SUI.err[m]) || {};
+  function noCell(a){ if (ER[a.code]) return '<td class="n sv-err" title="'+esc(ER[a.code])+'">erreur</td>'; return suiHasFiles(m, a.code) ? '<td class="n muted" title="Exports importés : cliquer « Recalculer toutes les agences »">à calculer</td>' : '<td class="n muted" title="Aucun export Odoo importé pour ce mois">·</td>'; }
   Object.keys(D).forEach(function(ag){ Object.keys(D[ag].byCode||{}).forEach(function(c){ var x = D[ag].byCode[c]; codes[c] = codes[c] || { sev:x.sev, title:x.title }; }); });
   var list = Object.keys(codes).sort(function(a, b){ return (SEV_ORD[codes[a].sev] - SEV_ORD[codes[b].sev]) || codes[a].title.localeCompare(codes[b].title); });
   var L = last18(), opts = L.map(function(x){ return '<option value="'+x+'"'+(x===m?' selected':'')+'>'+monthLabel(x)+'</option>'; }).join('');
@@ -3812,14 +3905,14 @@ function vSuivi(){
     '<span class="muted">'+Object.keys(D).length+' / '+ags.length+' agences calculées</span><span class="sp">'+(SUI.busy ? '<span class="muted">'+esc(SUI.busy)+'</span>' : '<button class="btn pri" data-a="suiRefresh">Recalculer toutes les agences</button>')+'<button class="btn" data-a="xlsSui"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></span></div>';
   h += '<div class="kpis">'+kpi('Bloquant', tot.bloquant, 'lignes non facturées')+kpi('À vérifier', tot.verifier, 'lignes facturées à confirmer')+kpi('Info', tot.info, 'écarts Odoo sans action')+kpi('Agences', Object.keys(D).length+' / '+ags.length, 'avec un calcul pour '+monthLabel(m))+'</div>';
   h += '<div class="panel"><div class="ph"><h2>Anomalies par nature et par agence</h2><span class="muted">Nombre de lignes concernées · '+monthLabel(m)+'</span><span class="legend"><i class="lg-b"></i>Bloquant<i class="lg-v"></i>À vérifier<i class="lg-i"></i>Info</span></div>';
-  if (!list.length) h += '<div class="empty">Aucune anomalie calculée pour '+monthLabel(m)+'. Cliquer sur « Recalculer toutes les agences ».</div>';
+  if (!list.length && !Object.keys(ER).length) h += '<div class="empty">Aucune anomalie calculée pour '+monthLabel(m)+'. Cliquer sur « Recalculer toutes les agences ».</div>';
   else {
     h += '<div class="tw"><table class="suit"><thead><tr><th>Gravité</th><th>Nature de l\'anomalie</th>'+ags.map(function(a){ return '<th class="n" title="'+esc(a.label||a.code)+'">'+esc(a.label||a.code)+'</th>'; }).join('')+'<th class="n">Total</th></tr></thead><tbody>';
     list.forEach(function(c){ var t = 0;
-      h += '<tr class="sv-'+codes[c].sev+'"><td><span class="pill p-'+codes[c].sev+'">'+SEV[codes[c].sev]+'</span></td><td>'+esc(codes[c].title)+'</td>'+ags.map(function(a){ var d = D[a.code]; if (!d) return '<td class="n muted">·</td>'; var x = d.byCode[c], v = x ? x.n : 0; t += v; return '<td class="n'+(v?' hit':'')+'">'+(v ? '<button class="lnk num" data-suigo="'+esc(a.code)+'" title="Ouvrir les anomalies de '+esc(a.label||a.code)+'">'+v+'</button>' : '<span class="muted">0</span>')+'</td>'; }).join('')+'<td class="n"><strong>'+t+'</strong></td></tr>';
+      h += '<tr class="sv-'+codes[c].sev+'"><td><span class="pill p-'+codes[c].sev+'">'+SEV[codes[c].sev]+'</span></td><td>'+esc(codes[c].title)+'</td>'+ags.map(function(a){ var d = D[a.code]; if (!d) return noCell(a); var x = d.byCode[c], v = x ? x.n : 0; t += v; return '<td class="n'+(v?' hit':'')+'">'+(v ? '<button class="lnk num" data-suigo="'+esc(a.code)+'" title="Ouvrir les anomalies de '+esc(a.label||a.code)+'">'+v+'</button>' : '<span class="muted">0</span>')+'</td>'; }).join('')+'<td class="n"><strong>'+t+'</strong></td></tr>';
     });
-    h += '</tbody><tfoot><tr class="tot"><td colspan="2">Total lignes</td>'+ags.map(function(a){ var d = D[a.code]; if (!d) return '<td class="n muted">·</td>'; return '<td class="n">'+Object.keys(d.byCode).reduce(function(s, c){ return s + d.byCode[c].n; }, 0)+'</td>'; }).join('')+'<td class="n">'+(tot.bloquant+tot.verifier+tot.info)+'</td></tr></tfoot></table></div>';
-    h += '<p class="pb note muted" style="margin:0">« · » : agence sans calcul pour ce mois (pas d\'exports importés, ou mois jamais ouvert depuis la v2.7). Cliquer un nombre ouvre l\'onglet Anomalies de l\'agence.</p>';
+    h += '</tbody><tfoot><tr class="tot"><td colspan="2">Total lignes</td>'+ags.map(function(a){ var d = D[a.code]; if (!d) return noCell(a); return '<td class="n">'+Object.keys(d.byCode).reduce(function(s, c){ return s + d.byCode[c].n; }, 0)+'</td>'; }).join('')+'<td class="n">'+(tot.bloquant+tot.verifier+tot.info)+'</td></tr></tfoot></table></div>';
+    h += '<p class="pb note muted" style="margin:0">« · » : aucun export Odoo importé pour ce mois. « à calculer » : exports importés, résumé pas encore calculé. « erreur » : calcul impossible (survoler pour le motif). Cliquer un nombre ouvre l\'onglet Anomalies de l\'agence.</p>';
   }
   h += '</div>';
   // Évolution sur 18 mois (résumés enregistrés)
@@ -3850,22 +3943,33 @@ function vSynth(){
     (miss.length ? '<p class="note syn-miss">Grisées : agences sans factures générées ('+esc(miss.map(function(a){ return a.label||a.code; }).join(', '))+'). La synthèse reprend les montants enregistrés à la génération des factures : ouvrir l\'agence dans Factures logistiques, puis « Générer les factures ».</p>' : '');
   var filled = data.filter(function(d){ return d.v; });
   if (!filled.length) return h + '<div class="panel empty">Aucun mois facturé sur les 18 derniers mois.</div></section>';
-  var last = filled[filled.length-1];
-  h += '<div class="kpis">'+kpi('Dernier mois', monthLabel(last.id), STATUS[last.status])+kpi('Total HT', eur(last.v.HT), last.v.inv+' factures')+kpi('Entrées', n3(last.v.E.up)+' m³/t', last.v.E.n+' colis · '+eur(last.v.E.eur))+kpi('Sorties', n3(last.v.S.up)+' m³/t', last.v.S.n+' colis · '+eur(last.v.S.eur))+kpi('Stockage facturé', n2(last.v.STK.m2)+' m²', eur(last.v.STK.eur))+'</div>';
+  var last = filled[filled.length-1], U = ST.kpiU || 'm3', UL = KPI_U[U];
+  var noQ = filled.some(function(d){ return U !== 'u' && ['E','S','STK'].some(function(f){ return kq(d.v, f, U) === null; }); });
+  h += '<div class="unitbar"><span class="lbl">Unité de mesure</span><span class="seg2">'+Object.keys(KPI_U).map(function(k){ return '<button class="'+(U === k ? 'on' : '')+'" data-kpiu="'+k+'" title="'+esc(KPI_U[k].tip)+'">'+KPI_U[k].b+'</button>'; }).join('')+'</span><span class="muted small">'+esc(UL.tip)+'</span></div>'+
+    (noQ ? '<p class="note syn-miss">Volumes et surfaces non enregistrés pour les mois calculés avant la v4.0 (barres absentes) : ouvrir le mois dans Factures logistiques pour mettre à jour le résumé. Les mois clôturés gardent leur résumé d\'origine.</p>' : '');
+  h += '<div class="kpis">'+kpi('Dernier mois', monthLabel(last.id), STATUS[last.status])+kpi('Total HT', eur(last.v.HT), last.v.inv+' factures')+kpi('Entrées', kqf(last.v, 'E', U), eur(last.v.E.eur))+kpi('Sorties', kqf(last.v, 'S', U), eur(last.v.S.eur))+kpi('Stockage', kqf(last.v, 'STK', U), eur(last.v.STK.eur))+'</div>';
   h += '<div class="charts">'+
-    chart('Entrées', 'm³/t facturés', data, function(v){ return v.E.up; }, function(v){ return n3(v.E.up)+' m³/t · '+v.E.n+' colis · '+eur(v.E.eur); })+
-    chart('Sorties', 'm³/t facturés', data, function(v){ return v.S.up; }, function(v){ return n3(v.S.up)+' m³/t · '+v.S.n+' colis · '+eur(v.S.eur); })+
-    chart('Stockage', 'm² facturés', data, function(v){ return v.STK.m2; }, function(v){ return n2(v.STK.m2)+' m² (dont min. 30 m² : '+n2(v.STK.minM2)+') · '+eur(v.STK.eur); })+
+    chart('Entrées', UL.ax('E'), data, function(v){ return kq(v, 'E', U); }, function(v){ return kqf(v, 'E', U)+' · '+eur(v.E.eur); })+
+    chart('Sorties', UL.ax('S'), data, function(v){ return kq(v, 'S', U); }, function(v){ return kqf(v, 'S', U)+' · '+eur(v.S.eur); })+
+    chart('Stockage', UL.ax('STK'), data, function(v){ return kq(v, 'STK', U); }, function(v){ return kqf(v, 'STK', U)+' · '+eur(v.STK.eur); })+
     chart('Chiffre d\'affaires', '€ HT', data, function(v){ return v.HT; }, function(v){ return eur(v.HT)+' · '+v.inv+' factures'; })+'</div>';
-  h += '<div class="panel"><div class="ph"><h2>Détail mensuel</h2><span class="muted">'+(!ag.length?'Toutes agences':esc(ag.map(function(k){ return ags[k]; }).join(', ')))+' · 18 derniers mois · un mois en cours est recalculé à chaque modification</span><div class="sp"><button class="btn" data-a="xlsSyn"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div><div class="tw"><table class="syn"><thead><tr><th rowspan="2">Mois</th><th rowspan="2">Statut</th><th colspan="3" class="grp">Entrées</th><th colspan="3" class="grp">Sorties</th><th colspan="3" class="grp">Stockage</th><th rowspan="2" class="n">Total HT</th><th rowspan="2" class="n">Var. M-1</th></tr><tr><th class="n">Colis</th><th class="n">m³/t</th><th class="n">€ HT</th><th class="n">Colis</th><th class="n">m³/t</th><th class="n">€ HT</th><th class="n">m² facturés</th><th class="n">dont min. 30</th><th class="n">€ HT</th></tr></thead><tbody>';
+  h += '<div class="panel"><div class="ph"><h2>Détail mensuel</h2><span class="muted">'+(!ag.length?'Toutes agences':esc(ag.map(function(k){ return ags[k]; }).join(', ')))+' · 18 derniers mois · un mois en cours est recalculé à chaque modification</span><div class="sp"><button class="btn" data-a="xlsSyn"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div><div class="tw"><table class="syn"><thead><tr><th rowspan="2">Mois</th><th rowspan="2">Statut</th><th colspan="2" class="grp">Entrées</th><th colspan="2" class="grp">Sorties</th><th colspan="2" class="grp">Stockage</th><th rowspan="2" class="n">Total HT</th><th rowspan="2" class="n">Var. M-1</th></tr><tr>'+['E','S','STK'].map(function(f){ return '<th class="n">'+esc(UL.col(f))+'</th><th class="n">€ HT</th>'; }).join('')+'</tr></thead><tbody>';
   data.slice().reverse().forEach(function(d, i, arr){
     var v = d.v, prev = arr[i+1] && arr[i+1].v;
     if (!v){ h += '<tr class="zero"><td>'+monthLabel(d.id)+'</td><td class="muted">vide</td><td colspan="11"></td></tr>'; return; }
     var dv = prev && prev.HT ? (v.HT - prev.HT) / prev.HT * 100 : null;
-    h += '<tr><td>'+monthLabel(d.id)+'</td><td><span class="pill '+(d.status==='clos'?'p-ok':'p-verifier')+'">'+STATUS[d.status]+'</span></td><td class="n">'+v.E.n+'</td><td class="n">'+n3(v.E.up)+'</td><td class="n">'+n2(v.E.eur)+'</td><td class="n">'+v.S.n+'</td><td class="n">'+n3(v.S.up)+'</td><td class="n">'+n2(v.S.eur)+'</td><td class="n">'+n2(v.STK.m2)+'</td><td class="n">'+n2(v.STK.minM2)+'</td><td class="n">'+n2(v.STK.eur)+'</td><td class="n"><strong>'+n2(v.HT)+'</strong></td><td class="n">'+(dv===null?'—':(dv>0?'+':'')+dv.toFixed(1).replace('.',',')+' %')+'</td></tr>';
+    h += '<tr><td>'+monthLabel(d.id)+'</td><td><span class="pill '+(d.status==='clos'?'p-ok':'p-verifier')+'">'+STATUS[d.status]+'</span></td>'+['E','S','STK'].map(function(f){ var q = kq(v, f, U); return '<td class="n">'+(q === null ? '<span class="muted">—</span>' : UL.f(q))+'</td><td class="n">'+n2(v[f].eur)+'</td>'; }).join('')+'<td class="n"><strong>'+n2(v.HT)+'</strong></td><td class="n">'+(dv===null?'—':(dv>0?'+':'')+dv.toFixed(1).replace('.',',')+' %')+'</td></tr>';
   });
   return h + '</tbody></table></div></div></section>';
 }
+/* Unité des KPI(s) : nombre de colis (lignes facturées), m² ou m³. Entrées / sorties : surface au sol et volume des colis mouvementés ; stockage : m² facturés (volume × coefficient de la grille) et volume des colis stockés */
+var KPI_U = {
+  u:{ b:'Unité', tip:'Nombre de colis facturés (une ligne de mouvement ou de stock = un colis)', f:function(q){ return String(Math.round(q)); }, ax:function(f){ return f === 'STK' ? 'colis stockés' : 'colis'; }, col:function(f){ return f === 'STK' ? 'Colis stockés' : 'Colis'; } },
+  m2:{ b:'m²', tip:'Entrées / sorties : surface au sol des colis · Stockage : m² facturés (volume × coefficient)', f:function(q){ return n2(q); }, ax:function(f){ return f === 'STK' ? 'm² facturés' : 'm² au sol'; }, col:function(f){ return f === 'STK' ? 'm² facturés' : 'm² au sol'; } },
+  m3:{ b:'m³', tip:'Volume des colis mouvementés ou stockés (volume Odoo)', f:function(q){ return n3(q); }, ax:function(){ return 'm³'; }, col:function(){ return 'm³'; } }
+};
+function kq(v, f, U){ var x = v[f]; if (U === 'u') return x.n; if (U === 'm2') return f === 'STK' ? x.m2 : (x.m2 === undefined ? null : x.m2); return x.m3 === undefined ? null : x.m3; }
+function kqf(v, f, U){ var q = kq(v, f, U), K = KPI_U[U]; return q === null ? '—' : K.f(q)+' '+(U === 'u' ? K.ax(f) : K.ax(f)); }
 /* petit histogramme SVG (une série, une unité) */
 function chart(title, unit, data, get, tip){
   var W = 360, H = 170, L = 44, R = 8, T = 10, B = 26, n = data.length, vals = data.map(function(d){ return d.v ? get(d.v) : null; });
@@ -3906,7 +4010,7 @@ function exportSynth(){
   var rows = synthRows(), out = [];
   var SA = ST.synAgs || [];
   rows.forEach(function(r){ if (!r.s) return; Object.keys(r.s.byAg).sort().forEach(function(k){ if (SA.length && SA.indexOf(k) < 0) return; var a = r.s.byAg[k];
-    out.push({ 'Mois':r.id, 'Statut':STATUS[r.status], 'Agence':a.label, 'Factures':a.inv, 'Entrées colis':a.E.n, 'Entrées m³/t':a.E.up, 'Entrées € HT':a.E.eur, 'Sorties colis':a.S.n, 'Sorties m³/t':a.S.up, 'Sorties € HT':a.S.eur, 'Stockage m² facturés':a.STK.m2, 'dont minimum 30 m²':a.STK.minM2, 'Stockage € HT':a.STK.eur, 'Total HT':a.HT }); }); });
+    out.push({ 'Mois':r.id, 'Statut':STATUS[r.status], 'Agence':a.label, 'Factures':a.inv, 'Entrées colis':a.E.n, 'Entrées m³/t':a.E.up, 'Entrées m³':a.E.m3 === undefined ? '' : a.E.m3, 'Entrées m² au sol':a.E.m2 === undefined ? '' : a.E.m2, 'Entrées € HT':a.E.eur, 'Sorties colis':a.S.n, 'Sorties m³/t':a.S.up, 'Sorties m³':a.S.m3 === undefined ? '' : a.S.m3, 'Sorties m² au sol':a.S.m2 === undefined ? '' : a.S.m2, 'Sorties € HT':a.S.eur, 'Stockage colis':a.STK.n, 'Stockage m² facturés':a.STK.m2, 'Stockage m³':a.STK.m3 === undefined ? '' : a.STK.m3, 'Stockage € HT':a.STK.eur, 'Total HT':a.HT }); }); });
   var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'Synthèse'); saveXlsx(wb, 'Synthèse facturation OTIS.xlsx');
 }
 
@@ -4067,7 +4171,15 @@ function createUserFromForm(){
 }
 function vAdmin(){
   if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
-  var h = '<section class="view"><nav class="subnav" role="tablist">'+[['users','Utilisateurs'],['logs','Journal de connexion et d\'activité'],['data','Données et conservation']].map(function(p){ return '<button class="subtab" role="tab" data-adm="'+p[0]+'" aria-selected="'+(ST.admTab===p[0])+'"><span class="st-l">'+p[1]+'</span></button>'; }).join('')+'</nav>';
+  var h = '<section class="view"><nav class="subnav" role="tablist">'+[['users','Utilisateurs'],['logs','Journal de connexion et d\'activité'],['data','Données et conservation'],['ai','Assistant']].map(function(p){ return '<button class="subtab" role="tab" data-adm="'+p[0]+'" aria-selected="'+(ST.admTab===p[0])+'"><span class="st-l">'+p[1]+'</span></button>'; }).join('')+'</nav>';
+  if (ST.admTab === 'ai'){
+    var AU = (ST.cfg.assistant || {}).url || '';
+    h += '<div class="panel"><div class="ph"><h2>Assistant documentaire</h2><span class="muted">Panneau « Assistant &amp; discussion », onglet Assistant</span></div><div class="pb">'+
+      '<p class="small">Par défaut, l\'assistant cherche dans les documents de la plateforme (règles de calcul, aide, documents de travail, documents des entités, paramètres, mois ouvert) et répond par les extraits les plus pertinents, sources citées. Le calcul se fait dans le navigateur : aucun document ne sort de la plateforme.</p>'+
+      '<p class="small">Pour des réponses rédigées, renseigner l\'URL d\'une fonction serveur (Firebase Cloud Functions, fichier <span class="mono">functions/index.js</span> fourni) qui détient la clé de l\'API Claude. La plateforme lui envoie la question et les extraits trouvés, avec le jeton de connexion de l\'utilisateur ; la réponse ne s\'appuie que sur ces extraits.</p>'+
+      field('URL du service de rédaction (facultatif)', '<input id="ai_url" type="url" placeholder="https://europe-west1-<projet>.cloudfunctions.net/assistant" value="'+esc(AU)+'">', 'Vide : réponses par extraits des documents.')+
+      '<div class="row" style="margin-top:10px"><button class="btn pri" data-a="aiurl">Enregistrer</button></div></div></div>';
+  }
   if (ST.admTab === 'users'){
     h += '<div class="panel"><div class="ph"><h2>Créer un compte</h2><span class="muted">1. Déclarer ici l\'e-mail et le rôle. 2. Console Firebase → Authentication → Ajouter un utilisateur, même e-mail, mot de passe de 12 caractères min. (bouton Générer). 3. Communiquer le mot de passe par un autre canal que l\'e-mail. À sa première connexion, le compte prend le rôle déclaré.</span></div><form class="pb" id="uform" autocomplete="off"><div class="grid-f">'+
       '<div class="fld"><label class="lbl" for="nu_name">Nom</label><input id="nu_name" type="text"></div>'+
@@ -4145,6 +4257,13 @@ document.addEventListener('click', function(e){
   if (d.gocdf){ ST.sub = 'cdf'; ST.cdfHl = d.gocdf; ST.ctlMenu = null; ST.modal = { cdf:{ pdf:d.gocdf, all:false } }; render(); window.scrollTo(0,0); setTimeout(function(){ var r = document.getElementById('cdf-'+d.gocdf); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
   if (d.asq){ assocOpen(d.asq); if (ST.modal && ST.modal.assoc){ ST.modal.assoc.sel = {}; ST.modal.assoc.sel[d.asqi] = 1; renderModal(); } return; }
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
+  if (d.chtab){ CH.tab = d.chtab; if (d.chtab === 'team') CH.mode = 'list'; renderChat(true); return; }
+  if (d.aiq){ kbAsk(d.aiq); return; }
+  if (d.aisend !== undefined){ var ai0 = $('aiinput'); if (ai0){ var t0 = ai0.value; ai0.value = ''; kbAsk(t0); } return; }
+  if (d.aiclear !== undefined){ KB.hist = []; renderChat(true); return; }
+  if (d.aireidx !== undefined){ KB.built = false; KB.busy = true; renderChat(true); kbBuild(true).then(function(){ KB.busy = false; renderChat(true); toast(KB.sources.length+' document(s) relus'); }); return; }
+  if (d.kpiu){ ST.kpiU = d.kpiu; render(); return; }
+  if (d.cdff){ ST.cdfF = d.cdff; render(); return; }
   if (d.cdfall !== undefined){ ST.modal.cdf.all = !ST.modal.cdf.all; renderModal(); return; }
   if (d.cdfx){ cdfExport(d.cdfx); return; }
   if (d.ctab){ ST.ctlTab = d.ctab; ST.ctlMenu = null; render(); return; }
@@ -4258,6 +4377,7 @@ document.addEventListener('click', function(e){
   else if (a === 'xlsCdf') exportCdf();
   else if (a === 'xlsDQS') exportDQSyn();
   else if (a === 'suiRefresh') suiRefresh();
+  else if (a === 'aiurl'){ var u0 = ($('ai_url').value || '').trim(); if (u0 && !/^https:\/\//.test(u0)){ toast('URL : commencer par https://'); return; } ST.cfg.assistant = { url:u0 }; saveCfg(u0 ? 'Assistant : service de rédaction '+u0 : 'Assistant : réponses par extraits'); render(); }
   else if (a === 'xlsSui') exportSuivi();
   else if (a === 'chat'){ CH.open = !CH.open; if (CH.open && CH.mode === 'conv' && CH.cur) STORE.markRead(CH.cur); renderChat(true); }
   else if (a === 'invfReset'){ ST.invF = {}; ST.fOpen = null; ST.fq = {}; render(); }
@@ -4368,7 +4488,155 @@ function doLogin(){
   STORE.signIn(em, pw).catch(function(e){ $('loginMsg').textContent = /wrong-password|invalid-credential|user-not-found|invalid-login/.test(e.code||e.message) ? 'E-mail ou mot de passe incorrect.' : /too-many/.test(e.code||'') ? 'Trop de tentatives : réessayer dans quelques minutes.' : 'Connexion impossible : '+e.message; });
 }
 /* ============ DISCUSSION (présence + conversations à 2 ou plus) ============ */
-var CH = { open:false, people:[], chats:[], cur:null, msgs:[], unsubMsg:null, mode:'list', seen:{}, started:false };
+/* ============ ASSISTANT DOCUMENTAIRE ============
+   Répond aux questions des ADV à partir des ressources de la plateforme :
+   règles de calcul (intégrées), aide de l'outil, documents de travail et documents d'entité déposés (PDF, Excel, CSV, Word, texte),
+   paramètres des entités et état du mois ouvert. Recherche plein texte (BM25) dans le navigateur : rien ne sort de la plateforme.
+   Si un service de rédaction est paramétré (Administration · Assistant : URL d'une fonction serveur), la réponse est rédigée
+   à partir des seuls extraits trouvés, sources citées. */
+var KB_RULES = "# Règles de calcul — facturation logistique OTIS (v7, 22/10/2026)\n\nRéférence du moteur de la plateforme. Toute évolution de règle se fait ici d'abord.\n\n## Sources\n- Odoo WMS, 2 exports par agence : « Fichier Manutention » (mouvements) et « Fichier Client Stockage » (colis en stock sur la période).\n- Grilles : OTIS 2022 (01/04/2022, XLS contrat v2), Tours The Link (01/01/2023), Transport 2023 (01/07/2023).\n- Process OTIS : AG 495 et 496 = cas 2, sans commande client, 1 facture par affaire avec les n° d'appareils, sans annexe. AG 58 et NSA = voir règles dédiées ci-dessous. Transport = cas 1, 1 facture par livraison.\n\n## Règle AG 58 (OTIS TERTIAIRE, document « AGENCE_58.v2 », intégrée en v1.8, appliquée automatiquement depuis v1.10)\n- Envoi du devis : oui ; n° de commande OTIS : oui → Process OTIS = cas 1 (pro forma titrée « Devis pro forma »).\n- Paramètre « Une facture par » = « Contremaître × Contrats / FHR » : 2 factures par contremaître.\n  - Facture « Contrats » : toutes les lignes (stockage et mouvements) dont le n° de commande Odoo ne contient pas « FHR ». N° de commande = tous les n° de commande des lignes facturées (dédoublonnés, triés). Objet = « LOGISTIQUE – <MOIS AAAA> – CONTRATS ».\n  - Facture « FHR » : toutes les lignes dont le n° de commande contient « FHR » (insensible à la casse). N° de commande = « FHR ». Objet = « LOGISTIQUE – <MOIS AAAA> – FHR ».\n  - Code contremaître = code paramétré dans Odoo, sur les deux factures.\n- Annexe : non.\n- Pas de blocage « affaire non identifiée » (réservé aux agences facturées par affaire) : les n° AG 58 (ex. affaire 100MMEO, appareil GAA26140M381) ne suivent pas le format 45K….\n- v1.10 : toute agence dont le libellé, le client Odoo ou le code contient « AG 58 » reçoit automatiquement ce paramétrage (une seule fois, marqueur `rule58 = v2`, tracé au journal) ; modifiable ensuite dans Paramètres.\n- Contrôle PDF : rapprochement par code contremaître + type (FHR si le PDF contient « FHR » et pas « CONTRATS »), contrôle « Type de facture » ajouté.\n\n## Règle NSA (Process OTIS, intégrée en v3.9, 22/10/2026)\n- Process OTIS : NSA = cas 2 (sans commande client), 1 facture par appareil + 1 facture pour l'outillage, sans annexe.\n- Toute agence dont le libellé, le client Odoo ou le code contient « NSA » reçoit automatiquement « Une facture par » = « Appareil », cas 2, sans annexe (une seule fois, marqueur `ruleNSA = v1`, tracé au journal) ; modifiable ensuite dans Paramètres. Supprime le blocage « Affaire non identifiée » (106 lignes NSA en septembre 2026), qui ne vaut que pour les agences facturées par affaire.\n- N° d'appareil NSA au format `R5K7C325` / `R5N7A728`. Code OTIS reconnu = 7 à 12 caractères alphanumériques mêlant lettres et chiffres. Affaire = format `45K/45N + RX|F4|A2…` uniquement ; tout autre code isolé est un appareil.\n  - « R5N7A728 », « NSA - R5N7A728 », « OUTILLAGE / R5K7C325 », « R5K7C325 - OUTILLAGE », « NSA R5N7A728 » → appareil, sans affaire.\n  - Libellé sans code (ex. « OUTILLAGE ») → facture portant ce libellé.\n- Contrôle PDF NSA (constat FAC-26-09-153) : l'appareil est porté par l'objet « LOGISTIQUE SEPTEMBRE 2026 - R5N7A728 » ; destinataire « NSA, Envoi factures NSA », sans « AG nnn ». Agence contrôlée par un mot distinctif du libellé de l'agence présent dans le PDF. Rapprochement par appareil, contrôle « Appareil » ajouté ; un appareil de l'objet inconnu du mois calculé est signalé.\n\n## Suivi des anomalies — identifiant des mois (v3.9)\n- Agence et mois relus depuis l'identifiant `<code agence>_<AAAA-MM>`. Un code agence contenant « _ » (ex. Tour Triangle) était lu de travers : agence et mois absents du suivi alors que les exports étaient importés.\n\n## Identification\n- N° de commande Odoo = `APPAREIL / AFFAIRE` (ex. `45K1BZY5 / 45KRXI9F`). Affaire OTIS = 8 caractères.\n- Affaire absente (retour chantier) : reprise de l'appareil, puis de l'historique du colis ; sinon ligne bloquée jusqu'à saisie ADV (agences facturées par affaire uniquement).\n- Client = « False » : ligne bloquée jusqu'à rattachement (suggestion par code contremaître ou n° de BR).\n- Contrôle « N° d'appareil affecté à plusieurs affaires » (APPAREIL_MULTI_AFF, v2.6) : sur l'affaire finalement retenue (n° de commande, déduction, saisie ou correction ADV), lignes exclues ignorées, toutes agences. Gravité « À vérifier » : les lignes restent facturées, mais la clôture du mois est refusée tant qu'un appareil porte plusieurs affaires. Correction par « Facturer X sur Y » (table de correspondance d'affaires) ou saisie ligne à ligne. Remplace l'ancien contrôle AFFAIRE_MULTI, qui ne regardait que le n° de commande brut. Cas réel août 2026 : 45K1CL53 sur 45KRXPG (216 l.) et 45KRXLPG (7 l.).\n\n## Manutention (entrée ou sortie), par colis et par mouvement\n- `UP = max(volume m³ ; poids t)` (lecture « M3/T » de la grille).\n- `montant = arrondi₂( max( 9,2664 × UP ; minimum ) )`.\n- Minimum manuel 3,796 € (→ 3,80) si volume < 0,250 m³ et poids ≤ 20 kg ; sinon minimum chariot 4,888 € (→ 4,89).\n\n## Stockage, par colis et par période\n- Jours = bornes incluses, de max(entrée, 1er du mois) à min(sortie, dernier jour du mois).\n- Export sans dates (AG 496) : entrée/sortie reprises des mouvements du mois ; à défaut colis présent tout le mois. Jours Odoo utilisés seulement si aucune date exploitable (plafonnés au mois).\n- Tranche : ≥ 22 j = mois (6,76) ; 15–21 j = quinzaine + semaine (5,148) ; 8–14 j = quinzaine (3,38) ; 1–7 j = semaine (1,768).\n- Surface facturée = volume × coefficient : ≥ 1 m³ 2,6832 ; 0,5–0,999 3,224 ; 0,25–0,499 3,744 ; < 0,25 4,2952. (Tours : surface au sol × 1,50.)\n- `montant = arrondi₂(surface facturée × prix de la tranche)`.\n\n## Minimum m² par appareil et par mois — clause abandonnée (décision du 02/10/2026)\n- La clause de la grille OTIS n'est plus appliquée depuis des années : aucune ligne « complément » n'est facturée.\n- v2.6 : règle commune « Minimum 30 m² par appareil » = Non appliqué et champ « Minimum m² par appareil et par mois » = 0 sur toutes les grilles (migration unique à la première connexion d'un admin, marqueur `rules.min30Off`, tracée au journal). Valeurs par défaut du moteur alignées (min30 = 0, rules.min30 = false).\n- Les mois déjà clôturés gardent leur grille figée.\n- Mécanique conservée si réactivée : par agence × appareil, si somme des surfaces facturées au mois < seuil, complément `(seuil − somme) × prix mois`.\n- Impact sur août 2026 (4 exports) : 53 843,97 € HT avec l'ancienne clause → 51 744,42 € HT sans (− 2 099,55 €). AG 495 seule : 9 813,62 € HT.\n\n## Arrondis\n- Au centime par ligne colis ; totaux = somme des lignes arrondies ; TVA 20 %.\n\n## Contrôle des factures Odoo (PDF) — lecture et rapprochement (v2.18, 20/10/2026)\n- Concordance des libellés de lignes Odoo (validée le 20/10/2026) :\n  - « PRESTATION LOGISTIQUE - ENTREES » = Entrées\n  - « PRESTATION LOGISTIQUE - SORTIES » = Sorties\n  - « [STOCK] PRESTATION LOGISTIQUE - STOCKAGE » = Stockage\n- Montant de la ligne = dernier montant de la ligne (colonne MONTANT). Total = « Montant hors taxes ». Famille absente du PDF alors que le total est lu = 0.\n- Lignes lues entre l'en-tête « DESCRIPTION » et « Montant hors taxes ». Libellé hors concordance : mots-clés entrée / sortie / stockage dans la description (ligne suivante comprise) ; sinon ligne signalée « sans famille reconnue ».\n- Affaire et appareils lus dans « N° de commande » (ex. « AFFAIRE : 45NRXI1F Appareils : 45N1CPT6 »), y compris quand un code est coupé par la mise en page du PDF et quand un même code est à la fois affaire et appareil.\n- Factures AG 58 (constat sur FAC-26-09-156, -157, -195) : destinataire « OTIS TERTIAIRE AG 58, Envoi factures OTIS AG 58 », code contremaître vide, ni affaire ni appareil ; seul identifiant = N° de commande OTIS « OJ… » (+ n° de devis). Rapprochement : n° OJ mémorisé par contremaître et type (Contrats / FHR) à la première association manuelle validée par un administrateur (Paramètres de l'agence, `poMap`), puis automatique ; à défaut, proposition par les montants Entrées / Sorties / Stockage (même type, facture sans PDF).\n- Rapprochement : automatique (affaire / appareil / code contremaître, puis agence et total HT) ou manuel (une facture Odoo ↔ une ou plusieurs factures calculées ; raisons du non-rapprochement affichées avant validation ; dissociation possible).\n- Écart = total HT Odoo − total HT outil. Contrôle détaillé (onglet E) : écart par famille et ligne à ligne ; montant Odoo d'une ligne = fichier de calcul déposé, sinon colonne « Prix » des exports Odoo.\n\n## Contrôle août 2026 (4 exports du 01/09/2026)\n- Total HT sans minimum m² : 51 744,42 € sur 49 affaires (E 7 965,41 · S 5 447,56 · stockage 38 331,45). Calcul initial vérifié ligne à ligne par un second calcul indépendant : 0 écart.\n- 14 lignes bloquantes hors montants : 10 « RETOUR CHANTIER » sans affaire, 4 lignes Client = False.\n\n## Incohérences Odoo constatées (août 2026)\n- Tarif manutention Odoo = 9,50 €/m³ et minimum 4,30 €, volume seul : ≠ grille (9,2664 €/m³ sur m³/t, min. 4,89 / 3,80).\n- Stockage Odoo = surface au sol × jours × 0,4056 €/m²/j : méthode différente de la grille (volume × coef × prix de tranche).\n- « Nombre de jour en stock » faux : 240 lignes changent de tranche, 168 lignes > 31 jours (jusqu'à 155).\n- Export stockage AG 496 incomplet : pas de dates, de type de stockage ni de prix.\n- 112 sorties datées en stock sans mouvement de sortie dans le fichier Manutention (sorties potentiellement non facturées).\n- 103 mouvements sans n° de colis ; 74 doubles mouvements (même colis, même opération).\n- Affaire tronquée : `45KRXPG` (216 lignes) au lieu de `45KRXLPG` pour l'appareil 45K1CL53.\n- Contremaître J.-B. FAVREAU sous deux codes (49630 / 49632).\n\n## Points à valider\n1. Unité payante m³/t (max) plutôt que m³ seul : +~290 €/mois sur août.\n2. Tranche 15–21 jours facturée quinzaine + semaine.\n";
+var KB_HELP = [
+  ['Importer les exports Odoo', "Factures logistiques › A · Import : déposer le « Fichier Manutention » et le « Fichier Client Stockage » exportés d'Odoo WMS pour le mois. Le calcul est relancé à chaque dépôt. Un fichier remplacé est supprimé. Un mois clôturé doit être rouvert par un administrateur avant tout import."],
+  ['Traiter les anomalies', "Factures logistiques › B · Anomalies : Bloquant = lignes non facturées tant qu'elles ne sont pas traitées (affaire non identifiée, client False, dimensions nulles). À vérifier = lignes facturées selon la règle, à confirmer. Info = écarts Odoo sans action. Chaque anomalie indique quoi faire ; « Affaire non identifiée » se traite en saisissant l'affaire, « Lignes sans client » en rattachant la ligne à une agence et un contremaître."],
+  ['Générer les factures', "Factures logistiques › C · Factures : « Générer les factures » crée une facture par affaire, appareil, contremaître (selon le paramètre « Une facture par » de l'entité). Chaque montant est cliquable pour voir le détail colis par colis et la formule appliquée. Export PDF (pro forma) et Excel."],
+  ['Contrôler les factures Odoo', "Factures logistiques › D · Contrôle factures : déposer les PDF des factures émises dans Odoo. L'outil lit les montants Entrées / Sorties / Stockage et le total HT, puis rapproche chaque PDF d'une facture calculée (affaire, appareil, code contremaître, n° de commande OTIS OJ…, total HT). Icône lien : associer manuellement une facture Odoo à une ou plusieurs factures calculées ; icône lien barré : dissocier. Le statut renvoie au contrôle détaillé."],
+  ['Contrôle détaillé et fichier de calcul ADV', "Factures logistiques › E · Contrôle détaillé factures : écart Odoo − outil par famille (Entrées, Sorties, Stockage, Total). Glisser-déposer le fichier de calcul détaillé de l'ADV (Excel, colonnes n° de colis, type d'opération, montants entrée / sortie / stockage) : l'écart est alors expliqué colis par colis (Odoo − fichier, puis fichier − outil). Sans fichier, la colonne « Prix » des exports Odoo est utilisée."],
+  ['Clôturer un mois', "Une fois les factures émises et contrôlées, clôturer le mois : la grille tarifaire est figée avec le mois. La clôture est refusée tant qu'un appareil est rattaché à plusieurs affaires. Seul un administrateur peut rouvrir un mois clôturé."],
+  ['KPI(s) et unités', "Onglet KPI(s) : volumes et chiffre d'affaires sur 18 mois. Le sélecteur « Unité de mesure » affiche les entrées, sorties et le stockage en unités (colis), en m² (surface au sol des colis ; m² facturés pour le stockage) ou en m³ (volume Odoo des colis)."],
+  ['Pilotage (administrateurs)', "Pilotage › Suivi des anomalies : anomalies par nature et par entité pour un mois ; « à calculer » = exports importés mais résumé non calculé, « erreur » = calcul impossible (motif au survol). Pilotage › KPI(s) : mêmes tableaux de bord que les entités, filtrables par entité, ADV et période."],
+  ['Paramètres d\'une entité', "Roue crantée à côté du nom de l'entité : client Odoo (correspondance sur la colonne Client), « Une facture par » (affaire, appareil, contremaître, contremaître × Contrats / FHR, agence), cas OTIS 1 (avec commande) ou 2 (sans commande), annexe, grille tarifaire (taux de manutention, minimums, prix de stockage par tranche, coefficients), liste des contremaîtres, documents de l'entité."],
+  ['Transport', "Module Transport : l'ADV saisit la marchandise (poids, dimensions, palettes) et l'adresse du chantier ; la plateforme recommande le véhicule et applique la grille transport 2023 (zones A, B, C, hayon, grue). Cas 1 : un devis par livraison, facturé après validation OTIS."]
+];
+var KB_STOP = {}; ('a au aux avec ce ces cet cette comment combien dans de des du elle en est et etre faire fait faut il ils je la le les leur leurs lui ma mais me mes moi mon ne nos notre nous on ou par pas peut plus pour pourquoi qu que quel quelle quelles quels qui quoi sa sans se ses si son sont sur ta te tes toi ton tu un une vos votre vous y the of and to is dois doit est-ce quand quelles cela ca ici donc alors tout tous toute toutes etc').split(' ').forEach(function(w){ KB_STOP[w] = 1; });
+function kbNorm(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function kbStem(t){ if (t.length > 4 && /[sx]$/.test(t)) t = t.slice(0, -1); while (t.length > 5 && /e$/.test(t)) t = t.slice(0, -1); return t; }
+// mots du domaine présents partout : poids réduit, pas de bonus de titre
+var KB_WEAK = { calcul:1, factur:1, facture:1, regl:1, regle:1, oti:1, otis:1, logistiqu:1, plateform:1 };
+function kbTok(s){ return kbNorm(s).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(function(t){ return t.length > 1 && !KB_STOP[t]; }).map(kbStem); }
+var KB = { built:false, building:null, chunks:[], df:{}, avg:1, sources:[], skipped:[], hist:[], busy:false };
+function kbChunk(src, text, sec){
+  text = String(text || '').replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); if (!text) return;
+  var paras = text.split(/\n(?=#{1,4} )|\n\n/), cur = '', title = sec || '';
+  function push(){ var t = cur.trim(); if (t.length > 20) KB.chunks.push({ src:src, sec:title, text:t }); cur = ''; }
+  paras.forEach(function(p){ var m = /^#{1,4} (.+)/.exec(p); if (m){ push(); title = m[1].trim(); p = p.replace(/^#{1,4} .+\n?/, ''); }
+    while (p.length > 900){ var cut = p.lastIndexOf('. ', 800); cut = cut > 300 ? cut + 1 : 800; cur += p.slice(0, cut) + '\n'; push(); p = p.slice(cut); }
+    if ((cur + p).length > 900) push(); cur += p + '\n'; });
+  push();
+}
+function kbText(name, buf){
+  var ext = (String(name).split('.').pop() || '').toLowerCase();
+  if (ext === 'pdf') return PDFCHECK.extractLines(buf).then(function(x){ return x.lines.join('\n'); });
+  if (/^(xlsx|xls|xlsm|csv)$/.test(ext)) return Promise.resolve().then(function(){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' });
+    return wb.SheetNames.map(function(sn){ var rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header:1, raw:false, defval:'' }).slice(0, 400);
+      return '## Feuille ' + sn + '\n' + rows.filter(function(r){ return r.some(function(c){ return String(c).trim(); }); }).map(function(r){ return r.map(function(c){ return String(c).trim(); }).filter(Boolean).join(' · '); }).join('\n'); }).join('\n\n'); });
+  if (ext === 'docx') return Promise.resolve().then(function(){ var z = XLSX.CFB.read(new Uint8Array(buf), { type:'array' }), f = XLSX.CFB.find(z, 'word/document.xml');
+    if (!f) throw new Error('document Word illisible'); var xml = new TextDecoder('utf-8').decode(f.content);
+    return xml.replace(/<\/w:p>/g, '\n').replace(/<w:tab\/>/g, ' ').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'"); });
+  if (/^(txt|md|csv|json|html?)$/.test(ext)) return Promise.resolve(new TextDecoder('utf-8').decode(new Uint8Array(buf)).replace(/<[^>]+>/g, ' '));
+  return Promise.reject(new Error('format .' + ext + ' non lu'));
+}
+/* Paramètres et état du mois : chunks recalculés à chaque question */
+function kbLive(){
+  var out = [];
+  agenciesAll(true).forEach(function(a){ var g = ST.cfg.grids[a.grid] || {}, SPL = { affaire:'une facture par affaire', appareil:'une facture par appareil (n° de commande)', cm:'une facture par contremaître', cm_fhr:'deux factures par contremaître (Contrats / FHR)', ag:'une facture unique pour l\'agence' };
+    var t = 'Entité ' + (a.label || a.code) + ' (code ' + a.code + ') : client Odoo « ' + (a.match || '—') + ' », ' + (SPL[a.split] || a.split) + ', cas OTIS ' + (a.cas || 2) + (a.cas === 1 ? ' (avec commande, devis pro forma)' : ' (sans commande client)') + ', annexe ' + (a.annexe ? 'oui' : 'non') + '.';
+    if (g.rate) t += ' Grille ' + (g.label || a.grid) + ' : manutention ' + n4(g.rate) + ' € par m³/t, minimum chariot ' + n4(g.minChariot) + ' €, minimum manuel ' + n4(g.minManuel) + ' €' + (g.prices && g.prices['Intérieur'] ? ', stockage intérieur mois ' + n4(g.prices['Intérieur'].mois) + ' €/m², quinzaine ' + n4(g.prices['Intérieur'].quinz) + ', semaine ' + n4(g.prices['Intérieur'].sem) : '') + '.';
+    if (a.cmList && a.cmList.length) t += ' Contremaîtres : ' + a.cmList.slice(0, 60).map(function(c){ return c.nom + ' (' + c.code + ')'; }).join(', ') + '.';
+    out.push({ src:'Paramètres · ' + (a.label || a.code), sec:'Paramètres de l\'entité', text:t, live:1 }); });
+  if (ST.R && ST.ag){
+    var R = ST.R, an = R.anomalies.map(function(a){ return a.title + ' : ' + openCount(a) + ' ligne(s) (' + (SEV[a.sev] || a.sev) + ')'; });
+    out.push({ src:'Mois ouvert · ' + agLabel(ST.ag) + ' · ' + monthLabel(ST.month), sec:'État du mois', live:1,
+      text:agLabel(ST.ag) + ', ' + monthLabel(ST.month) + ' (statut ' + ((ST.doc && ST.doc.status) || 'ouvert') + ') : ' + R.invoices.length + ' facture(s) calculée(s), total HT ' + eur(R.totals.HT) + ' (entrées ' + eur(R.totals.E) + ', sorties ' + eur(R.totals.S) + ', stockage ' + eur(R.totals.STK) + '). Anomalies : ' + (an.join(' ; ') || 'aucune') + '. PDF Odoo déposés : ' + (ST.pdfs || []).length + '.' });
+  }
+  return out;
+}
+function n4(x){ return x === undefined || x === null ? '—' : String(x).replace('.', ','); }
+function kbResources(){
+  var L = [], G = ST.cfg.knowledge || DEF_KNOW;
+  G.forEach(function(d){ L.push({ title:d.title, desc:d.desc, url:d.url, file:d.file, scope:'Documents de travail OTIS' }); });
+  agenciesAll(true).forEach(function(a){ (a.know || []).forEach(function(d){ L.push({ title:d.title, desc:d.desc, url:d.url, file:d.file, scope:a.label || a.code }); });
+    DOCK.forEach(function(k){ var m = a.docs && a.docs[k[0]]; if (m) L.push({ title:k[1] + ' · ' + (a.label || a.code), desc:m.name, file:m, scope:a.label || a.code }); }); });
+  return L;
+}
+function kbBuild(force){
+  if (KB.built && !force) return Promise.resolve();
+  if (KB.building) return KB.building;
+  KB.chunks = []; KB.sources = []; KB.skipped = [];
+  kbChunk('Règles de calcul de la facturation logistique OTIS', KB_RULES);
+  KB_HELP.forEach(function(x){ KB.chunks.push({ src:'Aide de la plateforme', sec:x[0], text:x[1] }); });
+  var R = kbResources(), chain = Promise.resolve();
+  R.forEach(function(d){ if (d.title || d.desc) KB.chunks.push({ src:d.title, sec:d.scope, text:d.title + (d.desc ? ' — ' + d.desc : '') + (d.url ? ' (lien : ' + d.url + ')' : ''), url:d.url });
+    if (!d.file) { if (d.url) KB.skipped.push(d.title + ' : lien externe, contenu non lisible depuis la plateforme (seuls le titre et la description sont indexés)'); return; }
+    chain = chain.then(function(){ return STORE.getFileBytes(d.file).then(function(buf){ if (!buf || !buf.byteLength) throw new Error('fichier vide'); return kbText(d.file.name || d.title, buf); })
+      .then(function(t){ var n0 = KB.chunks.length; kbChunk(d.title, t, d.scope); KB.sources.push({ title:d.title, n:KB.chunks.length - n0 }); }, function(e){ KB.skipped.push(d.title + ' : ' + e.message); }); });
+  });
+  KB.building = chain.then(function(){ KB.built = true; KB.building = null; KB.at = Date.now(); });
+  return KB.building;
+}
+function kbSearch(q, k){
+  var C = KB.chunks.concat(kbLive()), qt = uniqA(kbTok(q)); if (!qt.length) return [];
+  var df = {}, tot = 0; C.forEach(function(c){ if (!c._t){ c._t = kbTok(c.sec + ' ' + c.text); c._tf = {}; c._t.forEach(function(t){ c._tf[t] = (c._tf[t] || 0) + 1; }); } tot += c._t.length; qt.forEach(function(t){ if (c._tf[t]) df[t] = (df[t] || 0) + 1; }); });
+  var avg = tot / Math.max(1, C.length), N = C.length;
+  // codes (affaire, appareil, n° de facture) : recherche exacte en plus des mots
+  var codes = (q.toUpperCase().match(/\b[0-9A-Z][0-9A-Z\-]{4,}\b/g) || []).filter(function(c){ return /\d/.test(c); });
+  return C.map(function(c){ var s = 0; qt.forEach(function(t){ var f = c._tf[t]; if (!f) return; var idf = Math.log(1 + (N - df[t] + 0.5) / (df[t] + 0.5)); s += (KB_WEAK[t] ? 0.3 : 1) * idf * f * 2.2 / (f + 1.2 * (0.25 + 0.75 * c._t.length / avg)); });
+      var qs = qt.filter(function(t){ return !KB_WEAK[t]; }); if (!qs.length) qs = qt; var hitT = qs.filter(function(t){ return c._tf[t]; }).length; s *= (0.5 + hitT / qs.length);
+      // mot de la question dans le titre de section : la section qui traite du sujet passe devant les mentions incidentes
+      var tt = c._tt || (c._tt = kbTok(c.sec)); var th = qt.filter(function(t){ return !KB_WEAK[t] && tt.indexOf(t) >= 0; }).length; if (th) s *= 1 + 1.8 * th;
+      if (c.live && c.sec === 'État du mois' && /\b(ce mois|mois[- ]ci|en cours|mois ouvert|combien)\b/i.test(q)) s += 8;
+      codes.forEach(function(cd){ if (c.text.toUpperCase().indexOf(cd) >= 0) s += 6; });
+      return { c:c, s:s }; })
+    .filter(function(x){ return x.s > 0.8; }).sort(function(a, b){ return b.s - a.s; }).slice(0, k || 5);
+}
+/* Réponse extractive : les phrases des meilleurs extraits qui contiennent le plus de mots de la question */
+function kbExtract(q, hits){
+  var qt = uniqA(kbTok(q));
+  return hits.slice(0, 3).map(function(h, hi){
+    // meilleur extrait assez court : rendu en entier (règle complète plutôt que des phrases isolées)
+    if (hi === 0 && h.c.text.length <= 900) return { src:h.c.src, sec:h.c.sec, url:h.c.url, text:h.c.text.replace(/[`*#]/g, '').replace(/^\s*-\s+/gm, '• ').trim() };
+    var sents = h.c.text.replace(/[`*#]/g, '').split(/(?<=[.!?])\s+(?=[A-ZÀ-Ý«(\-0-9])|\n+/).map(function(x){ return x.replace(/^\s*-\s+/, ''); }).map(function(x){ return x.trim(); }).filter(function(x){ return x.length > 12; });
+    var sc = sents.map(function(x, i){ var tk = kbTok(x); return { x:x, i:i, s:qt.filter(function(t){ return tk.indexOf(t) >= 0; }).length }; });
+    var best = sc.filter(function(x){ return x.s > 0; }).sort(function(a, b){ return b.s - a.s || a.i - b.i; }).slice(0, 3).sort(function(a, b){ return a.i - b.i; });
+    return { src:h.c.src, sec:h.c.sec, url:h.c.url, text:(best.length ? best.map(function(x){ return x.x; }) : sents.slice(0, 2)).join(' ') }; });
+}
+function kbHl(t, q){ var qt = uniqA(kbTok(q)).filter(function(x){ return x.length > 2 && !KB_WEAK[x]; }); var h = esc(t); if (!qt.length) return h;
+  return h.replace(/[A-Za-zÀ-ÿ0-9]+/g, function(w){ var s = kbStem(kbNorm(w)); return qt.indexOf(s) >= 0 ? '<mark>' + w + '</mark>' : w; }); }
+function kbAsk(q){
+  q = String(q || '').trim(); if (!q || KB.busy) return;
+  KB.hist.push({ who:'me', text:q }); KB.busy = true; renderChat(true);
+  kbBuild().then(function(){
+    var hits = kbSearch(q, 8), url = ST.cfg.assistant && ST.cfg.assistant.url;
+    if (!hits.length){ KB.hist.push({ who:'ai', text:'Je ne trouve pas de réponse dans les documents de la plateforme. Reformuler avec les mots des documents (ex. « tranche quinzaine », « minimum chariot », « affaire non identifiée »), ou ajouter le document manquant dans Connaissance.', src:[] }); return; }
+    var src = uniqA(hits.slice(0, 4).map(function(h){ return h.c.src + (h.c.sec && h.c.sec !== h.c.src ? ' › ' + h.c.sec : ''); }));
+    if (!url){ KB.hist.push({ who:'ai', q:q, ext:kbExtract(q, hits), src:src }); return; }
+    return (STORE.idToken ? STORE.idToken() : Promise.resolve(null)).then(function(tok){
+      return fetch(url, { method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, tok ? { Authorization:'Bearer ' + tok } : {}),
+        body:JSON.stringify({ question:q, history:KB.hist.slice(-7, -1).map(function(m){ return { role:m.who === 'me' ? 'user' : 'assistant', text:m.text || (m.ext || []).map(function(e){ return e.text; }).join(' ') }; }),
+          passages:hits.map(function(h){ return { source:h.c.src + (h.c.sec ? ' › ' + h.c.sec : ''), text:h.c.text }; }) }) });
+    }).then(function(r){ if (!r.ok) throw new Error('service ' + r.status); return r.json(); })
+      .then(function(j){ KB.hist.push({ who:'ai', text:String(j.answer || '').trim() || '—', src:src, gen:1 }); },
+        function(e){ KB.hist.push({ who:'ai', q:q, ext:kbExtract(q, hits), src:src, note:'Service de rédaction indisponible (' + e.message + ') : extraits des documents.' }); });
+  }).catch(function(e){ KB.hist.push({ who:'ai', text:'Recherche impossible : ' + e.message, src:[] }); })
+    .then(function(){ KB.busy = false; renderChat(true); });
+}
+var KB_SUGG = ['Comment est calculé le stockage ?', 'Quel minimum pour une entrée de petit colis ?', 'Comment traiter une affaire non identifiée ?', 'Comment sont facturées les factures NSA ?', 'À quoi sert le fichier de calcul ADV ?'];
+function renderAssistant(){
+  var h = '<div class="ai-msgs" id="aimsgs">';
+  if (!KB.hist.length) h += '<div class="ai-intro"><b>Assistant documentaire</b><p class="small">Réponses tirées des règles de calcul, de l\'aide de la plateforme, des documents de travail et des documents des entités (grilles, listes de contremaîtres, principes de facturation…), ainsi que des paramètres des entités et du mois ouvert. Chaque réponse cite ses sources.</p><div class="ai-sugg">' + KB_SUGG.map(function(s){ return '<button class="chip" data-aiq="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div></div>';
+  KB.hist.forEach(function(m){
+    if (m.who === 'me'){ h += '<div class="msg me"><span class="mt">' + esc(m.text) + '</span></div>'; return; }
+    h += '<div class="msg ai">' + (m.note ? '<span class="small muted">' + esc(m.note) + '</span>' : '') +
+      (m.ext ? m.ext.map(function(e){ return '<div class="ai-x"><span class="ai-s">' + esc(e.src) + (e.sec && e.sec !== e.src ? ' › ' + esc(e.sec) : '') + '</span><span>' + kbHl(e.text, m.q) + '</span></div>'; }).join('') : '<span class="mt">' + esc(m.text) + '</span>') +
+      (m.src && m.src.length && !m.ext ? '<span class="ai-src">Sources : ' + m.src.map(esc).join(' · ') + '</span>' : '') + '</div>';
+  });
+  if (KB.busy) h += '<div class="msg ai"><span class="muted small">' + (KB.built ? 'Recherche dans les documents…' : 'Lecture des documents de la plateforme (première question)…') + '</span></div>';
+  h += '</div><div class="ch-in"><textarea id="aiinput" rows="2" maxlength="600" placeholder="Poser une question (règles, process, paramètres…)"></textarea><button class="btn pri" data-aisend' + (KB.busy ? ' disabled' : '') + '>Envoyer</button></div>' +
+    '<div class="ai-foot small muted">' + (KB.built ? KB.chunks.length + ' extraits indexés · ' + KB.sources.length + ' document(s) lus' + (KB.skipped.length ? ' · <span data-tip="' + esc(KB.skipped.join('\n')) + '">' + KB.skipped.length + ' non lu(s)</span>' : '') + ' · <button class="lnk small" data-aireidx>Relire les documents</button>' : 'Les documents sont lus à la première question.') + (KB.hist.length ? ' · <button class="lnk small" data-aiclear>Effacer</button>' : '') + '</div>';
+  return h;
+}
+document.addEventListener('keydown', function(e){ if (e.target && e.target.id === 'aiinput' && e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); var t = e.target.value; e.target.value = ''; kbAsk(t); } });
+
+var CH = { tab:'ai', open:false, people:[], chats:[], cur:null, msgs:[], unsubMsg:null, mode:'list', seen:{}, started:false };
 function myUid(){ return (STORE.profile && STORE.profile.uid) || (ST.user && ST.user.uid); }
 function isOnline(p){ return p.online !== false && (Date.now() - p.at) < 150000; }
 function chatStart(){
@@ -4396,8 +4664,14 @@ function renderChat(full){
   var box = $('chat'); if (!box) return;
   box.hidden = !CH.open; document.body.classList.toggle('chat-on', CH.open); if (!CH.open) return;
   var me = myUid();
-  if (CH.mode === 'conv' && !full && $('chinput')){ renderMsgs(); return; }
-  var h = '<div class="ch-h">'+(CH.mode !== 'list' ? '<button class="lnk" data-chback>← Retour</button>' : '<strong>Discussion</strong>')+'<button class="btn sm" data-a="chat" aria-label="Fermer">Fermer</button></div>';
+  if (CH.tab === 'team' && CH.mode === 'conv' && !full && $('chinput')){ renderMsgs(); return; }
+  if (CH.tab === 'ai' && !full && $('aiinput')) return;
+  var tabs = '<div class="ch-tabs" role="tablist"><button role="tab" aria-selected="'+(CH.tab === 'ai')+'" class="'+(CH.tab === 'ai' ? 'on' : '')+'" data-chtab="ai">Assistant</button><button role="tab" aria-selected="'+(CH.tab === 'team')+'" class="'+(CH.tab === 'team' ? 'on' : '')+'" data-chtab="team">Collègues'+(CH.chats.filter(chatUnread).length ? ' <b class="chn">'+CH.chats.filter(chatUnread).length+'</b>' : '')+'</button></div>';
+  if (CH.tab === 'ai'){
+    box.innerHTML = '<div class="ch-h"><strong>Assistant &amp; discussion</strong><button class="btn sm" data-a="chat" aria-label="Fermer">Fermer</button></div>'+tabs+renderAssistant();
+    var am = $('aimsgs'); if (am) am.scrollTop = am.scrollHeight; var ai = $('aiinput'); if (ai && !KB.busy) ai.focus(); return;
+  }
+  var h = '<div class="ch-h">'+(CH.mode !== 'list' ? '<button class="lnk" data-chback>← Retour</button>' : '<strong>Assistant &amp; discussion</strong>')+'<button class="btn sm" data-a="chat" aria-label="Fermer">Fermer</button></div>'+(CH.mode === 'list' ? tabs : '');
   if (CH.mode === 'conv'){
     var c = CH.chats.filter(function(x){ return x.id === CH.cur; })[0] || { members:[], names:{} };
     var on = c.members.filter(function(m){ return m !== me && CH.people.some(function(p){ return p.uid === m && isOnline(p); }); }).length;
