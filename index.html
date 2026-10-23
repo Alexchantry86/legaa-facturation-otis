@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v4.2 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v4.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -901,6 +901,13 @@ table.suit td.sv-err{color:#9b2c22;font-weight:600;cursor:help}
 .qz-rh{display:flex;gap:10px;align-items:center}
 .qz-ra{white-space:pre-wrap;background:#f6f7f5;border-radius:4px;padding:6px 9px;font-size:13px}
 @media (max-width:640px){.qz-yn{grid-template-columns:1fr 1fr}.qz-card{padding:16px}}
+/* ---- v4.3 : choix de l'activité compact, erreur savoir ---- */
+.ent-grid2{grid-template-columns:repeat(auto-fill,minmax(260px,320px));gap:12px}
+.ent-card.ent-act{padding:16px 18px}
+.ent-card.ent-act .ent-chip{width:52px;height:52px;border-radius:13px}
+.ent-card.ent-act .ent-name{font-size:17px}
+.sv-err{background:#fdf2f1;border:1px solid #e3b4ae;border-left:4px solid #9b2c22;border-radius:4px;padding:12px 14px;margin:0 0 12px;display:grid;gap:6px;justify-items:start}
+.sv-err p{margin:0;font-size:13px}
 </style>
 </head>
 <body>
@@ -2463,7 +2470,7 @@ function vLanding(){
   var h = '<section class="ent-home"><div class="ent-in"><p class="ent-hello">'+esc(first ? 'Bonjour '+first : 'Bonjour')+'</p><h2>Choisir l\'entité</h2><div class="ent-grid">'+
     L.map(function(a){ var sc = entScreens(a), ic = entIcon(a); return '<button class="ent-card ent-sm" data-ent="'+esc(a.code)+'" style="--ec:'+ic[1]+'"><span class="ent-chip">'+ic[0]+'</span><span class="ent-txt"><span class="ent-name">'+esc(a.label || 'AG '+a.code)+'</span><span class="ent-sub">'+[sc.log ? 'Logistique' : '', sc.trp ? 'Transport' : ''].filter(Boolean).join(' · ')+'</span></span></button>'; }).join('')+
     (L.length ? '' : '<p class="ent-empty">Aucune entité affectée à votre compte. Contacter un administrateur.</p>')+'</div>'+
-    (isExpert() ? '<div class="ent-more"><button class="ent-quiz" data-savgo="quiz" title="Questionnaire '+esc(expertName())+'"><span class="ent-chip" style="--ec:#c58b2b">'+ENT_SVG.quiz+'</span><span class="ent-txt"><span class="ent-name">Questionnaire '+esc(expertName())+'</span><span class="ent-sub">'+(SAV.list ? qzRemaining()+' question(s) à répondre' : 'Quiz par compte : AG 495, AG 496, AG 58')+'</span></span></button><button class="ent-alt" data-savgo="">'+ENT_SVG.book+'<span>Fiches validées et questions des ADV'+(SAV.list && savPending().length ? ' · <b>'+savPending().length+' en attente</b>' : '')+'</span></button></div>' : '');
+    '';
   return h + '</div></section>';
 }
 /* Pictogrammes des entités (trait, 28 px) et couleur d'accent, choisis d'après le libellé */
@@ -2478,6 +2485,8 @@ var ENT_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 32 32" widt
     lift:sv('<rect x="7" y="4" width="18" height="24" rx="1.5"/><path d="M16 4v24M11.5 13l-2 2.5h4zM20.5 15.5l-2-2.5h4z" fill="currentColor"/>'),
     box:sv('<path d="M16 3 28 9v14l-12 6-12-6V9z"/><path d="M4 9l12 6 12-6M16 15v14"/>'),
     flag:sv('<path d="M7 29V4"/><path d="M7 5h17l-3 5 3 5H7"/>'),
+    wh:sv('<path d="M3 13 16 5l13 8"/><path d="M6 11.5V27h20V11.5"/><path d="M10 27v-9h12v9M10 22h12"/>'),
+    truck:sv('<path d="M3 8h15v14H3zM18 13h6l5 5v4h-11"/><circle cx="9" cy="24" r="2.5"/><circle cx="23" cy="24" r="2.5"/>'),
     quiz:sv('<path d="M16 4a9 9 0 1 1-6.4 15.3L5 27l1.6-5.4A9 9 0 0 1 16 4z"/><path d="M13 11a3 3 0 1 1 4.2 2.8c-.8.4-1.2 1-1.2 1.9V17"/><circle cx="16" cy="20.5" r=".6" fill="currentColor"/>'),
     book:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6M9 11h6"/></svg>'
   }; })();
@@ -2489,8 +2498,8 @@ function entIcon(a){ var n = kbNorm((a.label || '')+' '+(a.code || '')+' '+(a.ma
 function vEntChoice(){
   var a = ST.cfg.agencies[ST.ent] || {};
   return '<section class="ent-home"><div class="ent-in"><p class="ent-hello">'+esc(a.label || ST.ent)+'</p><h2>Choisir l\'activité</h2><div class="ent-grid ent-grid2">'+
-    '<button class="ent-card ent-big" data-entmod="log"><span class="ent-ico">'+ICO_LOG+'</span><span class="ent-name">Logistique</span><span class="ent-sub">Factures logistiques · KPI(s)</span></button>'+
-    '<button class="ent-card ent-big" data-entmod="trp"><span class="ent-ico">'+ICO_TRP+'</span><span class="ent-name">Transport</span><span class="ent-sub">Nouveau transport · historique des transports</span></button>'+
+    '<button class="ent-card ent-sm ent-act" data-entmod="log" style="--ec:#4a7fc1"><span class="ent-chip">'+ENT_SVG.wh+'</span><span class="ent-txt"><span class="ent-name">Logistique</span><span class="ent-sub">Factures logistiques · KPI(s)</span></span></button>'+
+    '<button class="ent-card ent-sm ent-act" data-entmod="trp" style="--ec:#d07a3a"><span class="ent-chip">'+ENT_SVG.truck+'</span><span class="ent-txt"><span class="ent-name">Transport</span><span class="ent-sub">Nouveau transport · historique</span></span></button>'+
     '</div></div></section>';
 }
 /* ============ PILOTAGE (administrateurs) : toutes les entités, filtres entité / ADV / période ============ */
@@ -4375,6 +4384,7 @@ document.addEventListener('click', function(e){
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
+  if (d.svretry !== undefined){ SAV.err = ''; SAV.list = null; savLoad(); render(); return; }
   if (d.svmode){ SAV.mode = d.svmode; if (d.svmode === 'quiz') qzStart(SAV.set); render(); return; }
   if (d.qzopt !== undefined){ qzCapture(); var Fq = savFiches(SAV.set), fq = Fq[SAV.qi], dq = qzDraft(fq), o = fq.opts[+d.qzopt]; if (fq.t === 'multi'){ var ix0 = dq.choice.indexOf(o); if (ix0 >= 0) dq.choice.splice(ix0, 1); else dq.choice.push(o); } else dq.choice = dq.choice[0] === o ? [] : [o]; render(); return; }
   if (d.qzgo !== undefined){ qzCapture(); qzSaveCur().then(function(){ SAV.qi = +d.qzgo; render(); window.scrollTo(0,0); }); return; }
@@ -4889,7 +4899,7 @@ function qzRemaining(){ var n = 0; QF_SETS.forEach(function(s){ n += savFiches(s
 
 function expertName(){ return (ST.cfg.expertName || 'Fethi'); }
 function isExpert(){ var e = String((ST.user && ST.user.email) || '').toLowerCase(); return isAdmin() || (ST.cfg.experts || []).map(function(x){ return String(x).toLowerCase(); }).indexOf(e) >= 0; }
-function savLoad(){ if (!STORE.listSavoir) { SAV.list = []; return Promise.resolve(); } return STORE.listSavoir().then(function(L){ SAV.list = L; KB.built = false; render(); }, function(e){ SAV.list = []; SAV.err = e.message; render(); }); }
+function savLoad(){ if (!STORE.listSavoir) { SAV.list = []; return Promise.resolve(); } return STORE.listSavoir().then(function(L){ SAV.list = L; SAV.err = ''; KB.built = false; render(); }, function(e){ SAV.list = []; SAV.err = e.message; render(); }); }
 function savById(id){ return (SAV.list || []).filter(function(x){ return x.id === id; })[0] || null; }
 function savSetLabel(k){ var x = QF_SETS.filter(function(s){ return s[0] === k; })[0]; return x ? x[1] : (ST.cfg.agencies[k] ? (ST.cfg.agencies[k].label || k) : k || 'Général'); }
 function savValid(){ return (SAV.list || []).filter(function(x){ return x.status === 'valide' && x.a; }); }
@@ -4929,7 +4939,13 @@ function vSavoir(){
     '<div class="r">'+(ed ? '<span class="seg2"><button class="'+(SAV.mode === 'quiz' ? 'on' : '')+'" data-svmode="quiz">Quiz</button><button class="'+(SAV.mode !== 'quiz' ? 'on' : '')+'" data-svmode="list">Liste</button></span><button class="btn sm" data-a="svxls">Exporter le questionnaire (.xlsx)</button><label class="btn sm">Importer les réponses<input type="file" id="svin" accept=".xlsx,.xls" hidden></label>' : '')+'</div></div>'+
     '<div class="seg2 sv-tabs">'+QF_SETS.map(function(s){ var F = savFiches(s[0]), n = F.filter(function(f){ return f.status === 'valide'; }).length; return '<button class="'+(SAV.tab === 'q' && SAV.set === s[0] ? 'on' : '')+'" data-svset="'+s[0]+'">'+esc(s[1])+' · '+n+' / '+F.length+'</button>'; }).join('')+
     '<button class="'+(SAV.tab === 'adv' ? 'on' : '')+'" data-svtab="adv">Questions des ADV'+(P.length ? ' · <b>'+P.length+'</b>' : '')+'</button><button class="'+(SAV.tab === 'all' ? 'on' : '')+'" data-svtab="all">Fiches validées · '+savValid().length+'</button></div></div>';
-  if (SAV.err) h += '<p class="pb neg small">'+esc(SAV.err)+' — vérifier les règles Firestore (collection « savoir »).</p>';
+  if (SAV.err){
+    var perm = /permission/i.test(SAV.err);
+    h += '<div class="sv-err"><b>'+(perm ? 'Les règles de sécurité Firestore n\'autorisent pas encore le savoir des experts' : 'Lecture du savoir des experts impossible')+'</b>'+
+      (perm ? '<p>La base refuse l\'accès à la collection « savoir » : les règles v4.1 ne sont pas publiées. Un administrateur doit, dans la console Firebase › Firestore Database › Règles, remplacer tout le texte par le fichier <span class="mono">firestore.rules</span> v4.1, puis cliquer « Publier ». Les questionnaires ne peuvent pas être enregistrés d\'ici là.</p>' : '<p>'+esc(SAV.err)+'</p>')+
+      '<button class="btn sm" data-svretry>Réessayer</button></div>';
+    return h + '</section>';
+  }
   if (SAV.tab === 'q' && ed && SAV.mode === 'quiz') h += vQuiz();
   else if (SAV.tab === 'q'){
     var F = savFiches(SAV.set), done = F.filter(function(f){ return f.status === 'valide'; }).length, dr = F.filter(function(f){ return f.status === 'brouillon'; }).length;
