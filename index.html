@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v4.5 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v4.6 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -926,6 +926,10 @@ table.suit td.sv-err{color:#9b2c22;font-weight:600;cursor:help}
 .ai-where,.ai-tip{font-size:12.5px;line-height:1.4}
 .ai-tip{color:#6b4b00}
 .msg.ai{line-height:1.45}
+/* ---- v4.6 : suppression d'une question ADV ---- */
+.sv-act{display:flex;align-items:center;flex-wrap:wrap}.sv-act .sp{flex:1}
+.btn.danger{background:#9b2c22;border-color:#9b2c22;color:#fff}
+.sv-del{color:#9b2c22}
 </style>
 </head>
 <body>
@@ -1315,6 +1319,7 @@ var STORE = (function () {
     idToken: function () { var u = auth.currentUser; return u ? u.getIdToken() : Promise.resolve(null); },
     // Savoir des experts (v4.1) : fiches question / réponse
     listSavoir: function () { return db.collection('savoir').get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; delete x.updatedAt; return x; }); }); },
+    deleteSavoir: function (id) { return db.doc('savoir/' + id).delete(); },
     saveSavoir: function (id, d) { var x = clean(d); delete x.id; x.updatedAt = TS(); return db.doc('savoir/' + id).set(x, { merge: true }); },
     presenceStart: presenceStart, presenceStop: presenceStop, onPresence: onPresence, onChats: onChats, openChat: openChat, onMessages: onMessages, sendMessage: sendMessage, markRead: markRead,
     onAuth: onAuth, signIn: signIn, signOut: signOut, resetPasswordEmail: resetPasswordEmail, changeOwnPassword: changeOwnPassword,
@@ -4408,6 +4413,9 @@ document.addEventListener('click', function(e){
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
+  if (d.svdel){ SAV.delAsk = d.svdel; render(); return; }
+  if (d.svdelno !== undefined){ SAV.delAsk = null; render(); return; }
+  if (d.svdelok){ var idd = d.svdelok; SAV.busy = true; render(); STORE.deleteSavoir(idd).then(function(){ SAV.list = (SAV.list || []).filter(function(x){ return x.id !== idd; }); SAV.delAsk = null; SAV.busy = false; KB.built = false; render(); toast('Question supprimée'); }, function(e){ SAV.busy = false; render(); toast('Suppression impossible : '+e.message+(/permission/i.test(e.message) ? ' (publier les règles Firestore v4.6)' : '')); }); return; }
   if (d.svretry !== undefined){ SAV.err = ''; SAV.list = null; savLoad(); render(); return; }
   if (d.svmode){ SAV.mode = d.svmode; if (d.svmode === 'quiz') qzStart(SAV.set); render(); return; }
   if (d.qzopt !== undefined){ qzCapture(); var Fq = savFiches(SAV.set), fq = Fq[SAV.qi], dq = qzDraft(fq), o = fq.opts[+d.qzopt]; if (fq.t === 'multi'){ var ix0 = dq.choice.indexOf(o); if (ix0 >= 0) dq.choice.splice(ix0, 1); else dq.choice.push(o); } else dq.choice = dq.choice[0] === o ? [] : [o]; render(); return; }
@@ -4989,7 +4997,7 @@ function savCard(f, ed){
     (f.src === 'adv' && f.status === 'valide' && ed && !savMailCfg().auto && f.askedByEmail ? '<div class="sv-mail'+(SAV.mailAns === f.id ? ' hl' : '')+'"><span class="small">Réponse validée : prévenir '+esc(f.askedByName || f.askedByEmail)+'</span><a class="btn sm pri" href="'+esc(savMailAnswer(f))+'">Envoyer la réponse par e-mail</a></div>' : '')+
     (ed ? '<label class="lbl" for="sva-'+k+'">Réponse</label><textarea id="sva-'+k+'" rows="4" placeholder="Réponse telle que tu l\'expliquerais à un ADV qui reprend le compte">'+esc(f.a)+'</textarea>'+
       '<label class="lbl" for="svx-'+k+'">Exemple réel (facultatif)</label><input id="svx-'+k+'" placeholder="N° de facture, affaire, contremaître, BR…" value="'+esc(f.ex)+'">'+
-      '<div class="row sv-act"><button class="btn sm" data-svsave="'+k+'"'+(SAV.busy?' disabled':'')+'>Enregistrer le brouillon</button><button class="btn sm pri" data-svok="'+k+'"'+(SAV.busy?' disabled':'')+'>Valider la réponse</button>'+(f.status === 'valide' ? '<button class="btn sm g" data-svobs="'+k+'">Retirer</button>' : '')+'</div>'
+      '<div class="row sv-act">'+(f.src === 'adv' ? (SAV.delAsk === f.id ? '<span class="small neg">Supprimer définitivement cette question ?</span><button class="btn sm danger" data-svdelok="'+k+'">Confirmer la suppression</button><button class="btn sm g" data-svdelno>Annuler</button><span class="sp"></span>' : '<button class="btn sm g sv-del" data-svdel="'+k+'" title="Supprimer cette question (doublon, hors sujet, déjà traitée)">Supprimer</button><span class="sp"></span>') : '')+'<button class="btn sm" data-svsave="'+k+'"'+(SAV.busy?' disabled':'')+'>Enregistrer le brouillon</button><button class="btn sm pri" data-svok="'+k+'"'+(SAV.busy?' disabled':'')+'>Valider la réponse</button>'+(f.status === 'valide' ? '<button class="btn sm g" data-svobs="'+k+'">Retirer</button>' : '')+'</div>'
       : (f.a && f.status === 'valide' ? '<div class="sv-a">'+esc(f.a)+(f.ex ? '<p class="small muted">Exemple : '+esc(f.ex)+'</p>' : '')+'</div>' : '<p class="small muted">Pas encore de réponse validée.</p>'))+'</div>';
 }
 function vSavoir(){
