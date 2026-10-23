@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v4.3 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v4.4 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -908,6 +908,15 @@ table.suit td.sv-err{color:#9b2c22;font-weight:600;cursor:help}
 .ent-card.ent-act .ent-name{font-size:17px}
 .sv-err{background:#fdf2f1;border:1px solid #e3b4ae;border-left:4px solid #9b2c22;border-radius:4px;padding:12px 14px;margin:0 0 12px;display:grid;gap:6px;justify-items:start}
 .sv-err p{margin:0;font-size:13px}
+/* ---- v4.4 : circuit e-mail des questions ADV ---- */
+.ai-mail{justify-self:start;margin-top:4px;text-decoration:none}
+.msg.ai-sent{border-left:3px solid #2f7d4f}
+.ai-mine{background:#fff;border:1px solid #e3e3e1;border-radius:6px;padding:10px 12px;display:grid;gap:8px}
+.ai-mq{display:flex;gap:8px;align-items:flex-start}
+.ai-mq .pill{flex:none}
+.sv-mail{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#eef6f0;border:1px solid #b9dcc4;border-radius:4px;padding:8px 10px}
+.sv-mail.hl,.sv-card.hl{outline:2px solid #2f7d4f;outline-offset:2px}
+.kn-sv .kn-a2{white-space:pre-wrap;font-size:13px;background:#f6f7f5;border-radius:3px;padding:6px 8px;margin:4px 0}
 </style>
 </head>
 <body>
@@ -2568,6 +2577,9 @@ function vKnow(){
   h += '<div class="card2"><div class="h2"><b>Documents de l\'entité · '+esc(a.label || ST.ent)+'</b><span class="muted small">Grille, contremaîtres, principes de facturation, documents propres à l\'entité</span></div><div class="kn-l">'+
     ref.map(function(k){ return '<div class="kn-c"><div class="kn-t"><b>'+esc(k[1])+'</b><span class="small muted">'+esc(a.docs[k[0]].name)+'</span></div><div class="kn-a"><button class="btn sm" data-docdl="'+esc(k[0])+'">Télécharger</button></div></div>'; }).join('')+
     K.map(function(d){ return card(d, 'E'); }).join('')+(ref.length || K.length ? '' : '<p class="muted small">Aucun document pour cette entité.</p>')+'</div></div>';
+  var SV = savForEnt(ST.ent);
+  h += '<div class="card2"><div class="h2"><b>Réponses validées de '+esc(expertName())+'</b><span class="muted small">Questionnaire du compte et questions des ADV, utilisées en priorité par l\'assistant</span></div><div class="kn-l">'+
+    (SV.length ? SV.map(function(f){ return '<div class="kn-c kn-sv"><div class="kn-t"><b>'+esc(f.q)+'</b><span class="kn-a2">'+esc(f.a)+(f.ex ? '\nExemple : '+esc(f.ex) : '')+'</span><span class="small muted">Validée'+(f.validAt ? ' le '+esc(dt(f.validAt).split(' ')[0]) : '')+(f.validBy ? ' par '+esc(f.validBy) : '')+(f.askedByName ? ' · question de '+esc(f.askedByName) : '')+'</span></div></div>'; }).join('') : '<p class="muted small">'+(SAV.list ? 'Aucune réponse validée pour cette entité.' : 'Chargement…')+'</p>')+'</div></div>';
   if (adm) h += '<div class="card2"><div class="h2"><b>Ajouter un document</b></div><div class="pb kn-f"><input id="kn_t" placeholder="Titre"><input id="kn_u" placeholder="Lien (https://…) — ou fichier ci-contre"><input id="kn_d" placeholder="Description (facultatif)"><select id="kn_s"><option value="E">Pour '+esc(a.label || ST.ent)+'</option><option value="G">Pour toutes les entités</option></select><label class="btn sm">Fichier…<input type="file" id="kn_f" hidden></label><button class="btn sm pri" data-a="knadd">Ajouter</button></div><p class="pb small muted" style="margin:0">Les liens claude.ai ne s\'ouvrent que pour les personnes avec qui le document a été partagé.</p></div>';
   return h + '</section>';
 }
@@ -4303,6 +4315,8 @@ function vAdmin(){
       '<div class="panel"><div class="ph"><h2>Experts du savoir</h2><span class="muted">Comptes autorisés à répondre aux questionnaires et aux questions des ADV, et à valider les fiches</span></div><div class="pb">'+
       field('Nom affiché', '<input id="ai_expn" value="'+esc(expertName())+'">', 'Ex. « Fethi » : « Demander à Fethi » dans l\'assistant.')+
       field('E-mails des experts', '<input id="ai_exp" placeholder="prenom.nom@legaa.fr" value="'+esc((ST.cfg.experts || []).join(', '))+'">', 'Séparés par une virgule. Les administrateurs sont experts d\'office. Les règles Firestore v4.1 (collection « savoir ») doivent être publiées.')+
+      field('Adresse commune en copie', '<input id="ai_cc" placeholder="logistique@legaa.fr" value="'+esc((ST.cfg.savMail || {}).cc || '')+'">', 'Mise en copie de chaque question transmise à l\'expert et de chaque réponse envoyée à l\'ADV.')+
+      field('Envoi des e-mails', '<select id="ai_auto"><option value="0"'+((ST.cfg.savMail || {}).auto ? '' : ' selected')+'>Préparés dans la messagerie de l\'utilisateur (un clic pour envoyer)</option><option value="1"'+((ST.cfg.savMail || {}).auto ? ' selected' : '')+'>Automatiques (fonction serveur « savoirMail » déployée)</option></select>', 'L\'envoi automatique demande le déploiement de la fonction Firebase fournie (forfait Blaze, compte SMTP LEGAA).')+
       '<div class="row" style="margin-top:10px"><button class="btn pri" data-a="aiexp">Enregistrer</button></div></div></div>';
   }
   if (ST.admTab === 'users'){
@@ -4393,7 +4407,7 @@ document.addEventListener('click', function(e){
   if (d.qznext !== undefined){ qzCapture(); var Fn = savFiches(SAV.set), fn = Fn[SAV.qi]; if (fn && !qzHas(fn, qzDraft(fn))){ toast('Choisir une réponse ou écrire une réponse, sinon « Passer »'); return; } qzSaveCur().then(function(){ SAV.qi++; render(); window.scrollTo(0,0); }); return; }
   if (d.svtab){ SAV.tab = d.svtab; render(); return; }
   if (d.svsave){ var f1 = savFromForm(d.svsave); if (!f1.a){ toast('Écrire une réponse'); return; } f1.status = 'brouillon'; savSave(d.svsave, f1, 'Brouillon enregistré'); return; }
-  if (d.svok){ var f2 = savFromForm(d.svok); if (!f2.a){ toast('Écrire une réponse avant de valider'); return; } f2.status = 'valide'; savSave(d.svok, f2, 'Réponse validée : elle est maintenant utilisée par l\'assistant'); return; }
+  if (d.svok){ var f2 = savFromForm(d.svok); if (!f2.a){ toast('Écrire une réponse avant de valider'); return; } f2.status = 'valide'; var wasQ = (savById(d.svok) || {}).src === 'adv'; savSave(d.svok, f2, 'Réponse validée : elle est maintenant utilisée par l\'assistant').then(function(){ if (wasQ && !savMailCfg().auto){ SAV.mailAns = d.svok; render(); } }); return; }
   if (d.svobs){ savSave(d.svobs, { status:'obsolete' }, 'Fiche retirée de l\'assistant'); return; }
   if (d.svallok){ var dr = savFiches(d.svallok).filter(function(f){ return f.status === 'brouillon'; }), ch0 = Promise.resolve(); dr.forEach(function(f){ ch0 = ch0.then(function(){ return savSave(f.id, { status:'valide' }); }); }); ch0.then(function(){ toast(dr.length+' réponse(s) validée(s)'); }); return; }
   if (d.aiask !== undefined){ var ix = +d.aiask, qq = ''; for (var j0 = ix; j0 >= 0; j0--){ if (KB.hist[j0] && KB.hist[j0].who === 'me'){ qq = KB.hist[j0].text; break; } } if (qq) savAsk(qq); return; }
@@ -4520,7 +4534,7 @@ document.addEventListener('click', function(e){
   else if (a === 'svxls') savExport();
   else if (a === 'busave'){ var ag0 = ST.cfg.agencies[ST.parAg || ST.ent]; if (!ag0) return; var bad = [], T0 = ($('butab').value || '').split('\n').map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){ var m = /^(\S+)\s*=\s*(.+?)\s*:\s*(.+)$/.exec(l); if (!m){ bad.push(l); return null; } return { bu:m[1], ent:m[2], codes:m[3].split(/[\s,;]+/).filter(Boolean) }; }).filter(Boolean);
     if (bad.length){ toast('Ligne non comprise : '+bad[0]); return; } ag0.buTable = T0; saveCfg('Table des BU '+(ag0.label || ag0.code)+' : '+T0.length+' BU'); rebuild(); }
-  else if (a === 'aiexp'){ var ex0 = ($('ai_exp').value || '').split(/[\s,;]+/).map(function(x){ return x.trim().toLowerCase(); }).filter(function(x){ return /@/.test(x); }), nm0 = ($('ai_expn').value || '').trim() || 'Fethi'; ST.cfg.experts = ex0; ST.cfg.expertName = nm0; saveCfg('Experts du savoir : '+(ex0.join(', ') || 'aucun')); render(); }
+  else if (a === 'aiexp'){ var ex0 = ($('ai_exp').value || '').split(/[\s,;]+/).map(function(x){ return x.trim().toLowerCase(); }).filter(function(x){ return /@/.test(x); }), nm0 = ($('ai_expn').value || '').trim() || 'Fethi'; var cc0 = ($('ai_cc').value || '').trim().toLowerCase(); if (cc0 && !/^[^@\s]+@[^@\s]+$/.test(cc0)){ toast('Adresse en copie invalide'); return; } ST.cfg.savMail = { cc:cc0, auto:$('ai_auto').value === '1', appUrl:location.origin + location.pathname }; ST.cfg.experts = ex0; ST.cfg.expertName = nm0; saveCfg('Experts du savoir : '+(ex0.join(', ') || 'aucun')); render(); }
   else if (a === 'aiurl'){ var u0 = ($('ai_url').value || '').trim(); if (u0 && !/^https:\/\//.test(u0)){ toast('URL : commencer par https://'); return; } ST.cfg.assistant = { url:u0 }; saveCfg(u0 ? 'Assistant : service de rédaction '+u0 : 'Assistant : réponses par extraits'); render(); }
   else if (a === 'xlsSui') exportSuivi();
   else if (a === 'chat'){ CH.open = !CH.open; if (CH.open && CH.mode === 'conv' && CH.cur) STORE.markRead(CH.cur); renderChat(true); }
@@ -4814,7 +4828,7 @@ function kbHl(t, q){ var qt = uniqA(kbTok(q)).filter(function(x){ return x.lengt
 var KB_SUGG = ['Qui contacter si le n° d\'affaire manque sur AG 496 ?', 'Comment est calculé le stockage ?', 'Comment sont facturées les factures NSA ?', 'Quelle grille pour Tour Triangle ?', 'Quand relancer un contremaître AG 58 sans OJ ?'];
 function kbMsg(m, idx){
   var ask = '<button class="lnk small" data-aiask="' + idx + '">Demander à ' + esc(expertName()) + '</button>';
-  if (m.text) return '<div class="msg ai"><span class="mt">' + esc(m.text) + '</span></div>';
+  if (m.text) return '<div class="msg ai' + (m.sent ? ' ai-sent' : '') + '"><span class="mt">' + esc(m.text) + '</span>' + (m.mail ? '<a class="btn sm pri ai-mail" href="' + esc(m.mail) + '">Envoyer l\'e-mail à ' + esc(expertName()) + '</a><span class="small muted">Ouvre ta messagerie avec le message prêt (destinataire et copie remplis).</span>' : '') + '</div>';
   if (m.none) return '<div class="msg ai"><span class="mt">Je n\'ai pas de réponse à cette question dans les documents de la plateforme' + (m.missing && m.missing.length ? ' (rien sur « ' + esc(m.missing.join(' », « ')) + ' »)' : '') + '.</span><span class="ai-act">' + ask + '</span></div>';
   var A = m.ans, h = '<div class="msg ai">';
   if (A.fiche){
@@ -4832,6 +4846,8 @@ function kbMsg(m, idx){
 }
 function renderAssistant(){
   var h = '<div class="ai-msgs" id="aimsgs">';
+  var MQ = savMine().slice(0, 5);
+  if (!KB.hist.length && MQ.length) h += '<div class="ai-mine"><b class="small">Tes questions à '+esc(expertName())+'</b>'+MQ.map(function(f){ var ok = f.status === 'valide'; return '<div class="ai-mq'+(ok ? ' ok' : '')+'"><span class="pill '+(ok ? 'p-ok' : 'p-verifier')+'">'+(ok ? 'Répondue' : 'En attente')+'</span><span class="small"><b>'+esc(f.q)+'</b>'+(ok ? '<br>'+esc(f.a) : '')+'</span></div>'; }).join('')+'</div>';
   if (!KB.hist.length) h += '<div class="ai-intro"><b>Assistant documentaire</b><p class="small">Il répond à partir des books de passation, des règles de calcul, de la synthèse des ateliers, des réponses validées par ' + esc(expertName()) + ', des documents déposés et des paramètres des entités. Sans réponse fiable, la question peut être transmise à ' + esc(expertName()) + '.</p><div class="ai-sugg">' + KB_SUGG.map(function(s){ return '<button class="chip" data-aiq="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div></div>';
   KB.hist.forEach(function(m, i){ h += m.who === 'me' ? '<div class="msg me"><span class="mt">' + esc(m.text) + '</span></div>' : kbMsg(m, i); });
   if (KB.busy) h += '<div class="msg ai"><span class="muted small">' + (KB.built ? 'Recherche…' : 'Lecture des documents de la plateforme…') + '</span></div>';
@@ -4902,6 +4918,10 @@ function isExpert(){ var e = String((ST.user && ST.user.email) || '').toLowerCas
 function savLoad(){ if (!STORE.listSavoir) { SAV.list = []; return Promise.resolve(); } return STORE.listSavoir().then(function(L){ SAV.list = L; SAV.err = ''; KB.built = false; render(); }, function(e){ SAV.list = []; SAV.err = e.message; render(); }); }
 function savById(id){ return (SAV.list || []).filter(function(x){ return x.id === id; })[0] || null; }
 function savSetLabel(k){ var x = QF_SETS.filter(function(s){ return s[0] === k; })[0]; return x ? x[1] : (ST.cfg.agencies[k] ? (ST.cfg.agencies[k].label || k) : k || 'Général'); }
+/* Fiches validées d'une entité : questions d'ADV posées depuis l'entité, et questionnaire du compte (AG 495 / 496 / 58 reconnu dans le libellé) */
+function savForEnt(code){ var a = ST.cfg.agencies[code] || {}, n = kbNorm((a.label || '')+' '+(a.match || '')+' '+code);
+  return savValid().filter(function(f){ if (f.set === code) return true; if (!/^(495|496|58)$/.test(f.set)) return false; return new RegExp('\\b(ag\\s*)?0?'+f.set+'\\b').test(n) && !(f.set === '58' && /\b(495|496)\b/.test(n)); }); }
+function savMine(){ var me = ST.user || {}; return (SAV.list || []).filter(function(x){ return x.src === 'adv' && x.askedBy && x.askedBy === me.uid; }).sort(function(a, b){ return String(b.askedAt).localeCompare(String(a.askedAt)); }); }
 function savValid(){ return (SAV.list || []).filter(function(x){ return x.status === 'valide' && x.a; }); }
 function savPending(){ return (SAV.list || []).filter(function(x){ return x.status === 'question'; }); }
 function savSave(id, patch, msg){
@@ -4912,12 +4932,25 @@ function savSave(id, patch, msg){
   return STORE.saveSavoir(id, d).then(function(){ var L = (SAV.list || []).filter(function(x){ return x.id !== id; }); L.push(d); SAV.list = L; SAV.busy = false; KB.built = false; render(); if (msg) toast(msg); },
     function(e){ SAV.busy = false; render(); toast('Enregistrement impossible : '+e.message); });
 }
+/* ---- Circuit e-mail des questions ADV ----
+   Question posée → e-mail à l'expert (cfg.experts) + copie à l'adresse commune (cfg.savMail.cc), avec le lien direct vers la question.
+   Réponse validée → e-mail à l'ADV qui l'a posée + copie à l'adresse commune ; la réponse devient une fiche du savoir (assistant, Connaissance).
+   Envoi automatique par la fonction serveur « savoirMail » si elle est déployée (cfg.savMail.auto) ; sinon e-mail préparé dans la messagerie de l'utilisateur. */
+function savMailCfg(){ var m = ST.cfg.savMail || {}; return { to:(ST.cfg.experts || []).filter(Boolean), cc:String(m.cc || '').trim(), auto:!!m.auto }; }
+function savLink(id){ return location.origin + location.pathname + '#sav=' + encodeURIComponent(id); }
+function mailto(to, cc, subj, body){ return 'mailto:' + encodeURIComponent(to.join(',')).replace(/%40/g, '@').replace(/%2C/g, ',') + '?' + (cc ? 'cc=' + encodeURIComponent(cc).replace(/%40/g, '@') + '&' : '') + 'subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body); }
+function savMailAsk(d){ var M = savMailCfg(); if (!M.to.length) return '';
+  return mailto(M.to, M.cc, '[Pilotage Logistique] Question ADV' + (d.set ? ' – ' + savSetLabel(d.set) : ''), 'Bonjour ' + expertName() + ',\n\n' + (d.askedByName || 'Un ADV') + ' pose une question à laquelle l\'assistant n\'a pas de réponse fiable :\n\n« ' + d.q + ' »\n\nRépondre et valider dans la plateforme (la réponse sera envoyée à l\'ADV et enregistrée dans les connaissances) :\n' + savLink(d.id) + '\n\nMerci'); }
+function savMailAnswer(d){ var M = savMailCfg(); if (!d.askedByEmail) return '';
+  return mailto([d.askedByEmail], M.cc, '[Pilotage Logistique] Réponse de ' + expertName() + ' à ta question', 'Bonjour ' + (d.askedByName || '') + ',\n\nTa question : « ' + d.q + ' »\n\nRéponse de ' + expertName() + ' :\n' + d.a + (d.ex ? '\nExemple : ' + d.ex : '') + '\n\nCette réponse est enregistrée dans les connaissances de la plateforme et proposée par l\'assistant à tous les ADV.\n' + savLink(d.id)); }
 /* Question d'un ADV depuis l'assistant */
 function savAsk(q){
   q = String(q || '').trim(); if (!q) return;
   var id = 'A'+Date.now().toString(36)+Math.random().toString(36).slice(2, 5), me = ST.user || {};
-  var d = { id:id, set:ST.ent || '', theme:'Question ADV', q:q, ctx:'', a:'', ex:'', status:'question', src:'adv', askedBy:me.uid || '', askedByName:me.name || me.email || '', askedAt:new Date().toISOString() };
-  return STORE.saveSavoir(id, d).then(function(){ (SAV.list = SAV.list || []).push(d); toast('Question transmise à '+expertName()); KB.hist.push({ who:'ai', text:'Question transmise à '+expertName()+'. Sa réponse, une fois validée, sera proposée à tous les ADV.', src:[] }); renderChat(true); },
+  var d = { id:id, set:ST.ent || '', theme:'Question ADV', q:q, ctx:'', a:'', ex:'', status:'question', src:'adv', askedBy:me.uid || '', askedByName:me.name || me.email || '', askedByEmail:String(me.email || '').toLowerCase(), askedAt:new Date().toISOString() };
+  return STORE.saveSavoir(id, d).then(function(){ (SAV.list = SAV.list || []).push(d); var M = savMailCfg();
+    KB.hist.push({ who:'ai', sent:1, mail:M.auto ? '' : savMailAsk(d), text:'Question transmise à '+expertName()+'.'+(M.auto ? ' Un e-mail lui a été envoyé'+(M.cc ? ' (copie '+M.cc+')' : '')+'.' : '')+' Tu recevras sa réponse par e-mail ; une fois validée, elle sera enregistrée dans les connaissances et proposée à tous les ADV.' });
+    renderChat(true); },
     function(e){ toast('Envoi impossible : '+e.message); });
 }
 function savFiches(set){ var by = {}; (SAV.list || []).forEach(function(x){ by[x.id] = x; });
@@ -4927,6 +4960,7 @@ function savCard(f, ed){
   var st = SAV_ST[f.status] || SAV_ST.a_faire, k = esc(f.id);
   return '<div class="sv-card sv-'+esc(f.status)+'" id="sv-'+k+'"><div class="sv-h"><span class="mono small muted">'+k+'</span><span class="pill '+st[0]+'">'+st[1]+'</span>'+(f.validAt ? '<span class="small muted">validée le '+esc(dt(f.validAt))+(f.validBy ? ' par '+esc(f.validBy) : '')+'</span>' : f.askedByName ? '<span class="small muted">posée par '+esc(f.askedByName)+(f.askedAt ? ' le '+esc(dt(f.askedAt)) : '')+'</span>' : '')+'</div>'+
     '<p class="sv-q">'+esc(f.q)+'</p>'+(f.ctx ? '<p class="sv-ctx small">'+esc(f.ctx)+'</p>' : '')+
+    (f.src === 'adv' && f.status === 'valide' && ed && !savMailCfg().auto && f.askedByEmail ? '<div class="sv-mail'+(SAV.mailAns === f.id ? ' hl' : '')+'"><span class="small">Réponse validée : prévenir '+esc(f.askedByName || f.askedByEmail)+'</span><a class="btn sm pri" href="'+esc(savMailAnswer(f))+'">Envoyer la réponse par e-mail</a></div>' : '')+
     (ed ? '<label class="lbl" for="sva-'+k+'">Réponse</label><textarea id="sva-'+k+'" rows="4" placeholder="Réponse telle que tu l\'expliquerais à un ADV qui reprend le compte">'+esc(f.a)+'</textarea>'+
       '<label class="lbl" for="svx-'+k+'">Exemple réel (facultatif)</label><input id="svx-'+k+'" placeholder="N° de facture, affaire, contremaître, BR…" value="'+esc(f.ex)+'">'+
       '<div class="row sv-act"><button class="btn sm" data-svsave="'+k+'"'+(SAV.busy?' disabled':'')+'>Enregistrer le brouillon</button><button class="btn sm pri" data-svok="'+k+'"'+(SAV.busy?' disabled':'')+'>Valider la réponse</button>'+(f.status === 'valide' ? '<button class="btn sm g" data-svobs="'+k+'">Retirer</button>' : '')+'</div>'
@@ -5045,6 +5079,8 @@ function chatSend(){
   ti.value = ''; STORE.sendMessage(CH.cur, t).catch(function(e){ toast('Message non envoyé : '+e.message); ti.value = t; });
 }
 document.addEventListener('keydown', function(e){ if (e.target && e.target.id === 'chinput' && e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); chatSend(); } });
+function savDeepLink(){ var m = /#sav=([^&]+)/.exec(location.hash || ''); if (!m || !isExpert()) return; var id = decodeURIComponent(m[1]); ST.module = 'sav'; SAV.tab = id.charAt(0) === 'A' ? 'adv' : 'q'; SAV.mode = 'list'; SAV.hl = id;
+  (SAV.list ? Promise.resolve() : savLoad()).then(function(){ var f = savById(id); if (f && f.set && SAV.tab === 'q') SAV.set = f.set; render(); setTimeout(function(){ var el = document.getElementById('sv-'+id); if (el){ el.scrollIntoView({ block:'center' }); el.classList.add('hl'); } }, 50); }); }
 function start(profile){
   ST.user = profile; $('login').hidden = true; $('app').hidden = false; armIdle(); chatStart();
   STORE.getConfig().then(function(c){ ST.cfg = c ? deepMerge(E.DEFAULT_CONFIG, c) : clone(E.DEFAULT_CONFIG); if (c && c.agencies) Object.keys(E.DEFAULT_CONFIG.agencies).forEach(function(k){ if (!c.agencies[k]) delete ST.cfg.agencies[k]; });
@@ -5053,7 +5089,7 @@ function start(profile){
     if (m30 && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Minimum m² par appareil désactivé sur toutes les grilles (clause abandonnée)').catch(function(){});
     var ch = applyAgencyRules(ST.cfg); if (ch.length && c && isAdmin()) STORE.saveConfig(ST.cfg, 'Règles de facturation appliquées (AG 58 : Contrats / FHR par contremaître ; NSA : une facture par appareil ; CRA : une facture par BU) : '+ch.join(', ')).catch(function(){});
     ST.cfgM = ST.cfg; return STORE.listMonths(); })
-    .then(function(L){ L = setMonthsIndex(L); var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); if (isExpert()) savLoad(); },
+    .then(function(L){ L = setMonthsIndex(L); var withData = L.filter(function(m){ return (m.files||[]).length; }).map(function(m){ return m.month; }).sort(); ST.month = withData.indexOf(defaultMonth()) >= 0 ? defaultMonth() : (withData[withData.length-1] || defaultMonth()); render(); loadTransports(); savLoad().then(savDeepLink); },
       function(e){ toast('Base de données inaccessible : '+e.message); });
 }
 STORE.onAuth(function(profile, msg){ if (profile) start(profile); else { ST.user = null; showLogin(msg); } });
