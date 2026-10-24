@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v4.9 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v5.0 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1053,6 +1053,23 @@ details.an-sc{margin:0;padding:0}
 details.an-sc>summary{padding:10px 14px}
 details.an-sc>.panel{border:0;margin:0}
 @media (max-width:700px){.an-bar{grid-template-columns:110px 1fr 70px}.an-bar>.small{display:none}}
+/* ---- v5.0 · navigation transporteur et visionneuse ---- */
+.car-nav{display:flex;gap:0;border-bottom:1px solid #d3d7dc;background:#f4f5f7}
+.car-nav button{display:flex;align-items:center;gap:8px;background:none;border:0;border-right:1px solid #e1e4e8;padding:12px 20px;font:inherit;font-size:14px;font-weight:600;color:#4a525c;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.car-nav button:hover{background:#eceef1}
+.car-nav button.on{background:#fff;color:#14233d;border-bottom-color:#14233d}
+.car-nav button span{font-weight:500;font-size:11.5px;background:#dfe3e8;color:#4a525c;border-radius:9px;padding:1px 7px}
+.car-nav button.on span{background:#14233d;color:#fff}
+.car-sub{background:#fff;padding:8px 12px 0;gap:6px}
+.car-sub button{border:1px solid #d3d7dc;border-bottom:0;border-radius:4px 4px 0 0;padding:7px 12px;background:#f6f7f8}
+.car-sub button.on{background:#fff;border-color:#14233d;border-bottom:2px solid #fff;margin-bottom:-1px;box-shadow:inset 0 2px 0 #14233d}
+.car-sub button.add{border-style:dashed;background:#fff}
+.docv{margin:0 14px 10px;max-height:75vh;overflow:auto;background:#5f6670;padding:10px;border-radius:4px;display:grid;gap:10px;justify-items:center}
+.docv img{max-width:100%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.docv pre{background:#fff;padding:14px;margin:0;width:100%;white-space:pre-wrap;font-size:12px}
+.docv table{background:#fff;border-collapse:collapse;font-size:12px}.docv td{border:1px solid #ddd;padding:2px 6px}
+.docv h4{color:#fff;margin:0;justify-self:start}
+.gi-p .docv{margin:6px 0}
 </style>
 </head>
 <body>
@@ -1922,11 +1939,13 @@ var PDFCHECK = (function () {
       var pages = [];
       for (var i = 1; i <= doc.numPages; i++) pages.push(i);
       return Promise.all(pages.map(function (n) {
-        return doc.getPage(n).then(function (pg) { return pg.getTextContent(); }).then(function (tc) {
-          var rows = [];
+        return doc.getPage(n).then(function (pg) { var vp = pg.getViewport({ scale: 1 }); return pg.getTextContent().then(function (tc) { return { tc: tc, vp: vp }; }); }).then(function (o) {
+          var tc = o.tc, vt = o.vp.transform, rows = [];
           tc.items.forEach(function (it) {
             if (!it.str || !it.str.trim()) return;
-            var y = Math.round(it.transform[5]), x = it.transform[4];
+            // coordonnées dans le sens de lecture : page pivotée (/Rotate) ou scan dont le texte OCR est tourné
+            var m = pdfjs.Util && pdfjs.Util.transform ? pdfjs.Util.transform(vt, it.transform) : null;
+            var y = m ? -Math.round(m[5]) : Math.round(it.transform[5]), x = m ? m[4] : it.transform[4];
             var row = null;
             for (var k = 0; k < rows.length; k++) if (Math.abs(rows[k].y - y) <= 2) { row = rows[k]; break; }
             if (!row) { row = { y: y, items: [] }; rows.push(row); }
@@ -2244,7 +2263,7 @@ function render(){
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && ST.piltab === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if (ST.module === 'trp' && ST.ttab !== 'hist') trCalc();
-  if (ST.module === 'cfg' && ST.cfgTab === 'ach') bindGridDrop();
+  if (ST.module === 'cfg' && ST.cfgTab === 'ach'){ bindGridDrop(); docvFill(); }
 }
 
 /* ============ ACCUEIL ============ */
@@ -4396,7 +4415,7 @@ var GRP = (function(){
     var t = lines.slice(0, 6).map(function(l){ return l.trim(); }).filter(function(l){ return /^[A-Z][A-Z .'&-]{4,}$/.test(l) && !/LEGAA|TARIF|FORFAIT|LOTS|REGION|DEPARTEMENT|POIDS/.test(l); })[0];
     if (t) return t.replace(/\s+/g, ' ');
     var j = lines.join(' '), m = /([a-z0-9.-]+)@([a-z0-9.-]+)/i.exec(j); if (m) return m[1].replace(/trans(port)?s?$/i, '').toUpperCase() || m[1];
-    return String(fname || '').replace(/\.[a-z]+$/i, '').replace(/[_-]+/g, ' ').trim();
+    return fnameName(fname);
   }
   /* 1. Courses par commune : en-têtes « DEPARTEMENT nn » (une ou deux colonnes), ligne des véhicules, puis « COMMUNE  p1 € p2 € … » */
   function parseCourse(lines){
@@ -4470,11 +4489,39 @@ var GRP = (function(){
     return { kind:'vehicule', label:half ? 'Location ½ journée' : 'Location à la journée', hoursIncl:hrs, kmIncl:kmIncl ? +kmIncl : 0, hourRate:hSup ? num(hSup[1]) : '', unit:half ? '½ journée' : 'journée',
       zones:[{ code:'IDF', label:'Île-de-France', deps:'75 77 78 91 92 93 94 95' }], vehicles:veh.map(function(v){ return { label:v.label, kg:v.kg, pal:'', len:v.len, vol:'', dims:v.dims, hayon:v.hayon, grue:v.grue, kmRate:v.kmRate, hourRate:v.hourRate, prices:{ IDF:v.price } }; }), warnings:W };
   }
+
+  /* 4. Courses par département de départ × département d'arrivée, un tableau par véhicule (ex. TRANS-GRUTAGE : « Tarif Course en Porteur Grue 19T (charge utile 7T5) ») */
+  function parseOD(lines, origin){
+    var V = [], cur = null, warn = [];
+    lines.forEach(function(l){ var t = String(l).trim(); if (!t) return;
+      if (/^tarif\b/i.test(t)){ cur = { title:t, hdr:null, rows:{} }; V.push(cur); return; }
+      if (!cur) return; var tk = t.split(/\s+/);
+      if (!cur.hdr){ if (tk.length >= 3 && tk.every(function(x){ return /^(\d{2}|2[AB])$/.test(x); })) cur.hdr = tk; return; }
+      var m = /^(\d{2}|2[AB])\s+(.*)$/.exec(t); if (!m) return;
+      var am = (m[2].match(/\d+(?:[.,]\d{1,2})?\s*€/g) || []).map(num);
+      if (am.length === cur.hdr.length) cur.rows[m[1]] = am; else warn.push('Ligne « '+t.slice(0, 40)+' » ignorée : '+am.length+' prix lus pour '+cur.hdr.length+' colonnes.');
+    });
+    V = V.filter(function(v){ return v.hdr && Object.keys(v.rows).length >= 2; }); if (!V.length) return null;
+    var hdr = V[0].hdr, o = origin && V[0].rows[origin] ? origin : (V[0].rows['95'] ? '95' : Object.keys(V[0].rows)[0]), multi = false;
+    var veh = V.map(function(v){
+      var title = v.title.replace(/^tarif\s+(course\s+en\s+)?/i, '').replace(/potreur/i, 'Porteur').replace(/\s+/g, ' ').trim(), cu = /charge\s+utile\s*(?:de\s*)?([^)]*)/i.exec(title), kg = '';
+      if (cu){ var w = (cu[1].match(/(\d+)\s*T\s*(\d)?/gi) || []).map(function(x){ var q = /(\d+)\s*T\s*(\d)?/i.exec(x); return +q[1] + (q[2] ? +q[2] / 10 : 0); });
+        if (w.length){ if (/\+/.test(cu[1])) kg = w.reduce(function(a, b){ return a + b; }, 0) * 1000; else { kg = Math.min.apply(null, w) * 1000; if (w.length > 1) multi = true; } } }
+      var label = title.replace(/\s*\(.*$/, ''), prices = {}; (v.rows[o] || []).forEach(function(p, k){ prices[v.hdr[k]] = p; });
+      return { label:label, kg:Math.round(kg), pal:'', len:'', vol:'', hayon:false, grue:/grue/i.test(title), prices:prices, od:v.rows, cu:cu ? cu[1].trim() : '' };
+    });
+    var asym = 0; V.forEach(function(v){ Object.keys(v.rows).forEach(function(a){ v.hdr.forEach(function(b, k){ var r = v.rows[b]; if (r && r[v.hdr.indexOf(a)] !== v.rows[a][k]) asym++; }); }); });
+    warn = ['Prix retenus au départ du '+o+' (entrepôt LEGAA de Saint-Ouen-l\'Aumône) ; la matrice complète départ × arrivée est conservée : le département de départ se change dans la grille.',
+      'Course simple : le document ne prévoit ni heures ni km supplémentaires, ni longueur de plateau.'].concat(multi ? ['Charge utile annoncée en fourchette (« de 9T5 à 11T5 ») : la plus faible est retenue.'] : []).concat(asym ? ['Matrice non symétrique ('+(asym / 2)+' écarts aller / retour) : vérifier contre le document.'] : []).concat(['Document scanné possible : contrôler 2 ou 3 prix contre l\'original.']).concat(warn);
+    return { kind:'vehicule', label:'Course par département', unit:'', origin:o, odHdr:hdr, kmIncl:0, kmRate:0, surHayon:0, surGrue:0,
+      zones:hdr.map(function(d){ return { code:d, label:'Dép. '+d, deps:d }; }), vehicles:veh, warnings:warn };
+  }
+  function fnameName(f){ return String(f || '').replace(/\.[a-z0-9]+$/i, '').replace(/^(?:[0-9a-f]{8}-)?\d{6,}_/i, '').replace(/[_]+/g, ' ').trim(); }
   function fromLines(lines, fname){
-    var g = parseLots(lines) || parseCourse(lines) || parseVeh(lines);
+    var g = parseLots(lines) || parseOD(lines) || parseCourse(lines) || parseVeh(lines);
     if (!g) return null; g.carrier = guessCarrier(lines, fname); return g;
   }
-  return { fromLines:fromLines, parseCourse:parseCourse, parseLots:parseLots, parseVeh:parseVeh, norm:norm };
+  return { fnameName:fnameName, fromLines:fromLines, parseCourse:parseCourse, parseLots:parseLots, parseVeh:parseVeh, norm:norm };
 })();
 /* ---- Extraction du texte d'une grille déposée : PDF (pdf.js), Word .docx (XML), Word 97 .doc (flux WordDocument), Excel / CSV ---- */
 function docText(buf){
@@ -4501,7 +4548,7 @@ function carAcr(s){ var w = GRP.norm(s).replace(/[^a-z0-9 ]+/g, ' ').split(' ').
 function carKeys(name, aliases){ var K = [], add = function(x){ x = GRP.norm(x).replace(/[^a-z0-9]+/g, ''); if (x && K.indexOf(x) < 0) K.push(x); };
   add(name); add(carAcr(name)); String(aliases || '').split(/[,;]/).forEach(function(a){ add(a); add(carAcr(a)); }); return K; }
 function carFind(name){ if (!name) return null; var K = carKeys(name); return carriers().filter(function(c){ var C = carKeys(c.name, c.aliases); return K.some(function(k){ return C.indexOf(k) >= 0; }); })[0] || null; }
-function gridSugLabel(g){ if (g.kind === 'course') return 'VL · courses par commune'; if (g.kind === 'lots') return 'Lots · tonnage / ml';
+function gridSugLabel(g){ if (g.odHdr) return 'PL grue · course par département'; if (g.kind === 'course') return 'VL · courses par commune'; if (g.kind === 'lots') return 'Lots · tonnage / ml';
   var pl = (g.vehicles || []).some(function(v){ return +v.kg >= 3500; }); return (pl ? 'PL' : 'VL')+' · location '+(g.unit || ''); }
 /* Dépôt d'une ou plusieurs grilles : lecture, modèle reconnu, brouillon à valider */
 function gridDrop(files, carId){
@@ -4514,7 +4561,8 @@ function gridDrop(files, carId){
       if (!g){ dr.err = 'modèle non reconnu ('+L.filter(function(x){ return String(x).trim(); }).length+' lignes lues) : créer la grille à la main'; render(); return; }
       var vf = /(?:applicable|valable)[^0-9]{0,20}(?:au|le|du)?\s*(\d{1,2})\s*(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre)\s*(20\d\d)/i.exec(L.join(' '));
       if (vf){ var MO = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'], mi = MO.indexOf(GRP.norm(vf[2])); if (mi >= 0) g.validFrom = vf[3]+'-'+String(mi + 1).padStart(2, '0')+'-'+String(vf[1]).padStart(2, '0'); }
-      g.named = GRP.norm(g.carrier) !== GRP.norm(file.name.replace(/\.[a-z]+$/i, '').replace(/[_-]+/g, ' ').trim());
+      var fn = GRP.fnameName(file.name), txt = GRP.norm(L.join(' '));
+      g.named = GRP.norm(g.carrier) !== GRP.norm(fn) || GRP.norm(fn).split(/[^a-z0-9]+/).some(function(w){ return w.length >= 5 && !/^(tarif|tarifs|legaa|grille|grilles|transport|transports|distribution|lots|prix|region|parisienne)$/.test(w) && txt.indexOf(w) >= 0; });
       dr.g = g; dr.label = gridSugLabel(g); var m = g.named ? carFind(g.carrier) : null;
       dr.car = m ? m.id : (dr.carHint || (g.named ? '_new' : (carriers()[0] && typeof ST.carSel === 'number' && carriers()[ST.carSel] ? carriers()[ST.carSel].id : '_new'))); dr.newName = g.named ? g.carrier : '';
       gridBatchLink(batch); render();
@@ -4533,7 +4581,7 @@ function gridDraftSave(id){
     c = carFind(nm); if (!c){ c = { id:'c'+Date.now().toString(36), name:nm, aliases:carAcr(nm).toUpperCase(), contact:'', phone:'', email:'', notes:'', active:true, grids:[], comments:[] }; ST.cfg.carriers = carriers().concat([c]); }
     (ST.gimp || []).forEach(function(x){ if (x !== dr && x.car === '_new' && carFind(x.newName) === c) x.car = c.id; }); }
   var grid = { id:'g'+Date.now().toString(36), label:String(dr.label || '').trim() || gridSugLabel(g), kind:g.kind, validFrom:g.validFrom || '', active:true, source:dr.name, checks:g.warnings || [] };
-  ['zones','vehicles','hoursIncl','kmIncl','hourRate','unit','rows','classes','surHayon','surDebache','cols','minT','minML','mlPerPal'].forEach(function(k){ if (g[k] !== undefined) grid[k] = g[k]; });
+  ['zones','vehicles','hoursIncl','kmIncl','hourRate','unit','rows','classes','surHayon','surDebache','cols','minT','minML','mlPerPal','origin','odHdr'].forEach(function(k){ if (g[k] !== undefined) grid[k] = g[k]; });
   if (grid.kind === 'vehicule'){ grid.kmRate = grid.kmRate || 0; grid.surHayon = grid.surHayon || 0; grid.surGrue = 0; }
   dr.busy = true; render();
   STORE.uploadAgencyDoc('_carriers', 'grid_'+grid.id, dr.file).then(function(meta){ grid.doc = meta; }, function(){}).then(function(){
@@ -4541,7 +4589,25 @@ function gridDraftSave(id){
     saveCfg('Grille transporteur lue et ajoutée : '+c.name+' · '+grid.label+' ('+dr.name+')'); render(); toast('Grille ajoutée : '+c.name+' · '+grid.label); });
 }
 var GKIND = { course:'Courses / commune', lots:'Lots t / ml', vehicule:'Location véhicule', messagerie:'Messagerie' };
+/* ---- Visionneuse du document d'origine (grille transporteur) : PDF rendu en images (pages pivotées respectées), Word en texte, Excel en tableau ---- */
+var DOCV = {};
+function docRender(buf, name){
+  var ext = (String(name).split('.').pop() || '').toLowerCase();
+  if (ext === 'pdf'){ var pdfjs = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+    return pdfjs.getDocument({ data:new Uint8Array(buf), isEvalSupported:false }).promise.then(function(doc){ var P = []; for (var n = 1; n <= doc.numPages; n++) P.push(n);
+      return Promise.all(P.map(function(n){ return doc.getPage(n).then(function(pg){ var v1 = pg.getViewport({ scale:1 }), vp = pg.getViewport({ scale:Math.min(2, 1400 / v1.width) }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+        return pg.render({ canvasContext:cv.getContext('2d'), viewport:vp }).promise.then(function(){ return '<img src="'+cv.toDataURL('image/png')+'" alt="page '+n+'">'; }); }); })); }).then(function(I){ return I.join(''); }); }
+  if (/^(xlsx|xls|csv)$/.test(ext)){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' }); return Promise.resolve(wb.SheetNames.map(function(sn){ return '<h4>'+esc(sn)+'</h4>'+XLSX.utils.sheet_to_html(wb.Sheets[sn], { header:'', footer:'' }).replace(/<\/?(html|head|body|meta)[^>]*>/g, ''); }).join('')); }
+  return gridLines(new File([buf], name)).then(function(L){ return '<pre>'+esc(L.join('\n').replace(/\n{3,}/g, '\n\n'))+'</pre>'; });
+}
+function docvHtml(key){ var d = DOCV[key]; return '<div class="docv" id="docv" data-key="'+esc(key)+'">'+(!d || d.busy ? '<p class="small muted">Chargement du document…</p>' : d.err ? '<p class="small neg">'+esc(d.err)+'</p>' : d.html)+'</div>'; }
+function docvFill(){ var e = $('docv'); if (!e) return; var key = e.dataset.key; if (DOCV[key]) return; DOCV[key] = { busy:true };
+  var src; if (key.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === key.slice(2); })[0]; src = dr ? readBuf(dr.file).then(function(b){ return [b, dr.name]; }) : Promise.reject(new Error('brouillon introuvable')); }
+  else { var G = null; carriers().forEach(function(c){ (c.grids || []).forEach(function(g){ if (g.id === key) G = g; }); }); src = G && G.doc ? STORE.getFileBytes(G.doc).then(function(b){ return [b, G.doc.name]; }) : Promise.reject(new Error('document d\'origine non conservé')); }
+  src.then(function(x){ return docRender(x[0], x[1]); }).then(function(h){ DOCV[key] = { html:h }; render(); }, function(err){ DOCV[key] = { err:'Affichage impossible : '+err.message }; render(); }); }
+function odTable(g){ var H = g.odHdr || []; return '<div class="tw"><table class="grd-t"><thead><tr><th>Véhicule (départ '+esc(g.origin)+')</th><th class="n">CU</th>'+H.map(function(d){ return '<th class="n">'+d+'</th>'; }).join('')+'</tr></thead><tbody>'+g.vehicles.map(function(v){ return '<tr><td>'+esc(v.label)+'</td><td class="n">'+(v.kg ? (v.kg / 1000).toString().replace('.', ',')+' t' : '?')+'</td>'+H.map(function(d){ return '<td class="n">'+n0(v.prices[d])+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div>'; }
 function gridPreview(g){
+  if (g.odHdr) return odTable(g);
   if (g.kind === 'course') return '<p class="small">'+g.rows.length+' communes × '+g.classes.map(function(c){ return esc(c.label); }).join(', ')+(g.surHayon ? ' · hayon '+n2(g.surHayon)+' €' : '')+'</p>';
   if (g.kind === 'lots') return '<div class="tw"><table class="grd-t"><thead><tr><th>Dép.</th>'+g.cols.map(function(c){ return '<th class="n">'+c.t+' t<br>'+c.ml+' m</th>'; }).join('')+'</tr></thead><tbody>'+g.rows.map(function(r){ return '<tr><td>'+esc(r.deps)+'</td>'+r.prices.map(function(p){ return '<td class="n">'+n0(p)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div>';
   return '<div class="tw"><table class="grd-t"><thead><tr><th>Véhicule</th><th class="n">CU</th><th class="n">Long.</th><th>Grue</th><th class="n">'+esc(g.unit)+'</th><th class="n">€/km</th><th class="n">€/h</th></tr></thead><tbody>'+g.vehicles.map(function(v){ return '<tr><td>'+esc(v.label)+'</td><td class="n">'+(v.kg ? (v.kg / 1000)+' t' : '?')+'</td><td class="n">'+(v.len ? n2(v.len / 1000)+' m' : '?')+'</td><td>'+(v.grue ? 'oui' : '')+'</td><td class="n">'+n2(v.prices.IDF)+'</td><td class="n">'+(v.kmRate !== '' ? n2(v.kmRate) : '')+'</td><td class="n">'+(v.hourRate !== '' ? n2(v.hourRate) : (g.hourRate ? n2(g.hourRate) : ''))+'</td></tr>'; }).join('')+'</tbody></table></div><p class="small muted">'+g.hoursIncl+' h incluses'+(g.kmIncl ? ' · '+g.kmIncl+' km inclus' : '')+'</p>';
@@ -4555,8 +4621,9 @@ function gridDraftHtml(dr){
   h += '<span class="pill p-info">'+GKIND[g.kind]+'</span><select id="gi_car_'+dr.id+'" data-gicar="'+dr.id+'">'+carriers().map(function(c){ return '<option value="'+esc(c.id)+'"'+(dr.car === c.id ? ' selected' : '')+'>'+esc(c.name)+'</option>'; }).join('')+'<option value="_new"'+(dr.car === '_new' ? ' selected' : '')+'>+ nouveau transporteur</option></select>'+
     (dr.car === '_new' ? '<input id="gi_new_'+dr.id+'" value="'+esc(dr.newName || '')+'" placeholder="Nom du transporteur" style="width:200px">' : '')+
     '<input id="gi_lab_'+dr.id+'" value="'+esc(dr.label || '')+'" placeholder="Nom de la grille" style="width:220px">'+
-    '<button class="lnk small" data-giopen="'+dr.id+'">'+(dr.open ? 'Masquer' : 'Aperçu')+(nw ? ' · '+nw+' point(s) à vérifier' : '')+'</button><span class="sp"></span><button class="btn sm pri" data-gisave="'+dr.id+'">Ajouter</button><button class="btn sm g" data-gidrop="'+dr.id+'">Ignorer</button>';
+    '<button class="lnk small" data-giopen="'+dr.id+'">'+(dr.open ? 'Masquer' : 'Aperçu')+(nw ? ' · '+nw+' point(s) à vérifier' : '')+'</button><button class="lnk small" data-docview="d:'+dr.id+'">'+(ST.docView === 'd:'+dr.id ? 'Fermer le document' : 'Voir le document')+'</button><span class="sp"></span><button class="btn sm pri" data-gisave="'+dr.id+'">Ajouter</button><button class="btn sm g" data-gidrop="'+dr.id+'">Ignorer</button>';
   if (dr.open) h += '<div class="gi-p">'+gridPreview(g)+(nw ? '<ul class="gi-w">'+g.warnings.map(function(w){ return '<li>'+esc(w)+'</li>'; }).join('')+'</ul>' : '')+'</div>';
+  if (ST.docView === 'd:'+dr.id) h += '<div class="gi-p">'+docvHtml('d:'+dr.id)+'</div>';
   return h + '</div>';
 }
 window.__dbg = function(){ return { ST:ST, buyAll:buyAll }; };
@@ -4741,8 +4808,10 @@ function vCarriers(){
   if (!c) return h + '<label class="gdrop"><input type="file" hidden multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.csv"><b>Dépose les grilles tarifaires d\'un transporteur</b><span class="small muted">PDF, Word ou Excel : le transporteur et ses grilles sont créés à partir des documents</span></label></section>';
   var G = c.grids || [], sub = ST.carSub, i = sel;
   if (sub !== 'fiche' && sub !== 'com' && sub !== 'add' && !G.some(function(g){ return g.id === sub; })) sub = G.length ? G[0].id : 'add';
-  h += '<div class="panel car-p"><div class="car-sub">'+G.map(function(g){ return '<button class="'+(sub === g.id ? 'on' : '')+(g.active === false ? ' off' : '')+'" data-carsub="'+esc(g.id)+'">'+esc(g.label || 'Grille')+((g.checks || []).length ? ' <i class="dot" title="points à vérifier"></i>' : '')+'</button>'; }).join('')+
-    '<button class="'+(sub === 'add' ? 'on' : '')+' add" data-carsub="add">+ Grille</button><span class="sp"></span><button class="'+(sub === 'fiche' ? 'on' : '')+'" data-carsub="fiche">Fiche</button><button class="'+(sub === 'com' ? 'on' : '')+'" data-carsub="com">Commentaires'+((c.comments || []).length ? ' · '+c.comments.length : '')+'</button></div>';
+  var lv = sub === 'fiche' || sub === 'com' ? sub : 'grids', ICF = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2.5" y="2" width="11" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 5.5h6M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.4"/></svg>',
+    ICG = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12v10H2zM2 6.5h12M2 10h12M6 3v10M10 3v10" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>', ICC = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12v8H7l-3 3v-3H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+  h += '<div class="panel car-p"><div class="car-nav"><button class="'+(lv === 'fiche' ? 'on' : '')+'" data-carsub="fiche">'+ICF+'Fiche</button><button class="'+(lv === 'grids' ? 'on' : '')+'" data-carsub="'+esc(G.length ? (G.some(function(g){ return g.id === ST.carSub; }) ? ST.carSub : G[0].id) : 'add')+'">'+ICG+'Grilles tarifaires<span>'+G.length+'</span></button><button class="'+(lv === 'com' ? 'on' : '')+'" data-carsub="com">'+ICC+'Commentaires<span>'+(c.comments || []).length+'</span></button></div>';
+  if (lv === 'grids') h += '<div class="car-sub">'+G.map(function(g){ return '<button class="'+(sub === g.id ? 'on' : '')+(g.active === false ? ' off' : '')+'" data-carsub="'+esc(g.id)+'">'+esc(g.label || 'Grille')+((g.checks || []).length ? ' <i class="dot" title="points à vérifier"></i>' : '')+'</button>'; }).join('')+'<button class="'+(sub === 'add' ? 'on' : '')+' add" data-carsub="add">+ Ajouter une grille</button></div>';
   if (sub === 'fiche') h += carFiche(c, i);
   else if (sub === 'com') h += carComments(c, i);
   else if (sub === 'add') h += '<div class="pb" style="display:grid;gap:12px"><label class="gdrop" data-car="'+esc(c.id)+'"><input type="file" hidden multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.csv"><b>Dépose une grille de '+esc(c.name)+'</b><span class="small muted">PDF, Word ou Excel</span></label><div class="row"><span class="small muted">ou créer à la main :</span><button class="btn sm" data-gridnew="vehicule">Affrètement</button><button class="btn sm" data-gridnew="messagerie">Messagerie</button></div></div>';
@@ -4785,12 +4854,14 @@ function gridEditor(c, i, G, j){
   var p = 'carriers.'+i+'.grids.'+j+'.', Z = G.zones || [], veh = G.kind === 'vehicule', tab = G.kind === 'course' || G.kind === 'lots';
   var h = '<div class="pb grd-top">'+cIn(p+'label', G.label, '', '230px')+'<span class="pill p-info">'+GKIND[G.kind]+'</span><label class="small">Valable du <input data-cf="'+p+'validFrom" type="date" value="'+esc(G.validFrom || '')+'"'+ADM()+'></label>'+
     '<select data-cf="'+p+'active"'+ADM()+'><option value="true"'+(G.active !== false ? ' selected' : '')+'>Active</option><option value="false"'+(G.active === false ? ' selected' : '')+'>Inactive</option></select>'+
-    (G.source ? (G.doc ? '<button class="lnk small" data-griddocdl="'+i+'|'+j+'" title="Document d\'origine">'+esc(G.source)+'</button>' : '<span class="small muted">'+esc(G.source)+'</span>') : '')+'<span class="sp"></span>'+
+    (G.doc ? '<button class="btn sm'+(ST.docView === G.id ? ' pri' : '')+'" data-docview="'+esc(G.id)+'">'+(ST.docView === G.id ? 'Fermer le document' : 'Voir le document')+'</button><button class="lnk small" data-griddocdl="'+i+'|'+j+'" title="Télécharger">'+esc(G.source || G.doc.name)+'</button>' : (G.source ? '<span class="small muted">'+esc(G.source)+'</span>' : ''))+'<span class="sp"></span>'+
     (tab ? '' : '<button class="btn sm g" data-gridx="'+i+'|'+j+'">Exporter</button><label class="btn sm g">Importer<input type="file" hidden data-gridin="'+i+'|'+j+'" accept=".xlsx,.xls"></label>')+
     (ST.gridDel === G.id ? '<button class="btn sm danger" data-griddelok="'+i+'|'+j+'">Confirmer</button><button class="btn sm g" data-cardelno>Annuler</button>' : '<button class="btn sm g sv-del" data-griddel="'+esc(G.id)+'">Supprimer</button>')+'</div>';
+  if (ST.docView === G.id) h += docvHtml(G.id);
   if (G.checks && G.checks.length) h += '<details class="gchk"><summary>'+G.checks.length+' point(s) à vérifier (lecture automatique)</summary><ul class="gi-w">'+G.checks.map(function(w){ return '<li>'+esc(w)+'</li>'; }).join('')+'</ul><button class="lnk small" data-gridchk="'+i+'|'+j+'">Vérifié</button></details>';
   var F = function(l, k){ return '<label class="gp"><span>'+l+'</span>'+cIn(p+k, G[k], 'number', '80px')+'</label>'; };
   h += '<div class="pb gpar">';
+  if (veh && G.odHdr) h += '<label class="gp"><span>Départ</span><select data-gridorig="'+i+'|'+j+'">'+G.odHdr.map(function(d){ return '<option'+(d === G.origin ? ' selected' : '')+'>'+d+'</option>'; }).join('')+'</select></label>';
   if (veh) h += F('Km inclus', 'kmIncl')+F('€ / km au-delà', 'kmRate')+F('Heures incluses', 'hoursIncl')+F('€ / h au-delà', 'hourRate')+F('Hayon €', 'surHayon')+F('Grue €', 'surGrue');
   else if (G.kind === 'course') h += F('Hayon €', 'surHayon')+F('Débâchable €', 'surDebache');
   else if (G.kind === 'lots') h += F('Tonnage min.', 'minT')+F('Ml min.', 'minML')+F('Palettes / ml', 'mlPerPal');
@@ -5056,6 +5127,7 @@ document.addEventListener('click', function(e){
   if (d.griddocdl){ var gd = d.griddocdl.split('|'), gg = carriers()[+gd[0]].grids[+gd[1]]; if (gg.doc) STORE.getFileBytes(gg.doc).then(function(b){ saveBlob(gg.doc.name, new Blob([b]), ''); }); return; }
   if (d.carsel !== undefined){ ST.carSel = d.carsel === 'an' ? 'an' : +d.carsel; ST.carSub = null; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (d.carsub !== undefined){ ST.carSub = d.carsub; ST.carDel = null; ST.gridDel = null; render(); return; }
+  if (d.docview){ ST.docView = ST.docView === d.docview ? null : d.docview; render(); return; }
   if (d.giopen){ var go = (ST.gimp || []).filter(function(x){ return x.id === d.giopen; })[0]; if (go){ gridDraftKeep(go); go.open = !go.open; } render(); return; }
   if (d.carnewno !== undefined){ ST.carNew = false; render(); return; }
   if (d.carnewok !== undefined){ carCreate(); return; }
@@ -5234,6 +5306,7 @@ document.addEventListener('click', function(e){
 document.addEventListener('change', function(e){
   var t = e.target, d = t.dataset;
   if (d.an){ ST.an = ST.an || {}; ST.an[d.an] = t.value; if (d.an === 'dep'){ ST.an.cp = ''; ST.an.ville = ''; } render(); return; }
+  if (d.gridorig){ var go2 = d.gridorig.split('|'), G2 = carriers()[+go2[0]].grids[+go2[1]], o2 = t.value; G2.origin = o2; (G2.vehicles || []).forEach(function(v){ if (v.od && v.od[o2]){ v.prices = {}; G2.odHdr.forEach(function(dd, k){ v.prices[dd] = v.od[o2][k]; }); } }); saveCfg('Grille '+G2.label+' : départ '+o2); render(); return; }
   if (d.gicar){ var gc = (ST.gimp || []).filter(function(x){ return x.id === d.gicar; })[0]; if (gc){ gridDraftKeep(gc); render(); var gn = $('gi_new_'+gc.id); if (gn) gn.focus(); } return; }
   if (d.cf !== undefined){
     if (!isAdmin()){ render(); return; }
