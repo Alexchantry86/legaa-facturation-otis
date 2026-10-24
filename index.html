@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v5.4 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v5.5 · 01/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1149,6 +1149,57 @@ b.mg-r{color:#b42318}b.mg-o{color:#b45309}b.mg-g{color:#1e7b3c}
 .g-ax span{position:absolute;transform:translateX(-50%)}.g-ax span:first-child{transform:none}.g-ax span:last-child{transform:translateX(-100%)}
 @media (max-width:700px){.syn-k{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .g-ax span{white-space:nowrap}
+/* ---- v5.5 · analyses lisibles, blocs du devis, validation ---- */
+.an-sel{display:grid;gap:10px;padding:14px;background:#fff;border-bottom:1px solid #e3e5e8}
+.an-row{display:flex;align-items:flex-start;gap:12px}
+.an-cat{flex:0 0 86px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#4a525c;padding-top:7px}
+.an-chips{display:flex;flex-wrap:wrap;gap:6px}
+.an-chip{display:inline-flex;align-items:center;gap:7px;border:1.5px solid #c6ccd3;background:#fff;border-radius:18px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;color:#2b3440;cursor:pointer;transition:all .12s}
+.an-chip span{font-size:11px;font-weight:600;background:#eef0f3;color:#5c6570;border-radius:9px;padding:0 6px;min-width:18px;text-align:center}
+.an-chip:hover{border-color:#2563eb;color:#1d4ed8}
+.an-chip.on{background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.3)}
+.an-chip.on span{background:#fff;color:#1d4ed8}
+.an-chip.none{opacity:.5}
+.an-sel .an-t{margin:2px 0 0 98px;color:#2b3440}
+.an-sel .an-ad{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.an-heat{width:auto;border-spacing:2px;font-size:12.5px}
+.an-heat thead th{max-width:120px;white-space:normal;line-height:1.2;font-size:11.5px;vertical-align:bottom;padding:4px}
+.an-heat tbody th{white-space:nowrap;font-size:12px;padding:3px 8px 3px 0}
+.an-heat td{min-width:0;width:96px;padding:4px 6px;border-radius:4px}
+.an-heat td b{font-size:13px}
+.an-heat td span{font-size:10.5px;color:inherit;opacity:.85}
+.an-heat td.h-best{background:#22c55e;color:#fff;font-weight:700}
+.an-heat td.h-solo{background:#dbeafe;color:#1e3a8a}
+.an-heat td.h-g1{background:#fef9c3;color:#713f12}
+.an-heat td.h-g2{background:#fde68a;color:#78350f}
+.an-heat td.h-g3{background:#fdba74;color:#7c2d12}
+.an-heat td.h-g4{background:#fca5a5;color:#7f1d1d}
+.an-heat td.na{background:#f6f7f8;color:#c3c8ce;width:96px}
+.an-heat td.an-w{width:auto;min-width:130px;background:#f1f5f9;color:#14233d}
+.an-heat td.best,.an-heat td.best span{color:#fff}
+.an-heat tr.an-none th{color:#b0b6bd}
+/* blocs du devis */
+.blk>.panel{border-width:1px;overflow:hidden}
+.blk .ph h2{display:flex;align-items:center;gap:10px}
+.bn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:#fff;font-size:14px;font-weight:700}
+.blk-sell>.panel{border-top:4px solid #2563eb}.blk-sell>.panel>.ph{background:#eff6ff}.blk-sell .bn{background:#2563eb}
+.blk-buy>.panel{border-top:4px solid #d97706}.blk-buy>.panel>.ph{background:#fffbeb}.blk-buy .bn{background:#d97706}
+.blk-syn>.panel{border-top:4px solid #14233d}.blk-syn>.panel>.ph{background:#f1f5f9}.blk-syn .bn{background:#14233d}
+.blk-sell .reco{border-color:#2563eb}
+/* options d'achat : pas de débordement */
+.tr-opts{grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr))}
+.tr-opt{min-width:0;overflow:hidden;position:relative}
+.tr-opt .formula{white-space:normal;overflow-wrap:anywhere;line-height:1.45}
+.tr-opt.first{border-color:#16a34a;box-shadow:inset 0 3px 0 #16a34a;background:#f0fdf4}
+.tr-opt.pick{background:#dcfce7;border-color:#16a34a}
+.tr-opt .btn{white-space:normal}
+/* bandeau validé */
+.tr-done{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;background:#dcfce7;border:1.5px solid #16a34a;color:#14532d;border-radius:6px;padding:10px 16px;margin-bottom:16px;font-size:13.5px;animation:trdone .35s ease-out}
+.tr-done>b{font-size:17px;letter-spacing:.02em}
+.tr-done .ok-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#16a34a;color:#fff}
+.tr-done .sp{flex:1}
+@keyframes trdone{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}
+.an-heat td span{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -4474,7 +4525,7 @@ function trBuyEff(I){ var A = buyAll(I).filter(function(q){ return q.ok; }).sort
 function calcSyn(){
   var box = $('tsyn'); if (!box) return; var I = trSave(), S = sellCalc(I), sell = S.best ? S.best.q.total : null, B = trBuyEff(I);
   var mg = sell !== null && B ? E.r2(sell - B.price) : null, pc = mg !== null && sell ? mg / sell * 100 : null, cls = mgClass(pc);
-  var h = '<div class="panel syn"><div class="ph"><h2>Synthèse</h2><span class="muted small">objectif de marge '+MG_TARGET+' %</span></div><div class="pb" style="display:grid;gap:14px">';
+  var h = '<div class="panel syn"><div class="ph"><h2><span class="bn">3</span>Synthèse · marge</h2><span class="muted small">objectif de marge '+MG_TARGET+' %</span></div><div class="pb" style="display:grid;gap:14px">';
   h += '<div class="syn-k"><div><span class="lbl">Vente HT</span><b>'+(sell !== null ? eur(sell) : '—')+'</b><span class="small muted">'+(S.best ? esc(S.best.v.label) : 'hors grille de vente')+'</span></div>'+
     '<div><span class="lbl">Achat HT</span><b>'+(B ? eur(B.price) : '—')+'</b><span class="small muted">'+(B ? esc(B.carrier)+(B.picked ? ' · retenu' : ' · option la moins chère, non retenue') : 'aucune grille transporteur')+'</span></div>'+
     '<div class="'+cls+'"><span class="lbl">Marge</span><b>'+(mg !== null ? (mg >= 0 ? '+' : '')+n2(mg)+' €' : '—')+'</b><span class="small">'+(pc !== null ? '' : '&nbsp;')+'</span></div>'+
@@ -4490,7 +4541,9 @@ function calcSyn(){
 }
 /* Mise à jour sans recréer un bloc identique : un clic sur « Valider » juste après une saisie n'est pas perdu */
 function setHtml(box, h){ if (box._h === h) return; box._h = h; box.innerHTML = h; }
-function vDevis(){ return '<section class="view"><div class="two">'+trForm()+'<div style="display:grid;gap:16px;align-content:start"><div id="treco"></div><div id="tbuy"></div><div id="tsyn"></div></div></div></section>'; }
+function vDevis(){ var V = ST.trDone;
+  var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+(V.ville ? ' · '+esc(V.cp+' '+V.ville) : '')+'</span><span class="sp"></span><button class="btn sm" data-ttab="hist">Voir l\'historique</button><button class="btn sm g" data-trdone>Nouveau devis</button></div>' : '';
+  return '<section class="view">'+ban+'<div class="two">'+trForm()+'<div style="display:grid;gap:16px;align-content:start"><div id="treco" class="blk blk-sell"></div><div id="tbuy" class="blk blk-buy"></div><div id="tsyn" class="blk blk-syn"></div></div></div></section>'; }
 function vTransport(){ return '<section class="view"><div class="two">'+trForm('sell')+'<div style="display:grid;gap:16px"><div id="treco"></div></div></div></section>'; }
 function vTrBuy(){ return '<section class="view"><div class="two">'+trForm('buy')+'<div style="display:grid;gap:16px"><div id="tbuy"></div></div></div></section>'; }
 function fld(l,id,type,v){ return '<div class="fld"><label class="lbl" for="'+id+'">'+l+'</label><input id="'+id+'" type="'+type+'" value="'+esc(v)+'"'+(type==='number'?' step="any" min="0"':'')+'></div>'; }
@@ -4526,7 +4579,7 @@ function calcTransport(){
   var S = sellCalc(I), zone = S.zone;
   if (!zone){ box.innerHTML = '<div class="panel pb note">'+(String(I.cp).slice(0,2)==='78'?'Yvelines : choisir la zone A ou B (la grille partage le 78 en deux moitiés).':'Saisir un code postal valide pour déterminer la zone.')+'</div>'; LAST_Q=null; return; }
   var best = S.best, B = ST.trBuyPick;
-  var h = '<div class="panel"><div class="ph"><h2>1 · Vente : prix à facturer au client</h2><span class="pill p-info">Zone '+zone+'</span><span class="muted small">'+esc(S.G.label || 'Grille de vente spécifique')+'</span></div><div class="pb" style="display:grid;gap:12px">';
+  var h = '<div class="panel"><div class="ph"><h2><span class="bn">1</span>Vente · prix à facturer au client</h2><span class="pill p-info">Zone '+zone+'</span><span class="muted small">'+esc(S.G.label || 'Grille de vente spécifique')+'</span></div><div class="pb" style="display:grid;gap:12px">';
   if (!best){ h += '<p class="note"><span class="pill p-bloquant">Hors grille</span> Aucun véhicule de la grille de vente ne convient : transport sur devis.</p>'; LAST_Q=null; }
   else {
     LAST_Q = { zone:zone, veh:best.v.label, detail:best.q.detail, total:best.q.total };
@@ -4893,7 +4946,7 @@ function buyQuote(G, I){
 function buyAll(I){ var out = []; carriers().forEach(function(c){ if (c.active === false) return; (c.grids || []).forEach(function(G){ if (G.active === false) return; var q = buyQuote(G, I); q.carrier = c.name; q.c = c; q.G = G; out.push(q); }); }); return out; }
 function calcBuy(){
   var box = $('tbuy'); if (!box) return; var I = trSave(), A = buyAll(I), ok = A.filter(function(q){ return q.ok; }).sort(function(a, b){ return a.price - b.price; }), S = sellCalc(I), sell = S.best ? S.best.q.total : null;
-  var h = '<div class="panel"><div class="ph"><h2>2 · Achat : les 2 options les plus économiques</h2><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
+  var h = '<div class="panel"><div class="ph"><h2><span class="bn">2</span>Achat · les 2 options les plus économiques</h2><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
   if (!carriers().length) h += '<p class="note">Aucun transporteur paramétré. '+(isAdmin() ? '<button class="lnk" data-cfgtab="ach">Créer les transporteurs et leurs grilles</button> (Paramétrage › Grille achat transport).' : 'Un administrateur doit créer les transporteurs dans Paramétrage › Grille achat transport.')+'</p>';
   else if (!ok.length) h += '<p class="note"><span class="pill p-bloquant">Aucune option</span> Aucune grille de transporteur ne couvre cette livraison : demander un devis.</p>';
   else h += '<div class="tr-opts">'+ok.slice(0, 2).map(function(q, i){ var mg = sell !== null ? E.r2(sell - q.price) : null, pick = ST.trBuyPick && ST.trBuyPick.key === q.c.id+'|'+q.G.id;
@@ -5038,8 +5091,9 @@ function anHeat(rows, C, first){
   return '<div class="tw"><table class="an-heat"><thead><tr><th>'+first+'</th>'+C.map(function(c){ return '<th>'+esc(c.name)+'</th>'; }).join('')+'<th class="an-w">Le moins cher</th></tr></thead><tbody>'+rows.map(function(r){
     var P = r.vals.filter(Boolean).map(function(q){ return q.price; }), mn = Math.min.apply(null, P.concat([Infinity])), mx = Math.max.apply(null, P.concat([-Infinity])), wi = -1;
     var cells = r.vals.map(function(q, k){ if (!q) return '<td class="na">—</td>';
-      var t = mx > mn ? (q.price - mn) / (mx - mn) : 0, best = q.price === mn && P.length > 1; if (q.price === mn && wi < 0) wi = k; var bg = best ? '#14233d' : 'rgb('+Math.round(236 - t * 70)+','+Math.round(238 - t * 70)+','+Math.round(241 - t * 66)+')';
-      return '<td style="background:'+bg+'" class="'+(best ? 'best' : '')+'" title="'+esc(q.G.label+' · '+q.what)+'"><b>'+n2(q.price)+'</b><span>'+(P.length < 2 ? 'seul' : best ? 'le moins cher' : '+'+Math.round((q.price / mn - 1) * 100)+' %')+'</span></td>'; }).join('');
+      var best = q.price === mn && P.length > 1, gap = (q.price / mn - 1) * 100; if (q.price === mn && wi < 0) wi = k;
+      var cl = P.length < 2 ? 'h-solo' : best ? 'h-best' : gap <= 5 ? 'h-g1' : gap <= 15 ? 'h-g2' : gap <= 30 ? 'h-g3' : 'h-g4';
+      return '<td class="'+cl+'" title="'+esc(q.G.label+' · '+q.what)+'"><b>'+n2(q.price)+'</b><span>'+(P.length < 2 ? 'seule offre' : best ? '★ moins cher' : '+'+Math.round(gap)+' %')+'</span></td>'; }).join('');
     return '<tr'+(P.length ? '' : ' class="an-none"')+'><th>'+r.label+'</th>'+cells+'<td class="an-w">'+(wi >= 0 ? '<b>'+esc(C[wi].name)+'</b><span>'+(P.length > 1 ? 'écart max '+n2(mx - mn)+' €' : 'seule offre')+'</span>' : '<span>aucune offre</span>')+'</td></tr>'; }).join('')+'</tbody></table></div>';
 }
 function vAnalyses(){
@@ -5049,16 +5103,17 @@ function vAnalyses(){
   var h = '<div class="panel an"><div class="an-tabs"><button class="'+(A.tab === 'veh' ? 'on' : '')+'" data-antab="veh">Par type de véhicule</button><button class="'+(A.tab === 'dest' ? 'on' : '')+'" data-antab="dest">Par destination</button></div>';
   if (A.tab === 'veh'){
     var t = vtByCode(A.type);
-    h += '<div class="an-f"><label><span>Type de véhicule</span><select data-an="type">'+['VL', 'PL'].map(function(cat){ return '<optgroup label="'+cat+'">'+T.filter(function(x){ return x.cat === cat; }).map(function(x){ return '<option value="'+esc(x.code)+'"'+(x.code === A.type ? ' selected' : '')+'>'+esc(x.label)+'</option>'; }).join('')+'</optgroup>'; }).join('')+'</select></label>'+
-      '<span class="an-t small muted">'+vtShort(t)+(vtVol(t) !== '' ? ' · '+String(vtVol(t)).replace('.', ',')+' m³' : '')+(+t.L ? ' · int. '+t.L+(t.W ? ' × '+t.W : '')+(t.H ? ' × '+t.H : '')+' mm' : '')+(t.grue ? ' · grue' : '')+(t.hayon ? ' · hayon' : '')+'</span></div>';
+    var nOff = function(x){ return C.filter(function(c){ return (c.grids || []).some(function(G){ return G.active !== false && (gUnits(G).some(function(u){ return vType(u) === x.code; }) || (G.kind === 'lots' && !x.grue)); }); }).length; };
+    h += '<div class="an-sel">'+['VL', 'PL'].map(function(cat){ var L = T.filter(function(x){ return x.cat === cat; }); return L.length ? '<div class="an-row"><span class="an-cat">'+cat+'</span><div class="an-chips">'+L.map(function(x){ var n = nOff(x); return '<button class="an-chip'+(x.code === A.type ? ' on' : '')+(n ? '' : ' none')+'" data-anset="type|'+esc(x.code)+'">'+esc(x.label)+'<span>'+n+'</span></button>'; }).join('')+'</div></div>' : ''; }).join('')+
+      '<p class="an-t small">'+vtShort(t)+(vtVol(t) !== '' ? ' · '+String(vtVol(t)).replace('.', ',')+' m³' : '')+(+t.L ? ' · int. '+t.L+(t.W ? ' × '+t.W : '')+(t.H ? ' × '+t.H : '')+' mm' : '')+(t.grue ? ' · grue' : '')+(t.hayon ? ' · hayon' : '')+' · <span class="muted">chiffre = nombre de transporteurs proposant le type</span></p></div>';
     h += '<div class="an-1">'+anHeat(D.map(function(d){ return { label:destLabel(d), vals:C.map(function(c){ return carTypePrice(c, t, d); }) }; }), C, 'Destination')+'</div>';
   } else {
     var dest = A.cp && A.ville ? { cp:A.cp, ville:A.ville } : D[+A.dest];
-    h += '<div class="an-f"><label><span>Destination</span><select data-an="dest">'+D.map(function(d, k){ return '<option value="'+k+'"'+(+A.dest === k && !(A.cp && A.ville) ? ' selected' : '')+'>'+destLabel(d)+'</option>'; }).join('')+'</select></label>'+
-      '<label><span>ou autre adresse</span><span class="an-ad"><input data-an="cp" value="'+esc(A.cp || '')+'" placeholder="CP" style="width:70px"><input data-an="ville" value="'+esc(A.ville || '')+'" placeholder="Commune" style="width:160px"></span></label>'+(A.cp && A.ville ? '<button class="lnk small" data-anclr>Revenir au référentiel</button>' : '')+'</div>';
+    h += '<div class="an-sel"><div class="an-row"><span class="an-cat">Destination</span><div class="an-chips">'+D.map(function(d, k){ return '<button class="an-chip'+(+A.dest === k && !(A.cp && A.ville) ? ' on' : '')+'" data-anset="dest|'+k+'">'+esc(d.ville || d.cp)+'<span>'+esc(String(d.cp).slice(0, 5))+'</span></button>'; }).join('')+'</div></div>'+
+      '<div class="an-row"><span class="an-cat">Autre</span><span class="an-ad"><input data-an="cp" value="'+esc(A.cp || '')+'" placeholder="CP" style="width:70px"><input data-an="ville" value="'+esc(A.ville || '')+'" placeholder="Commune" style="width:160px"></span></label>'+(A.cp && A.ville ? '<span class="an-chip on">'+esc(A.cp+' '+A.ville)+'</span><button class="lnk small" data-anclr>Revenir au référentiel</button>' : '<span class="small muted">code postal puis commune</span>')+'</div></div>';
     h += '<div class="an-1">'+anHeat(T.map(function(x){ return { label:esc(x.label)+'<span class="small muted"> · '+vtShort(x)+'</span>', vals:C.map(function(c){ return carTypePrice(c, x, dest); }) }; }), C, 'Type de véhicule')+'</div>';
   }
-  return h + '<p class="small muted an-l">Prix de base des grilles (€ HT), hors suppléments, heures et km au-delà des forfaits ; détail au survol d\'une case. Lot : colonne couvrant la charge utile et les mètres linéaires du type. Foncé = le moins cher de la ligne.</p></div>';
+  return h + '<p class="small muted an-l">Prix de base des grilles (€ HT), hors suppléments, heures et km au-delà des forfaits ; détail au survol d\'une case. Lot : colonne couvrant la charge utile et les mètres linéaires du type. Couleurs : vert = le moins cher de la ligne, puis écart croissant (jaune ≤ 5 %, orange ≤ 15 %, rose ≤ 30 %, rouge au-delà).</p></div>';
 }
 /* ---- Fenêtre de visualisation d'un document ---- */
 function docName(k){ if (k.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === k.slice(2); })[0]; return dr ? dr.name : ''; }
@@ -5218,7 +5273,7 @@ function validateTransport(){
   var t = { date:I.date, ag:I.ag, agLabel:agLabel(I.ag), cm:I.cm, cmd:I.cmd, cp:I.cp, ville:I.ville, pal:+I.pal||0, kg:+I.kg||0, vol:+I.vol||0, len:+I.len||0, h:+I.h||0, km:+I.km||0, obs:I.obs, zone:LAST_Q.zone, veh:LAST_Q.veh, detail:LAST_Q.detail, total:LAST_Q.total, status:'valide' };
   if (B){ t.buyCarrier = B.carrier; t.buyWhat = B.what; t.buyPrice = B.price; t.buyPicked = !!B.picked; t.marge = E.r2(t.total - B.price); t.margePct = t.total ? Math.round((t.total - B.price) / t.total * 1000) / 10 : null; }
   if (!t.date){ toast('Renseigner la date de livraison'); return; }
-  STORE.addTransport(t).then(function(){ toast('Transport validé : '+eur(t.total)+' HT'+(B ? ' · achat '+eur(B.price)+' ('+B.carrier+')' : '')); ST.trBuyPick = null; ST.transports = null; loadTransports(); }, function(e){ toast('Validation impossible : '+e.message); });
+  STORE.addTransport(t).then(function(){ ST.trDone = { at:new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }), total:t.total, buy:t.buyPrice, carrier:t.buyCarrier, pc:t.margePct, cp:t.cp, ville:t.ville }; window.scrollTo(0, 0); toast('Transport validé : '+eur(t.total)+' HT'+(B ? ' · achat '+eur(B.price)+' ('+B.carrier+')' : '')); ST.trBuyPick = null; ST.transports = null; loadTransports(); }, function(e){ toast('Validation impossible : '+e.message); });
 }
 function loadTransports(){ return STORE.listTransports().then(function(L){ ST.transports = L; if (ST.module !== 'log') render(); }, function(e){ toast('Historique inaccessible : '+e.message); }); }
 var TRST = { valide:'Validé', facture:'Facturé', annule:'Annulé' };
@@ -5396,6 +5451,7 @@ document.addEventListener('click', function(e){
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
   if (d.trbuy){ var kq = d.trbuy.split('|'), cq = carriers().filter(function(x){ return x.id === kq[0]; })[0], gq = cq && (cq.grids || []).filter(function(x){ return x.id === kq[1]; })[0]; if (gq){ var qq = buyQuote(gq, trSave()); if (qq.ok){ ST.trBuyPick = { key:d.trbuy, carrier:cq.name, grid:gq.label, what:qq.what, price:qq.price }; toast('Achat retenu : '+cq.name+' · '+eur(qq.price)+' HT'); trCalc(); } } return; }
+  if (d.trdone !== undefined){ ST.trDone = null; render(); return; }
   if (d.trbuyclr !== undefined){ ST.trBuyPick = null; trCalc(); return; }
   if (d.gisave){ gridDraftSave(d.gisave); return; }
   if (d.gidrop){ ST.gimp = (ST.gimp || []).filter(function(x){ return x.id !== d.gidrop; }); render(); return; }
@@ -5403,6 +5459,7 @@ document.addEventListener('click', function(e){
   if (d.griddocdl){ var gd = d.griddocdl.split('|'), gg = carriers()[+gd[0]].grids[+gd[1]]; if (gg.doc) STORE.getFileBytes(gg.doc).then(function(b){ saveBlob(gg.doc.name, new Blob([b]), ''); }); return; }
   if (d.carsel !== undefined){ ST.carSel = /^(an|veh|dest)$/.test(d.carsel) ? d.carsel : +d.carsel; ST.carSub = null; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (d.carsub !== undefined){ ST.carSub = d.carsub; ST.carDel = null; ST.gridDel = null; render(); return; }
+  if (d.anset){ var as = d.anset.split('|'); ST.an = ST.an || {}; ST.an[as[0]] = as[1]; if (as[0] === 'dest'){ ST.an.cp = ''; ST.an.ville = ''; } render(); return; }
   if (d.antab){ ST.an = ST.an || {}; ST.an.tab = d.antab; render(); return; }
   if (d.anclr !== undefined){ ST.an.cp = ''; ST.an.ville = ''; render(); return; }
   if (d.docview){ ST.docView = ST.docView === d.docview ? null : d.docview; render(); return; }
@@ -5632,7 +5689,7 @@ document.addEventListener('change', function(e){
   if (t.closest && t.closest('#tform')) trCalc();
 });
 document.addEventListener('input', function(e){
-  if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn();
+  if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
     else if (ti === 't_ville'){ TI.kmMan = false; TI.hMan = false; trGeo(false); }
     else if (ti === 't_km') TI.kmMan = true; else if (ti === 't_h') TI.hMan = true;
