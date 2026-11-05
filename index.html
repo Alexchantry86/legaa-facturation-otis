@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v5.11 · 05/11/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v5.12 · 05/11/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -6499,7 +6499,8 @@ function vQuiz(){
 function qzRemaining(){ var n = 0; QF_SETS.forEach(function(s){ n += savFiches(s[0]).filter(function(f){ return f.status === 'a_faire'; }).length; }); return n + savPending().length; }
 
 function expertName(){ return (ST.cfg.expertName || 'Fethi'); }
-function isExpert(){ var e = String((ST.user && ST.user.email) || '').toLowerCase(); return isAdmin() || (ST.cfg.experts || []).map(function(x){ return String(x).toLowerCase(); }).indexOf(e) >= 0; }
+/* v5.12 : le savoir des experts (questionnaires, quiz, questions des ADV) est ouvert à tous les utilisateurs connectés */
+function isExpert(){ return !!ST.user; }
 function savLoad(){ if (!STORE.listSavoir) { SAV.list = []; return Promise.resolve(); } return STORE.listSavoir().then(function(L){ SAV.list = L; SAV.err = ''; KB.built = false; render(); }, function(e){ SAV.list = []; SAV.err = e.message; render(); }); }
 function savById(id){ return (SAV.list || []).filter(function(x){ return x.id === id; })[0] || null; }
 function savSetLabel(k){ var x = QF_SETS.filter(function(s){ return s[0] === k; })[0]; return x ? x[1] : (ST.cfg.agencies[k] ? (ST.cfg.agencies[k].label || k) : k || 'Général'); }
