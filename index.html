@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v5.10 · 05/11/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v5.11 · 05/11/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1263,6 +1263,10 @@ table.info-t td.nowrap{white-space:nowrap}
 .aff-eh .aff-c{margin-left:auto}
 .aff-e select{font:inherit;font-size:12.5px;padding:4px 6px;border:1px dashed var(--line);border-radius:4px;background:var(--sunk)}
 @media (max-width:700px){.aff-r{grid-template-columns:minmax(0,1fr)}}
+/* ---- v5.11 · Word lisible, grille de vente visible ---- */
+.dvx h1,.dvx h2,.dvx h3{margin:12px 0 6px;color:#14233d}.dvx table{border-collapse:collapse;width:100%;margin:8px 0}.dvx td,.dvx th{border:1px solid #c9ced4;padding:4px 6px;vertical-align:top}.dvx img{max-width:100%}.dvx ul,.dvx ol{margin:4px 0 8px 20px}
+.dvdoc h3{margin:0 0 8px}
+.ds-f{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--acc,#1f5fa6);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 </style>
 </head>
 <body>
@@ -3019,7 +3023,7 @@ function agEditor(a, tab){
   h += '<div class="panel keydocs"><div class="ph"><h2>Documents à renseigner</h2><span class="kd-n'+(nDoc===DK.length?' ok':'')+'">'+nDoc+' / '+DK.length+' chargé'+(DK.length > 1 ? 's' : '')+'</span><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs docs1">';
   DK.forEach(function(k, i){
     var d = (a.docs||{})[k[0]];
-    h += '<div class="docslot'+(d?' done':' todo')+'"><div class="ds-h"><span class="ds-n">'+(i+1)+'</span><span class="ds-t">'+k[1]+'</span><span class="ds-s">'+(d?'✓ Chargé':'À charger')+'</span></div>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Voir</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
+    h += '<div class="docslot'+(d?' done':' todo')+'"><div class="ds-h"><span class="ds-n">'+(i+1)+'</span><span class="ds-t">'+k[1]+'</span><span class="ds-s">'+(d?'✓ Chargé':'À charger')+'</span></div>'+(d ? '<button class="ds-f" data-docdl="'+esc(k[0])+'" title="Voir le document">'+esc(d.name)+'</button><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Voir</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
       : '<span class="muted">Aucun fichier.</span>'+(isAdmin()?'<label class="btn sm pri">Charger le fichier<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label>':''))+'<span class="hint">'+k[2]+'</span></div>';
   });
   h += '</div>';
@@ -4788,7 +4792,7 @@ function calcTransport(){
   var S = sellCalc(I), zone = S.zone;
   if (!zone){ box.innerHTML = '<div class="panel pb note">'+(String(I.cp).slice(0,2)==='78'?'Yvelines : choisir la zone A ou B (la grille partage le 78 en deux moitiés).':'Saisir un code postal valide pour déterminer la zone.')+'</div>'; LAST_Q=null; return; }
   var best = S.best, B = ST.trBuyPick;
-  var h = '<div class="panel"><div class="ph"><h2><span class="bn">1</span>Vente · prix à facturer au client</h2><span class="pill p-info">Zone '+zone+'</span><span class="muted small">'+esc(S.G.label || 'Grille de vente spécifique')+'</span></div><div class="pb" style="display:grid;gap:12px">';
+  var h = '<div class="panel"><div class="ph"><h2><span class="bn">1</span>Vente · prix à facturer au client</h2><span class="pill p-info">Zone '+zone+'</span><span class="muted small">'+esc(S.G.label || 'Grille de vente spécifique')+'</span><span class="sp"><button class="btn sm" data-saleview="'+esc(I.ag)+'">Voir la grille</button></span></div><div class="pb" style="display:grid;gap:12px">';
   if (!best){ h += '<p class="note"><span class="pill p-bloquant">Hors grille</span> Aucun véhicule de la grille de vente ne convient : transport sur devis.</p>'; LAST_Q=null; }
   else {
     LAST_Q = { zone:zone, veh:best.v.label, detail:best.q.detail, total:best.q.total };
@@ -5211,6 +5215,9 @@ function docHtml(buf){
 }
 /* ---- Visionneuse générique : tout document déposé (grilles, contrats, documents d'entité, exports, fichier ADV) s'ouvre dans une fenêtre ---- */
 var DOCM = {};
+/* Enregistrer en PDF : le document affiché (Word, Excel, grille) s'ouvre dans une page d'impression ; « Enregistrer au format PDF » produit le PDF */
+function dvPrint(k){ var D = DOCV[k]; if (!D || !D.html) return; var w = window.open('', '_blank'); if (!w){ toast('Fenêtre bloquée par le navigateur : autoriser les fenêtres pour ce site'); return; }
+  w.document.write('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>'+esc(docName(k).replace(/\.(docx?|xlsx?|csv)$/i, ''))+'</title><style>body{font:13px/1.5 Arial,sans-serif;color:#111;margin:18mm}table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}h1,h2,h3{margin:12px 0 6px}img{max-width:100%}@page{size:A4;margin:12mm}</style></head><body>'+D.html.replace(/<h4>/g, '<h3>').replace(/<\/h4>/g, '</h3>')+'<script>setTimeout(function(){ window.print(); }, 300);<\/script></body></html>'); w.document.close(); }
 function openDoc(meta){ if (!meta) return; var id = String(meta.id || meta.path || meta.name); DOCM[id] = meta; ST.docView = 'm:'+id; render(); }
 function docMetaOf(k){ if (!k) return null;
   if (k.indexOf('m:') === 0) return DOCM[k.slice(2)] || null;
@@ -5228,6 +5235,16 @@ function docMetaFromBtn(d){
   if (d.cardocdl !== undefined){ var cd = carriers()[+d.cardocdl]; return (cd && cd.doc) || null; }
   return undefined;
 }
+/* Word .docx : mise en page lisible (titres, gras, listes, tableaux) via mammoth.js, chargé à la première ouverture */
+function loadMammoth(){ if (window.mammoth) return Promise.resolve(window.mammoth);
+  return new Promise(function(res, rej){ var sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'; sc.onload = function(){ window.mammoth ? res(window.mammoth) : rej(new Error('lecteur Word indisponible')); }; sc.onerror = function(){ rej(new Error('lecteur Word indisponible')); }; document.head.appendChild(sc); }); }
+/* Grille de vente transport appliquée à une entité, en tableau (fenêtre de visualisation) */
+function saleGridHtml(ag){ var G = saleGrid(ag), a = ST.cfg.agencies[ag] || {}, own = G !== SALE_DEF;
+  return '<div class="dvdoc"><h3>'+esc(own ? 'Grille de vente spécifique · '+(a.label || ag) : (G.label || 'Grille transport OTIS 2023'))+'</h3><p>'+(own ? 'Grille propre à l\'entité.' : 'Grille commune à toutes les entités.')+' Zone A : '+esc(G.zA)+' · Zone B : '+esc(G.zB)+' · Zone C : reste de la France'+(G.split78 ? ' · Yvelines (78) partagé entre A (moitié Est) et B (moitié Ouest)' : '')+'.</p>'+
+    '<table class="dvt"><tr><th>Véhicule</th><th>Pal.</th><th>Kg max</th><th>Long. mm</th><th>Hayon</th><th>Grue</th><th>A ½ j.</th><th>A j.</th><th>B ½ j.</th><th>B j.</th><th>C ½ j.</th><th>C j.</th><th>€ / h sup.</th><th>€ / km sup.</th></tr>'+
+    G.veh.map(function(v){ var f = function(x){ return x === null || x === undefined || x === '' ? '—' : esc(String(x).replace('.', ',')); }; return '<tr><td>'+esc(v.label)+'</td><td>'+f(v.pal)+'</td><td>'+f(v.kg)+'</td><td>'+f(v.len)+'</td><td>'+(v.hayon ? 'oui' : 'non')+'</td><td>'+(v.grue ? 'oui' : 'non')+'</td>'+['A','B','C'].map(function(z){ return '<td>'+f(v.p[z][0])+'</td><td>'+f(v.p[z][1])+'</td>'; }).join('')+'<td>'+f(v.h)+'</td><td>'+f(v.km)+'</td></tr>'; }).join('')+'</table>'+
+    '<p>Km inclus (½ journée / journée) : '+['A','B','C'].map(function(z){ return 'zone '+z+' '+G.kmi[z][0]+' / '+G.kmi[z][1]; }).join(' · ')+(G.manut ? ' · Manutentionnaire : '+G.manut[0]+' € (½ j.) / '+G.manut[1]+' € (j.)' : '')+'. Prix en € HT.</p></div>'; }
+function saleDocOf(ag){ var a = ST.cfg.agencies[ag] || {}, own = saleGrid(ag) !== SALE_DEF; return (own && a.docs && a.docs.trp) || ST.cfg.trpSaleDoc || (a.docs && a.docs.trp) || null; }
 var DOCV = {};
 function docRender(buf, name){
   var ext = (String(name).split('.').pop() || '').toLowerCase();
@@ -5239,12 +5256,14 @@ function docRender(buf, name){
         return pg.render({ canvasContext:cx, viewport:vp }).promise.then(function(){ I.push('<figure class="dvp"><img src="'+cv.toDataURL('image/png')+'" alt="page '+n+'"><figcaption>Page '+n+' / '+N+'</figcaption></figure>'); }); }); })(n);
       return chain.then(function(){ return (N > 1 ? '<p class="dvn">'+N+' pages · faire défiler</p>' : '')+I.join(''); }); }); }
   if (ext === 'doc') return Promise.resolve(docHtml(buf));
+  if (ext === 'docx') return loadMammoth().then(function(m){ return m.convertToHtml({ arrayBuffer:buf }); }).then(function(r){ return '<div class="dvdoc dvx">'+r.value+'</div>'; }, function(){ return gridLines(new File([buf], name)).then(function(L){ return '<pre>'+esc(L.join('\n'))+'</pre>'; }); });
   if (/^(xlsx|xls|csv)$/.test(ext)){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' }); return Promise.resolve(wb.SheetNames.map(function(sn){ return '<h4>'+esc(sn)+'</h4>'+XLSX.utils.sheet_to_html(wb.Sheets[sn], { header:'', footer:'' }).replace(/<\/?(html|head|body|meta)[^>]*>/g, ''); }).join('')); }
   return gridLines(new File([buf], name)).then(function(L){ return '<pre>'+esc(L.join('\n').replace(/\n{3,}/g, '\n\n'))+'</pre>'; });
 }
 function docvHtml(key){ var d = DOCV[key]; return '<div class="docv" id="docv" data-key="'+esc(key)+'">'+(!d || d.busy ? '<p class="small muted">Chargement du document…</p>' : d.err ? '<p class="small neg">'+esc(d.err)+'</p>' : d.html)+'</div>'; }
 function docvFill(){ var e = $('docv'); if (!e) return; var key = e.dataset.key; if (DOCV[key]) return; DOCV[key] = { busy:true };
   var src; if (key.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === key.slice(2); })[0]; src = dr ? readBuf(dr.file).then(function(b){ return [b, dr.name]; }) : Promise.reject(new Error('brouillon introuvable')); }
+  else if (key.indexOf('sale:') === 0){ DOCV[key] = { html:saleGridHtml(key.slice(5)) }; render(); return; }
   else if (key.indexOf('m:') === 0){ var mm = DOCM[key.slice(2)]; src = mm ? STORE.getFileBytes(mm).then(function(b){ return [b, mm.name]; }) : Promise.reject(new Error('document introuvable')); }
   else if (key.indexOf('c:') === 0){ var cc = carriers().filter(function(x){ return x.id === key.slice(2); })[0]; src = cc && cc.doc ? STORE.getFileBytes(cc.doc).then(function(b){ return [b, cc.doc.name]; }) : Promise.reject(new Error('document absent')); }
   else { var G = null; carriers().forEach(function(c){ (c.grids || []).forEach(function(g){ if (g.id === key) G = g; }); }); src = G && G.doc ? STORE.getFileBytes(G.doc).then(function(b){ return [b, G.doc.name]; }) : Promise.reject(new Error('document d\'origine non conservé')); }
@@ -5531,13 +5550,15 @@ function vAnalyses(){
   return h + '<p class="small muted an-l">Prix de base des grilles (€ HT), hors suppléments, heures et km au-delà des forfaits ; détail au survol d\'une case. Lot : colonne couvrant la charge utile et les mètres linéaires du type. Couleurs : vert = le moins cher de la ligne, puis écart croissant (jaune ≤ 5 %, orange ≤ 15 %, rose ≤ 30 %, rouge au-delà).</p></div>';
 }
 /* ---- Fenêtre de visualisation d'un document ---- */
-function docName(k){ if (k.indexOf('m:') === 0){ var mm = DOCM[k.slice(2)]; return mm ? mm.name : ''; }
+function docName(k){ if (k.indexOf('sale:') === 0){ var sg = saleGrid(k.slice(5)); return (sg === SALE_DEF ? (sg.label || 'Grille transport OTIS 2023') : 'Grille de vente spécifique · '+agLabel(k.slice(5)))+' (grille appliquée)'; }
+  if (k.indexOf('m:') === 0){ var mm = DOCM[k.slice(2)]; return mm ? mm.name : ''; }
   if (k.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === k.slice(2); })[0]; return dr ? dr.name : ''; }
   if (k.indexOf('c:') === 0){ var c = carriers().filter(function(x){ return x.id === k.slice(2); })[0]; return c && c.doc ? c.doc.name : ''; }
   var n = ''; carriers().forEach(function(c){ (c.grids || []).forEach(function(g){ if (g.id === k && g.doc) n = g.doc.name; }); }); return n; }
 function docModal(){ var k = ST.docView; if (!k) return '';
   var P = ST.dvPos;
-  return '<div class="dv-ov"><div class="dv-w"'+(P ? ' style="position:fixed;left:'+P.x+'px;top:'+P.y+'px"' : '')+'><div class="dv-h" title="Glisser pour déplacer la fenêtre"><span class="dv-grip">⠿</span><b>'+esc(docName(k))+'</b><span class="sp"></span>'+(k.indexOf('d:') === 0 ? '' : '<button class="btn sm g" data-dvdl="'+esc(k)+'">Télécharger</button>')+'<button class="btn sm" data-docview="'+esc(k)+'">Fermer</button></div>'+docvHtml(k)+'</div></div>'; }
+  return '<div class="dv-ov"><div class="dv-w"'+(P ? ' style="position:fixed;left:'+P.x+'px;top:'+P.y+'px"' : '')+'><div class="dv-h" title="Glisser pour déplacer la fenêtre"><span class="dv-grip">⠿</span><b>'+esc(docName(k))+'</b><span class="sp"></span>'+(!/\.pdf$/i.test(docName(k)) && DOCV[k] && DOCV[k].html ? '<button class="btn sm g" data-dvprint="'+esc(k)+'" title="Ouvre l\'impression : choisir « Enregistrer au format PDF »">Enregistrer en PDF</button>' : '')+
+    (k.indexOf('sale:') === 0 ? (saleDocOf(k.slice(5)) ? '<button class="btn sm g" data-saledoc="'+esc(k.slice(5))+'">Grille signée</button>' : '') : k.indexOf('d:') === 0 ? '' : '<button class="btn sm g" data-dvdl="'+esc(k)+'">Télécharger</button>')+'<button class="btn sm" data-docview="'+esc(k)+'">Fermer</button></div>'+docvHtml(k)+'</div></div>'; }
 function vCarriers(){
   if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
   var C = carriers(), D = ST.gimp || [], sel = /^(an|veh|dest)$/.test(ST.carSel) ? ST.carSel : Math.min(+ST.carSel || 0, Math.max(0, C.length - 1)), c = sel === 'cmp' ? null : C[sel];
@@ -5671,7 +5692,9 @@ function vEntTrp(a){
   var h = '<div class="panel"><div class="ph"><h2>Grille de vente transport</h2><span class="muted">Prix facturé au client pour une livraison (onglet « Vente » du transport)</span></div><div class="pb" style="display:grid;gap:10px">'+
     '<p class="small" style="margin:0">'+(own ? 'Grille <b>spécifique à '+esc(a.label || a.code)+'</b>, modifiable ci-dessous.' : 'Grille <b>OTIS 2023</b> (01/07/2023), commune à toutes les entités. Pour des prix propres à cette entité, crée une grille spécifique à partir de celle-ci.')+'</p>'+
     (isAdmin() ? '<div class="row">'+(own ? '<button class="btn sm g" data-salereset>Revenir à la grille OTIS 2023</button>' : '<button class="btn sm pri" data-saleown>Créer une grille spécifique (copie de la grille OTIS 2023)</button>')+'</div>' : '')+
-    field('Grille transport signée (document)', d ? '<span class="small"><b>'+esc(d.name)+'</b> · '+esc(dt(d.at))+' <button class="lnk small" data-docdl="trp">Voir</button></span>'+(isAdmin() ? ' <label class="btn sm g">Remplacer<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx"></label>' : '') : (isAdmin() ? '<label class="btn sm">Charger le document<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx"></label>' : '<span class="muted small">Aucun document</span>'))+'</div>';
+    '<div class="row"><button class="btn sm pri" data-saleview="'+esc(a.code)+'">Voir la grille appliquée</button>'+(saleDocOf(a.code) ? '<button class="btn sm" data-saledoc="'+esc(a.code)+'">Voir la grille signée</button>' : '')+'</div>'+
+    (own ? field('Grille transport signée spécifique (document)', d ? '<span class="small"><button class="lnk small" data-docdl="trp">'+esc(d.name)+'</button> · '+esc(dt(d.at))+'</span>'+(isAdmin() ? ' <label class="btn sm g">Remplacer<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx,.doc,.docx"></label>' : '') : (isAdmin() ? '<label class="btn sm">Charger le document<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx,.doc,.docx"></label>' : '<span class="muted small">Aucun document</span>'))
+      : field('Grille OTIS 2023 signée (document commun à toutes les entités)', ST.cfg.trpSaleDoc ? '<span class="small"><button class="lnk small" data-saledoc="'+esc(a.code)+'">'+esc(ST.cfg.trpSaleDoc.name)+'</button> · '+esc(dt(ST.cfg.trpSaleDoc.at))+'</span>'+(isAdmin() ? ' <label class="btn sm g">Remplacer<input type="file" hidden data-saledocup accept=".pdf,.xls,.xlsx,.doc,.docx"></label>' : '') : (isAdmin() ? '<label class="btn sm">Charger la grille OTIS 2023 signée<input type="file" hidden data-saledocup accept=".pdf,.xls,.xlsx,.doc,.docx"></label>' : '<span class="muted small">Aucun document chargé</span>'), 'Visible dans toutes les entités qui appliquent la grille commune.'))+'</div>';
   var inp = function(path, v, w){ return ed ? cIn(p+path, v, 'number', w || '72px') : '<span class="num">'+esc(v === null || v === undefined ? '—' : v)+'</span>'; };
   h += '<div class="pb"><span class="lbl">Zones</span><div class="grd-f">'+field('Zone A (départements)', ed ? cIn(p+'zA', G.zA) : esc(G.zA))+field('Zone B (départements)', ed ? cIn(p+'zB', G.zB) : esc(G.zB))+field('Zone C', '<span class="small">reste de la France</span>')+field('Yvelines (78) partagé A / B', ed ? cYN(p+'split78', G.split78) : (G.split78 ? 'oui' : 'non'))+'</div></div>';
   h += '<div class="pb"><span class="lbl">Véhicules et prix (€ HT : ½ journée / journée)</span><div class="tw"><table class="grd-t"><thead><tr><th>Véhicule</th><th class="n">Pal.</th><th class="n">Kg max</th><th class="n">Long. mm</th><th>Hayon</th><th>Grue</th><th class="n">A ½</th><th class="n">A j.</th><th class="n">B ½</th><th class="n">B j.</th><th class="n">C ½</th><th class="n">C j.</th><th class="n">€ / h sup.</th><th class="n">€ / km sup.</th>'+(ed ? '<th></th>' : '')+'</tr></thead><tbody>'+
@@ -5891,6 +5914,9 @@ document.addEventListener('click', function(e){
   if (d.antab){ ST.an = ST.an || {}; ST.an.tab = d.antab; render(); return; }
   if (d.anclr !== undefined){ ST.an.cp = ''; ST.an.ville = ''; render(); return; }
   if (d.docview){ ST.docView = ST.docView === d.docview ? null : d.docview; render(); return; }
+  if (d.dvprint){ dvPrint(d.dvprint); return; }
+  if (d.saleview){ ST.docView = 'sale:'+d.saleview; delete DOCV['sale:'+d.saleview]; render(); return; }
+  if (d.saledoc){ var sd = saleDocOf(d.saledoc); if (sd) openDoc(sd); else toast('Aucune grille signée chargée'); return; }
   if (d.dvdl){ var dm0 = docMetaOf(d.dvdl); if (dm0) STORE.getFileBytes(dm0).then(function(b){ saveBlob(dm0.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
   if (d.giopen){ var go = (ST.gimp || []).filter(function(x){ return x.id === d.giopen; })[0]; if (go){ gridDraftKeep(go); go.open = !go.open; } render(); return; }
   if (d.carnewno !== undefined){ ST.carNew = false; render(); return; }
@@ -6090,6 +6116,7 @@ document.addEventListener('change', function(e){
     setPath(ST.cfg, d.cf, v); saveCfg(d.cf.replace(/^agencies\./,'agence ').replace(/^grids\./,'grille ')+' = '+v); if (/\.(label|active)$/.test(d.cf)) render(); return;
   }
   if (d.docup){ if (t.files[0]) agDocUpload(d.docup, t.files[0]); t.value = ''; return; }
+  if (d.saledocup !== undefined){ var sf = t.files[0]; t.value = ''; if (!sf || !isAdmin()) return; STORE.uploadAgencyDoc('_trpsale', 'grille', sf).then(function(meta){ if (ST.cfg.trpSaleDoc) STORE.deleteFile(ST.cfg.trpSaleDoc).catch(function(){}); ST.cfg.trpSaleDoc = meta; saveCfg('Grille transport OTIS 2023 signée chargée : '+sf.name); render(); }, function(e){ toast('Chargement impossible : '+e.message); }); return; }
   if (d.gridin){ var gi = d.gridin.split('|'); if (t.files[0]) gridImport(+gi[0], +gi[1], t.files[0]); t.value = ''; return; }
   if (d.cardoc !== undefined){ var cdo = carriers()[+d.cardoc], f0 = t.files[0]; t.value = ''; if (!cdo || !f0) return; STORE.uploadAgencyDoc('_carriers', 'car_'+cdo.id, f0).then(function(meta){ if (cdo.doc) STORE.deleteFile(cdo.doc).catch(function(){}); cdo.doc = meta; saveCfg('Document transporteur : '+cdo.name); render(); }, function(e){ toast('Fichier refusé : '+e.message); }); return; }
   if (d.slotin){ if (t.files[0]) importFile(t.files[0], d.slotin); t.value = ''; return; }
