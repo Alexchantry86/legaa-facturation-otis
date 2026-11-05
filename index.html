@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v5.7 · 26/10/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v5.9 · 04/11/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1213,6 +1213,56 @@ b.mg-r{color:#b42318}b.mg-o{color:#b45309}b.mg-g{color:#1e7b3c}
 .tf-chk{display:flex;flex-wrap:wrap;gap:10px 22px}
 .tform textarea{width:100%;font:inherit;font-size:13.5px}
 .tform .t-est{margin:0}
+/* ---- v5.8 · visionneuse, modélisation transport, Info OTIS ---- */
+.dv-h .btn{color:#14233d;border-color:#fff}
+.dv-h .btn.g{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+.dv-w .docv{display:block;min-height:0;padding:14px}
+.dvn{color:#fff;font-size:12px;margin:0 0 8px;text-align:center}
+figure.dvp{margin:0 auto 16px;max-width:100%;text-align:center}
+figure.dvp img{display:block;margin:0 auto;max-width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+figure.dvp figcaption{color:#e5e7eb;font-size:11.5px;margin-top:4px}
+.dvdoc{background:#fff;padding:18px 22px;max-width:980px;margin:0 auto;font-size:13.5px;line-height:1.5;color:#14233d}
+.dvdoc p{margin:0 0 6px}
+.dvdoc table.dvt{border-collapse:collapse;margin:8px 0 14px;width:100%;font-size:13px}
+.dvdoc table.dvt th,.dvdoc table.dvt td{border:1px solid #c9ced4;padding:5px 8px;text-align:left;vertical-align:top}
+.dvdoc table.dvt th{background:#eef1f5;font-weight:600}
+.tr-none{border:1.5px solid #d97706;background:#fffbeb;border-radius:6px;padding:12px 14px;display:grid;gap:4px}
+.tr-none b{color:#92400e;font-size:14px}
+.tr-none p{margin:0;font-weight:600;color:#14233d}
+.tr-none ul{margin:6px 0 0;padding-left:18px;font-size:13px;display:grid;gap:3px}
+.md-intro{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;background:#fff;border:1px solid var(--line);border-left:5px solid #d97706;border-radius:6px;padding:12px 16px}
+.md-intro b{font-family:var(--f-label);font-size:18px;color:#14233d}
+.md-intro span{color:var(--ink-2);font-size:13.5px}
+.info .md-intro{border-left-color:#2563eb}
+.tools-h{margin-top:26px}
+.ent-card.tool{border-style:dashed}
+.info-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 14px;align-items:end}
+.info-act{align-self:end}
+.info-bar{display:flex;flex-wrap:wrap;gap:8px}
+.info-bar input[type=search]{flex:1 1 300px;min-width:0}
+table.info-t td{vertical-align:middle;font-size:13px}
+table.info-t th .lnk{text-transform:uppercase;font-size:11px;letter-spacing:.05em;color:var(--muted);text-decoration:none;padding:0}
+table.info-t th .lnk.on{color:var(--ink)}
+table.info-t td.nowrap{white-space:nowrap}
+/* ---- v5.9 · accueil segmenté, affectation des entités ---- */
+.home-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:26px 0 10px}
+.home-h:first-of-type{margin-top:8px}
+.home-h h2{margin:0}
+.home-n{font-family:var(--f-num);font-size:12px;background:#e3e8ee;color:#3a4350;border-radius:10px;padding:1px 8px}
+.home-h .btn{margin-left:auto}
+.ent-grid.ent-all .ent-card{opacity:.92}
+.aff-l{display:grid}
+.aff-r{display:grid;grid-template-columns:minmax(200px,260px) minmax(0,1fr);gap:8px 16px;padding:12px 14px;border-bottom:1px solid var(--line-2);align-items:start}
+.aff-u{display:grid;gap:2px;position:relative}
+.aff-c{font-family:var(--f-num);font-size:12px;color:#14233d;background:#eef2f8;border-radius:10px;padding:0 8px;justify-self:start}
+.aff-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;padding:14px}
+.aff-e{border:1px solid var(--line);border-left:4px solid var(--ec);border-radius:6px;padding:10px 12px;display:grid;gap:8px;background:#fff}
+.aff-eh{display:flex;align-items:center;gap:10px}
+.aff-eh .ent-chip{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--ec);color:#fff}
+.aff-eh .ent-chip svg{width:18px;height:18px}
+.aff-eh .aff-c{margin-left:auto}
+.aff-e select{font:inherit;font-size:12.5px;padding:4px 6px;border:1px dashed var(--line);border-radius:4px;background:var(--sunk)}
+@media (max-width:700px){.aff-r{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -1237,6 +1287,7 @@ b.mg-r{color:#b42318}b.mg-o{color:#b45309}b.mg-g{color:#1e7b3c}
     <button class="chatbtn" id="chatbtn" data-a="chat" title="Assistant documentaire et discussion avec les collègues" aria-label="Assistant et discussion"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 3h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg><span>Assistant</span><b id="chatn" hidden></b></button>
     <button class="gearbtn qzbtn" id="qzbtn" data-savgo="quiz" title="Questionnaire de l'expert : transmettre le savoir à l'assistant" aria-label="Questionnaire" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M10 2.5a7 7 0 1 1-5 11.9L2.5 17.5l1-4.1A7 7 0 0 1 10 2.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 7.8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.3v.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="13.4" r=".9" fill="currentColor"/></svg><b id="qzn" class="qzn" hidden></b></button>
     <button class="gearbtn" id="pilbtn" data-mod="pil" title="Pilotage : suivi des anomalies et synthèse de toutes les entités" aria-label="Pilotage" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 17V9M8 17V4M13 17v-6M18 17V7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <button class="gearbtn" id="infobtn" data-mod="info" title="Info OTIS : affaires ↔ appareils ↔ contremaîtres" aria-label="Info OTIS" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 7.5h15M7.5 7.5v9M2.5 12h15" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
     <button class="gearbtn" id="dqbtn" data-mod="dq" title="Contrôle des données Odoo (LEGAA / CAP'EMBAL)" aria-label="Contrôle des données" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4h9M3 8h9M3 12h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="13.5" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.8 15.3 18 17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     <span class="gearwrap"><button class="gearbtn" id="gearbtn" data-a="gear" title="Paramétrage" aria-label="Paramétrage" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg></button><div id="gearpop"></div></span>
     <button class="who" id="who" data-acc title="Mon compte"></button>
@@ -1604,6 +1655,12 @@ var STORE = (function () {
     listSavoir: function () { return db.collection('savoir').get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; delete x.updatedAt; return x; }); }); },
     deleteSavoir: function (id) { return db.doc('savoir/' + id).delete(); },
     saveSavoir: function (id, d) { var x = clean(d); delete x.id; x.updatedAt = TS(); return db.doc('savoir/' + id).set(x, { merge: true }); },
+    // Info OTIS (v5.8) : correspondances affaire ↔ appareil ↔ contremaître
+    listRef: function () { return db.collection('otisref').get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; delete x.updatedAt; return x; }); }); },
+    saveRef: function (id, d) { var x = clean(d); delete x.id; x.updatedAt = TS(); return db.doc('otisref/' + id).set(x); },
+    saveRefs: function (W) { var chain = Promise.resolve(); for (var i = 0; i < W.length; i += 400) (function (part) { chain = chain.then(function () { var b = db.batch(); part.forEach(function (w) { var x = clean(w[1]); delete x.id; x.updatedAt = TS(); b.set(db.doc('otisref/' + w[0]), x); }); return b.commit(); }); })(W.slice(i, i + 400));
+      return chain.then(function () { return log('otisref', W.length + ' correspondance(s) affaire / appareil / contremaître'); }); },
+    deleteRef: function (id) { return db.doc('otisref/' + id).delete(); },
     presenceStart: presenceStart, presenceStop: presenceStop, onPresence: onPresence, onChats: onChats, openChat: openChat, onMessages: onMessages, sendMessage: sendMessage, markRead: markRead,
     onAuth: onAuth, signIn: signIn, signOut: signOut, resetPasswordEmail: resetPasswordEmail, changeOwnPassword: changeOwnPassword,
     getConfig: getConfig, saveConfig: saveConfig,
@@ -2374,12 +2431,13 @@ function renderTop(){
   var bt = document.querySelector('.brand h1'), bs = document.querySelector('.brand span'); if (bt){ bt.textContent = ent ? (ent.label || ent.code) : 'Pilotage Logistique'; } if (bs) bs.textContent = ent ? (mod === 'log' ? 'Logistique' : mod === 'trp' ? 'Transport' : 'Choix de l\'activité') : 'LEGAA'; var br = document.querySelector('.brand'); if (br) br.classList.toggle('isent', !!ent);
   var eg = $('entgear'); if (eg){ eg.hidden = !ent; eg.classList.toggle('on', mod === 'log' && ST.ltab === 'par'); }
   var ek = $('entbook'); if (ek){ ek.hidden = !ent; ek.classList.toggle('on', mod === 'log' && ST.ltab === 'con'); }
+  var ib = $('infobtn'); if (ib){ ib.hidden = !ST.user; ib.classList.toggle('on', mod === 'info'); }
   var db = $('dqbtn'); if (db){ db.hidden = !ST.user || role() === 'lecture'; db.classList.toggle('on', mod === 'dq'); }
   var qb = $('qzbtn'); if (qb){ qb.hidden = !ST.user || !isExpert(); qb.classList.toggle('on', mod === 'sav'); var qn = $('qzn'), rn = SAV.list ? qzRemaining() : 0; if (qn){ qn.textContent = rn; qn.hidden = !rn; } }
   var pb2 = $('pilbtn'); if (pb2){ pb2.hidden = !isAdmin(); pb2.classList.toggle('on', mod === 'pil'); }
   var gb = $('gearbtn'); if (gb){ gb.hidden = !isAdmin(); gb.classList.toggle('on', mod === 'cfg' || !!ST.gearOpen); }
   var gp = $('gearpop'); if (gp) gp.innerHTML = gearMenu();
-  $('modname').textContent = mod === 'acc' ? 'Mon compte' : mod === 'dq' ? 'Contrôle des données' : mod === 'cfg' ? 'Paramétrage' : mod === 'pil' ? 'Pilotage' : mod === 'sav' ? 'Savoir des experts' : '';
+  $('modname').textContent = mod === 'acc' ? 'Mon compte' : mod === 'dq' ? 'Contrôle des données' : mod === 'cfg' ? 'Paramétrage' : mod === 'pil' ? 'Pilotage' : mod === 'sav' ? 'Savoir des experts' : mod === 'mod' ? 'Modélisation transport' : mod === 'info' ? 'Info OTIS' : '';
   if (ST.user) $('who').textContent = ST.user.name + ' · ' + ({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role];
   $('src').textContent = STORE.mode === 'demo' ? 'mode démo' : '';
 }
@@ -2394,20 +2452,23 @@ function render(){
   else if (ST.module === 'pil') h = isAdmin() ? '<section class="view">'+pilBar()+'</section>' + (ST.piltab === 'syn' ? vSynth() : vSuivi()) : '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
   else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : ST.cfgTab === 'ach' ? vCarriers() : vAdmin();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vDevis();
+  else if (ST.module === 'mod') h = vModel();
+  else if (ST.module === 'info') h = vInfo();
   else if (ST.ltab === 'con') h = vKnow();
   else if (ST.ltab === 'par') h = vParams();
   else if (ST.ltab === 'syn') h = vSynth();
   else if (ST.ltab === 'sui') h = vSuivi();
   else h = vFactures();
-  if (ST.module === 'cfg' && ST.cfgTab === 'ach') h += docModal();
+  h += docModal();
   m.innerHTML = h;
   renderModal();
   placePop(); placeCmenu(); if (ST.module === 'dq') bindDQ();
   if (ST.module === 'sav'){ var si = $('svin'); if (si) si.onchange = function(){ if (si.files[0]) savImport(si.files[0]); si.value = ''; }; }
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && ST.piltab === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
-  if (ST.module === 'trp' && ST.ttab !== 'hist'){ trGeo(false); trCalc(); }
-  if (ST.module === 'cfg' && ST.cfgTab === 'ach'){ bindGridDrop(); docvFill(); }
+  if ((ST.module === 'trp' && ST.ttab !== 'hist') || ST.module === 'mod'){ trGeo(false); trCalc(); }
+  if (ST.module === 'cfg' && ST.cfgTab === 'ach') bindGridDrop();
+  if (ST.docView) docvFill();
 }
 
 /* ============ ACCUEIL ============ */
@@ -2698,7 +2759,7 @@ function vDQ(){
   if (DQ.tab === 'syn') return h + vDQSyn() + '</section>';
   h += '<div class="panel"><div class="ph"><h2>Contrôle des données Odoo · '+DQ_CO[DQ.co].label+' · '+monthLabel(DQ.month)+'</h2><span class="muted">Déposer l\'export des mouvements de stock et l\'export des quantités en stock du mois. Les fichiers sont conservés 18 mois.</span></div>'+
     '<div class="pb dq-files">'+[['m','Mouvements de stock','Odoo › Inventaire › Rapports › Historique des mouvements (stock.move.line) — export Excel'],['q','Quantités en stock','Odoo › Inventaire › Rapports › Stock (stock.quant) — export Excel']].map(function(k){ var f = DQ.f[k[0]];
-      return '<div class="dq-slot'+(f?' done':'')+'"><span class="ds-t">'+k[1]+'</span>'+(f ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+f.rows.length+' lignes'+(f.meta ? ' · '+dt(f.meta.at)+' · '+esc(f.meta.by||'') : '')+'</span>'+(f.meta ? '<div class="row"><button class="btn sm" data-dqdl="'+k[0]+'">Télécharger</button>'+(canEdit()?'<button class="btn sm" data-dqrm="'+k[0]+'">Supprimer</button>':'')+'</div>' : '') : '<span class="muted">'+k[2]+'</span>')+'</div>'; }).join('')+
+      return '<div class="dq-slot'+(f?' done':'')+'"><span class="ds-t">'+k[1]+'</span>'+(f ? '<strong>'+esc(f.name)+'</strong><span class="muted">'+f.rows.length+' lignes'+(f.meta ? ' · '+dt(f.meta.at)+' · '+esc(f.meta.by||'') : '')+'</span>'+(f.meta ? '<div class="row"><button class="btn sm" data-dqdl="'+k[0]+'">Voir</button>'+(canEdit()?'<button class="btn sm" data-dqrm="'+k[0]+'">Supprimer</button>':'')+'</div>' : '') : '<span class="muted">'+k[2]+'</span>')+'</div>'; }).join('')+
     '<label class="drop" id="dqdrop"><input type="file" id="dqin" multiple accept=".xlsx,.xls"><strong>'+(DQ.busy ? esc(DQ.busy) : 'Déposer les exports Odoo du mois ici (les deux en même temps si possible)')+'</strong><span class="muted">Type de fichier et entreprise reconnus automatiquement ; un nouveau dépôt remplace le fichier du même type.</span></label></div></div>';
   if (!DQ.res){ return h + '</section>'; }
   var R = DQ.res, c = { bloquant:0, verifier:0, info:0 }; R.A.forEach(function(a){ c[a.sev] += a.code === 'Q_DATE_SYS' ? a.rows[0]['Lignes concernées'] : a.rows.length; });
@@ -2775,12 +2836,19 @@ function enterEnt(code, mod){
   if (ST.ag !== code || !ST.R) selectMonth(code, ST.month || defaultMonth()); else render();
   window.scrollTo(0, 0);
 }
+/* Accueil : « Mes entités » (affectées au compte dans Paramétrage › Affectation), « Toutes les entités », « Outils » */
+function myAssigned(){ var em = String((ST.user && ST.user.email) || '').toLowerCase(), A = (ST.cfg.assign || {})[em] || []; return allAgencies().filter(function(a){ return A.indexOf(a.code) >= 0; }); }
+function entCard(a){ var sc = entScreens(a), ic = entIcon(a), who = assignedTo(a.code);
+  return '<button class="ent-card ent-sm" data-ent="'+esc(a.code)+'" style="--ec:'+ic[1]+'"><span class="ent-chip">'+ic[0]+'</span><span class="ent-txt"><span class="ent-name">'+esc(a.label || a.code)+'</span><span class="ent-sub">'+[sc.log ? 'Logistique' : '', sc.trp ? 'Transport' : ''].filter(Boolean).join(' · ')+(who.length ? ' · '+esc(who.map(function(u){ return u.split(' ')[0]; }).join(', ')) : '')+'</span></span></button>'; }
+function assignedTo(code){ var A = ST.cfg.assign || {}, N = ST.cfg.userNames || {}; return Object.keys(A).filter(function(em){ return (A[em] || []).indexOf(code) >= 0; }).map(function(em){ return N[em] || em.split('@')[0]; }); }
 function vLanding(){
-  var L = myEnts(), first = ST.user ? ST.user.name.split(' ')[0] : '';
-  var h = '<section class="ent-home"><div class="ent-in"><p class="ent-hello">'+esc(first ? 'Bonjour '+first : 'Bonjour')+'</p><h2>Choisir l\'entité</h2><div class="ent-grid">'+
-    L.map(function(a){ var sc = entScreens(a), ic = entIcon(a); return '<button class="ent-card ent-sm" data-ent="'+esc(a.code)+'" style="--ec:'+ic[1]+'"><span class="ent-chip">'+ic[0]+'</span><span class="ent-txt"><span class="ent-name">'+esc(a.label || 'AG '+a.code)+'</span><span class="ent-sub">'+[sc.log ? 'Logistique' : '', sc.trp ? 'Transport' : ''].filter(Boolean).join(' · ')+'</span></span></button>'; }).join('')+
-    (L.length ? '' : '<p class="ent-empty">Aucune entité affectée à votre compte. Contacter un administrateur.</p>')+'</div>'+
-    '';
+  var mine = myAssigned(), mc = mine.map(function(a){ return a.code; }), others = allAgencies().filter(function(a){ return mc.indexOf(a.code) < 0; }), first = ST.user ? ST.user.name.split(' ')[0] : '';
+  var h = '<section class="ent-home"><div class="ent-in"><p class="ent-hello">'+esc(first ? 'Bonjour '+first : 'Bonjour')+'</p>';
+  h += '<div class="home-h"><h2>Mes entités</h2><span class="home-n">'+mine.length+'</span>'+(isAdmin() ? '<button class="btn sm" data-cfgtab="aff">Affecter les entités aux utilisateurs</button>' : '')+'</div>';
+  h += mine.length ? '<div class="ent-grid">'+mine.map(entCard).join('')+'</div>' : '<p class="ent-empty">Aucune entité ne t\'est affectée'+(isAdmin() ? ' : utilise « Affecter les entités aux utilisateurs ».' : ' : choisis dans « Toutes les entités » ou demande une affectation à un administrateur.')+'</p>';
+  h += '<div class="home-h"><h2>Toutes les entités</h2><span class="home-n">'+allAgencies().length+'</span></div>'+'<div class="ent-grid ent-all">'+allAgencies().map(entCard).join('')+'</div>';
+  h += '<div class="home-h"><h2>Outils</h2></div><div class="ent-grid tools">'+
+    '<button class="ent-card ent-sm tool" data-mod="mod" style="--ec:#d97706"><span class="ent-chip">'+ENT_SVG.truck+'</span><span class="ent-txt"><span class="ent-name">Modélisation transport</span><span class="ent-sub">Coût d\'une livraison selon les grilles de nos transporteurs</span></span></button></div>';
   return h + '</div></section>';
 }
 /* Pictogrammes des entités (trait, 28 px) et couleur d'accent, choisis d'après le libellé */
@@ -2797,6 +2865,7 @@ var ENT_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 32 32" widt
     flag:sv('<path d="M7 29V4"/><path d="M7 5h17l-3 5 3 5H7"/>'),
     wh:sv('<path d="M3 13 16 5l13 8"/><path d="M6 11.5V27h20V11.5"/><path d="M10 27v-9h12v9M10 22h12"/>'),
     truck:sv('<path d="M3 8h15v14H3zM18 13h6l5 5v4h-11"/><circle cx="9" cy="24" r="2.5"/><circle cx="23" cy="24" r="2.5"/>'),
+    info:sv('<rect x="4" y="5" width="24" height="22" rx="2"/><path d="M4 11h24M11 11v16M4 17h24M4 22h24"/>'),
     quiz:sv('<path d="M16 4a9 9 0 1 1-6.4 15.3L5 27l1.6-5.4A9 9 0 0 1 16 4z"/><path d="M13 11a3 3 0 1 1 4.2 2.8c-.8.4-1.2 1-1.2 1.9V17"/><circle cx="16" cy="20.5" r=".6" fill="currentColor"/>'),
     book:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6M9 11h6"/></svg>'
   }; })();
@@ -2840,19 +2909,32 @@ function vEntParams(){
   return h + '</section>';
 }
 /* Affectation : ADV ↔ entités */
+/* Paramétrage › Affectation : entités confiées à chaque utilisateur (cfg.assign = { e-mail : [codes] }), vue par utilisateur ou par entité */
 function vAffect(){
   if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
-  if (!ST.users){ STORE.listUsers().then(function(u){ ST.users = u.sort(function(a,b){ return (a.name||a.email).localeCompare(b.name||b.email); }); render(); }, function(e){ toast('Utilisateurs inaccessibles : '+e.message); ST.users = []; render(); }); return '<section class="view"><div class="panel empty">Chargement des utilisateurs…</div></section>'; }
-  var L = allAgencies(), A = ST.cfg.assign || {}, U = ST.users.filter(function(u){ return !u.remove; });
-  var h = '<section class="view onecol"><div class="card2"><div class="h2"><b>Affectation des entités aux ADV</b><span class="muted small">Un ADV sans affectation voit toutes les entités ; les administrateurs voient toujours tout.</span><div class="r"><label class="btn sm">Importer un fichier Excel<input type="file" id="affin" accept=".xlsx,.xls,.csv" hidden></label><button class="btn sm g" data-a="affmodel">Modèle</button></div></div>';
+  if (!ST.users){ STORE.listUsers().then(function(u){ ST.users = u.sort(function(a,b){ return (a.name||a.email).localeCompare(b.name||b.email); }); affNames(); render(); }, function(e){ toast('Utilisateurs inaccessibles : '+e.message); ST.users = []; render(); }); return '<section class="view"><div class="panel empty">Chargement des utilisateurs…</div></section>'; }
+  var L = allAgencies(), A = ST.cfg.assign || {}, U = ST.users.filter(function(u){ return !u.remove && u.active !== false; }), V = ST.affView === 'ent' ? 'ent' : 'user';
+  var h = '<section class="view aff"><div class="panel"><div class="ph"><h2>Affectation des entités</h2><span class="muted small">Chaque utilisateur retrouve ses entités dans « Mes entités » sur l\'accueil ; toutes les entités restent accessibles dans « Toutes les entités ».</span>'+
+    '<div class="sp"><label class="btn sm">Importer (.xlsx)<input type="file" id="affin" accept=".xlsx,.xls,.csv" hidden></label><button class="btn sm g" data-a="affmodel">Modèle</button></div></div>'+
+    '<div class="an-tabs"><button class="'+(V === 'user' ? 'on' : '')+'" data-affview="user">Par utilisateur</button><button class="'+(V === 'ent' ? 'on' : '')+'" data-affview="ent">Par entité</button></div>';
   if (ST.affNote) h += '<p class="pb small">'+esc(ST.affNote)+'</p>';
-  h += '<div class="tw"><table class="ct2 afft"><thead><tr><th>ADV</th><th>E-mail</th><th>Rôle</th>'+L.map(function(a){ return '<th class="c">'+esc(a.label || a.code)+'</th>'; }).join('')+'</tr></thead><tbody>'+
-    U.map(function(u){ var em = String(u.email || '').toLowerCase(), mine = A[em] || []; return '<tr><td><b>'+esc(u.name || '')+'</b></td><td class="small">'+esc(u.email || '')+'</td><td class="small muted">'+esc(({admin:'administrateur',adv:'ADV',lecture:'lecture'})[u.role] || u.role || '')+'</td>'+
-      L.map(function(a){ return '<td class="c"><input type="checkbox" data-asg="'+esc(em)+'|'+esc(a.code)+'"'+(mine.indexOf(a.code) >= 0 ? ' checked' : '')+(u.role === 'admin' ? ' disabled title="Administrateur : accès à toutes les entités"' : '')+'></td>'; }).join('')+'</tr>'; }).join('')+
-    (U.length ? '' : '<tr><td colspan="'+(3 + L.length)+'" class="muted">Aucun utilisateur : les créer dans Administration.</td></tr>')+'</tbody></table></div>'+
-    '<p class="pb small muted" style="margin:0">Fichier Excel : une colonne « ADV » (e-mail ou nom de l\'utilisateur) et une colonne « Compte » (code ou libellé de l\'entité, plusieurs séparés par des virgules possibles). L\'import remplace les affectations des ADV présents dans le fichier.</p></div></section>';
-  return h;
+  if (V === 'user'){
+    h += '<div class="aff-l">'+(U.length ? U.map(function(u){ var em = String(u.email || '').toLowerCase(), mine = A[em] || [];
+      return '<div class="aff-r"><div class="aff-u"><b>'+esc(u.name || em)+'</b><span class="small muted">'+esc(em)+' · '+esc(({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[u.role] || u.role)+'</span><span class="aff-c">'+mine.length+' / '+L.length+'</span></div>'+
+        '<div class="an-chips">'+L.map(function(a){ var on = mine.indexOf(a.code) >= 0; return '<button class="an-chip'+(on ? ' on' : '')+'" data-asgt="'+esc(em)+'|'+esc(a.code)+'">'+(on ? '✓ ' : '')+esc(a.label || a.code)+'</button>'; }).join('')+
+        '<button class="lnk small" data-asgall="'+esc(em)+'">tout</button><button class="lnk small" data-asgnone="'+esc(em)+'">aucune</button></div></div>'; }).join('') : '<p class="pb muted">Aucun utilisateur actif : les créer dans Administration.</p>')+'</div>';
+  } else {
+    h += '<div class="aff-g">'+L.map(function(a){ var ic = entIcon(a), on = U.filter(function(u){ return (A[String(u.email).toLowerCase()] || []).indexOf(a.code) >= 0; }), off = U.filter(function(u){ return on.indexOf(u) < 0; });
+      return '<div class="aff-e" style="--ec:'+ic[1]+'"><div class="aff-eh"><span class="ent-chip">'+ic[0]+'</span><b>'+esc(a.label || a.code)+'</b><span class="aff-c">'+on.length+'</span></div><div class="an-chips">'+
+        (on.length ? on.map(function(u){ var em = String(u.email).toLowerCase(); return '<button class="an-chip on" data-asgt="'+esc(em)+'|'+esc(a.code)+'" title="Retirer">'+esc(u.name || em)+' ×</button>'; }).join('') : '<span class="small muted">Aucun utilisateur</span>')+'</div>'+
+        (off.length ? '<select data-asgadd="'+esc(a.code)+'"><option value="">+ affecter un utilisateur…</option>'+off.map(function(u){ return '<option value="'+esc(String(u.email).toLowerCase())+'">'+esc(u.name || u.email)+'</option>'; }).join('')+'</select>' : '')+'</div>'; }).join('')+'</div>';
+  }
+  return h + '<p class="pb small muted" style="margin:0">Import Excel : une colonne « ADV » (e-mail ou nom) et une colonne « Compte » (code ou libellé de l\'entité, plusieurs séparés par des virgules). L\'import remplace les affectations des utilisateurs présents dans le fichier.</p></div></section>';
 }
+/* Noms des utilisateurs conservés avec l'affectation, pour les afficher sur l'accueil (la liste des comptes n'est lisible que par les administrateurs) */
+function affNames(){ var N = {}; (ST.users || []).forEach(function(u){ if (u.email) N[String(u.email).toLowerCase()] = u.name || u.email; }); ST.cfg.userNames = N; }
+function affSet(em, code, on){ ST.cfg.assign = ST.cfg.assign || {}; var cur = ST.cfg.assign[em] || []; ST.cfg.assign[em] = on ? uniqA(cur.concat([code])) : cur.filter(function(x){ return x !== code; }); affNames();
+  saveCfg('Affectation '+em+' : '+(ST.cfg.assign[em].join(', ') || 'aucune entité')); render(); }
 function affImport(file){
   readBuf(file).then(function(buf){
     var wb = XLSX.read(new Uint8Array(buf), { type:'array' }), rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:false, defval:'' }), hi = -1, ia = -1, ic = -1;
@@ -2871,12 +2953,12 @@ function affImport(file){
 /* Connaissance : documents de travail partagés et documents de l'entité */
 function vKnow(){
   var a = ST.cfg.agencies[ST.ent] || {}, G = ST.cfg.knowledge || DEF_KNOW, K = a.know || [], adm = isAdmin();
-  function card(d, scope){ var file = d.file; return '<div class="kn-c"><div class="kn-t"><b>'+esc(d.title)+'</b>'+(d.desc ? '<span class="small muted">'+esc(d.desc)+'</span>' : '')+'</div><div class="kn-a">'+(d.url ? '<a class="btn sm" href="'+esc(d.url)+'" target="_blank" rel="noopener">Ouvrir</a>' : '')+(file ? '<button class="btn sm" data-kdl="'+esc(scope+'|'+d.id)+'">Télécharger</button>' : '')+(adm ? '<button class="btn sm g" data-krm="'+esc(scope+'|'+d.id)+'" title="Retirer">✕</button>' : '')+'</div></div>'; }
+  function card(d, scope){ var file = d.file; return '<div class="kn-c"><div class="kn-t"><b>'+esc(d.title)+'</b>'+(d.desc ? '<span class="small muted">'+esc(d.desc)+'</span>' : '')+'</div><div class="kn-a">'+(d.url ? '<a class="btn sm" href="'+esc(d.url)+'" target="_blank" rel="noopener">Ouvrir</a>' : '')+(file ? '<button class="btn sm" data-kdl="'+esc(scope+'|'+d.id)+'">Voir</button>' : '')+(adm ? '<button class="btn sm g" data-krm="'+esc(scope+'|'+d.id)+'" title="Retirer">✕</button>' : '')+'</div></div>'; }
   var h = '<section class="view onecol">';
   h += '<div class="card2"><div class="h2"><b>Documents de travail OTIS</b><span class="muted small">Communs à toutes les entités</span></div><div class="kn-l">'+(G.length ? G.map(function(d){ return card(d, 'G'); }).join('') : '<p class="muted small">Aucun document.</p>')+'</div></div>';
   var ref = DOCK.filter(function(k){ return a.docs && a.docs[k[0]]; });
   h += '<div class="card2"><div class="h2"><b>Documents de l\'entité · '+esc(a.label || ST.ent)+'</b><span class="muted small">Grille, contremaîtres, principes de facturation, documents propres à l\'entité</span></div><div class="kn-l">'+
-    ref.map(function(k){ return '<div class="kn-c"><div class="kn-t"><b>'+esc(k[1])+'</b><span class="small muted">'+esc(a.docs[k[0]].name)+'</span></div><div class="kn-a"><button class="btn sm" data-docdl="'+esc(k[0])+'">Télécharger</button></div></div>'; }).join('')+
+    ref.map(function(k){ return '<div class="kn-c"><div class="kn-t"><b>'+esc(k[1])+'</b><span class="small muted">'+esc(a.docs[k[0]].name)+'</span></div><div class="kn-a"><button class="btn sm" data-docdl="'+esc(k[0])+'">Voir</button></div></div>'; }).join('')+
     K.map(function(d){ return card(d, 'E'); }).join('')+(ref.length || K.length ? '' : '<p class="muted small">Aucun document pour cette entité.</p>')+'</div></div>';
   var SV = savForEnt(ST.ent);
   h += '<div class="card2"><div class="h2"><b>Réponses validées de '+esc(expertName())+'</b><span class="muted small">Questionnaire du compte et questions des ADV, utilisées en priorité par l\'assistant</span></div><div class="kn-l">'+
@@ -2936,7 +3018,7 @@ function agEditor(a, tab){
   h += '<div class="panel keydocs"><div class="ph"><h2>Documents à renseigner</h2><span class="kd-n'+(nDoc===DK.length?' ok':'')+'">'+nDoc+' / '+DK.length+' chargé'+(DK.length > 1 ? 's' : '')+'</span><span class="muted">Conservés en base, téléchargeables par tous les utilisateurs</span></div><div class="docs docs1">';
   DK.forEach(function(k, i){
     var d = (a.docs||{})[k[0]];
-    h += '<div class="docslot'+(d?' done':' todo')+'"><div class="ds-h"><span class="ds-n">'+(i+1)+'</span><span class="ds-t">'+k[1]+'</span><span class="ds-s">'+(d?'✓ Chargé':'À charger')+'</span></div>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Télécharger</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
+    h += '<div class="docslot'+(d?' done':' todo')+'"><div class="ds-h"><span class="ds-n">'+(i+1)+'</span><span class="ds-t">'+k[1]+'</span><span class="ds-s">'+(d?'✓ Chargé':'À charger')+'</span></div>'+(d ? '<strong>'+esc(d.name)+'</strong><span class="muted">'+dt(d.at)+' · '+esc(d.by||'')+'</span>'+(k[0]==='cm' ? '<span class="muted">'+(a.cmList||[]).length+' contremaître(s) lus</span>' : '')+'<div class="row"><button class="btn sm" data-docdl="'+k[0]+'">Voir</button>'+(isAdmin()?'<label class="btn sm">Remplacer<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label><button class="btn sm" data-docrm="'+k[0]+'">Supprimer</button>':'')+'</div>'
       : '<span class="muted">Aucun fichier.</span>'+(isAdmin()?'<label class="btn sm pri">Charger le fichier<input type="file" hidden data-docup="'+k[0]+'" accept="'+k[3]+'"></label>':''))+'<span class="hint">'+k[2]+'</span></div>';
   });
   h += '</div>';
@@ -3458,7 +3540,7 @@ function gridModal(){
   rows.push(['Minimum par appareil et par mois', c.rules.min30 && g.min30 ? g.min30+' m²' : 'aucun']);
   return '<div class="mbox mbox-s" role="dialog" aria-modal="true" aria-label="Grille tarifaire"><div class="mhead"><div><span class="lbl">'+esc(A.label||'')+'</span><h2>Grille tarifaire appliquée</h2><span class="muted">'+esc(g.label||'')+(ST.doc && ST.doc.status === 'clos' ? ' · figée à la clôture' : '')+'</span></div><button class="btn" data-mclose>Fermer</button></div>'+
     '<div class="mbody"><div class="tw"><table><tbody>'+rows.map(function(r){ return '<tr><td>'+esc(r[0])+'</td><td class="n">'+esc(r[1])+'</td></tr>'; }).join('')+'</tbody></table></div>'+
-    '<div class="row" style="margin-top:12px">'+(doc ? '<button class="btn" data-gdl>Télécharger la grille signée ('+esc(doc.name)+')</button>' : '<span class="muted">Aucune grille signée chargée dans Paramètres.</span>')+'</div></div></div>';
+    '<div class="row" style="margin-top:12px">'+(doc ? '<button class="btn" data-gdl>Voir la grille signée ('+esc(doc.name)+')</button>' : '<span class="muted">Aucune grille signée chargée dans Paramètres.</span>')+'</div></div></div>';
 }
 /* Champs d'en-tête de la facture Odoo, selon les principes de facturation de l'agence */
 function noAcc(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g, ''); }
@@ -3857,7 +3939,7 @@ function vAdv(ro){
   if (!A){ h += '</div><div class="empty">Aucun fichier ADV pour ce mois.'+(ro ? '' : ' Utiliser le bouton « Déposer le fichier ADV ». Toutes les feuilles sont lues ; colonnes reconnues : n° de colis, type d\'opération, montant ou prix, et si présents affaire, appareil, code contremaître.')+'</div></div>'; return h; }
   if (A.error) return h + '</div><div class="empty">'+esc(A.error)+'</div></div>';
   var C = advCompare(); if (!C) return h + '</div></div>';
-  h += '<div class="sp">'+(A.meta ? '<button class="btn sm" data-advdl>Télécharger</button>' : '')+'<button class="btn sm" data-a="xlsAdv"'+(canSave()?'':' disabled')+'>Exporter l\'écart (.xlsx)</button>'+(!ro ? '<button class="btn sm" data-advrm>Supprimer</button>' : '')+'</div></div>';
+  h += '<div class="sp">'+(A.meta ? '<button class="btn sm" data-advdl>Voir</button>' : '')+'<button class="btn sm" data-a="xlsAdv"'+(canSave()?'':' disabled')+'>Exporter l\'écart (.xlsx)</button>'+(!ro ? '<button class="btn sm" data-advrm>Supprimer</button>' : '')+'</div></div>';
   h += '<p class="pb note muted" style="margin:0">'+esc(A.name)+(A.meta && A.meta.at ? ' · déposé le '+esc(dt(A.meta.at))+' par '+esc(A.meta.by||'') : '')+' · '+A.sheets.map(function(s){ return esc(s.name)+' : '+(s.used ? s.n+' ligne(s)'+(s.amtH ? ', montant = « '+esc(s.amtH)+' »' : ', sans colonne montant')+(s.note ? ', '+esc(s.note) : '') : esc(s.note)); }).join(' · ')+'</p>';
   var dTot = E.r2(C.tot.adv - C.tot.calc), calcAll = ctlHT(ST.R.invoices);
   h += '<div class="kpis">'+kpi('Total fichier ADV', C.hasAmt ? eur(C.tot.adv) : '—', A.lines.length+' ligne(s) lues')+kpi('Total calculé', eur(C.tot.calc), 'lignes rapprochées · factures du mois : '+eur(calcAll))+kpi('Delta ADV − outil', C.hasAmt ? (dTot > 0 ? '+' : '')+n2(dTot)+' €' : '—', (C.cnt.ok||0)+' ligne(s) identique(s)')+kpi('Lignes en écart', (C.cnt.diff||0)+(C.cnt.absent_calc||0)+(C.cnt.absent_adv||0)+(C.cnt.non_fact||0), (C.cnt.diff||0)+' montant · '+(C.cnt.absent_calc||0)+' absente(s) du calcul · '+(C.cnt.absent_adv||0)+' absente(s) du fichier · '+(C.cnt.non_fact||0)+' non facturée(s)')+'</div>';
@@ -4050,7 +4132,7 @@ function advBox(ro, A){
     '<span class="muted small">'+(A.meta && A.meta.at ? 'Déposé le '+esc(dt(A.meta.at))+(A.meta.by ? ' par '+esc(A.meta.by) : '')+' · ' : '')+L.length+' lignes · '+Object.keys(nc).length+' colis'+(DS.length > 1 ? '' : (DS[0] ? ' · feuille « '+esc(DS[0])+' »' : ''))+'</span>'+
     (DS.length > 1 ? '<span class="small">Feuille utilisée <select id="advsheet" class="chk2">'+DS.map(function(sn){ return '<option'+(sn === cur ? ' selected' : '')+'>'+esc(sn)+'</option>'; }).join('')+'</select>'+(ST.ov.advSheet ? '' : ' <span class="muted">(choix automatique : la plus proche des factures Odoo)</span>')+'</span>' : '')+
     '<span class="advft small">Entrées <b>'+n2(ft.E)+'</b> · Sorties <b>'+n2(ft.S)+'</b> · Stockage <b>'+n2(ft.STK)+'</b> · Total <b>'+n2(E.r2(ft.E + ft.S + ft.STK))+' €</b></span></div>'+
-    '<div class="advact">'+(!ro ? '<label class="btn sm">Remplacer'+input+'</label>' : '')+(A.meta ? '<button class="btn sm g" data-advdl>Télécharger</button>'+(!ro ? '<button class="btn sm g" data-advrm>Supprimer</button>' : '') : '')+
+    '<div class="advact">'+(!ro ? '<label class="btn sm">Remplacer'+input+'</label>' : '')+(A.meta ? '<button class="btn sm g" data-advdl>Voir</button>'+(!ro ? '<button class="btn sm g" data-advrm>Supprimer</button>' : '') : '')+
     (!ro ? '<span class="muted small">ou glisser un autre fichier ici</span>' : '')+'</div></div>';
 }
 function vCdf(){
@@ -4486,14 +4568,15 @@ function trIn(){ if (!ST.trIn){ ST.trIn = JSON.parse(JSON.stringify(TR_DEF)); } 
 function trSave(){ var I = trIn(); ['ag','cm','cmd','date','cp','ville','z78','pal','kg','vol','len','h','km','obs'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.value; }); ['hayon','grue','man'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.checked; }); return I; }
 function trForm(mode){
   var I = trIn(), ags = agencies(), cmL = ((ST.cfg.agencies[I.ag]||{}).cmList||[]);
-  var sec = function(n, t, ic){ return '<div class="tf-s"><div class="tf-h"><span class="tf-n">'+n+'</span>'+ic+'<b>'+t+'</b></div>'; };
+  var MD = mode === 'model', N = 0;
+  var sec = function(n, t, ic){ n = ++N; return '<div class="tf-s"><div class="tf-h"><span class="tf-n">'+n+'</span>'+ic+'<b>'+t+'</b></div>'; };
   var IC = { ent:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 14V4l6-2 6 2v10M5 14V9h6v5M5 6h1M10 6h1" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
     chan:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M8 15s5-4.6 5-8.5A5 5 0 0 0 3 6.5C3 10.4 8 15 8 15z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6.5" r="1.8" fill="currentColor"/></svg>',
     mar:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 5l6-3 6 3v6l-6 3-6-3zM2 5l6 3 6-3M8 8v6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
     con:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M8 1.5l6.5 12h-13zM8 6v3.5M8 11.5v.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
     obs:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 3h12v8H7l-3 3v-3H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' };
   var h = '<div class="panel"><div class="ph"><h2>Livraison à réaliser</h2></div><form class="pb tform" id="tform" autocomplete="off">';
-  h += sec(1, 'Quelle entité ?', IC.ent)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Entité OTIS</label><select id="t_ag"'+(ST.ent ? ' disabled' : '')+'>'+ags.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === I.ag ? ' selected' : '')+'>'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+'</select></div>'+
+  if (!MD) h += sec(1, 'Quelle entité ?', IC.ent)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Entité OTIS</label><select id="t_ag"'+(ST.ent ? ' disabled' : '')+'>'+ags.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === I.ag ? ' selected' : '')+'>'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+'</select></div>'+
     '<div class="fld"><label class="lbl" for="t_cm">Contremaître</label><input id="t_cm" list="t_cml" value="'+esc(I.cm)+'"><datalist id="t_cml">'+cmL.map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join('')+'</datalist></div>'+
     fld('Appareil / affaire','t_cmd','text',I.cmd)+fld('Date de livraison','t_date','date',I.date)+'</div></div>';
   h += sec(2, 'Quel chantier ?', IC.chan)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_cp">Code postal</label><input id="t_cp" type="text" inputmode="numeric" maxlength="5" value="'+esc(I.cp)+'"></div>'+
@@ -4550,7 +4633,7 @@ function calcSyn(){
   var mg = sell !== null && B ? E.r2(sell - B.price) : null, pc = mg !== null && sell ? mg / sell * 100 : null, cls = mgClass(pc);
   var h = '<div class="panel syn"><div class="ph"><h2><span class="bn">3</span>Synthèse · marge</h2><span class="muted small">objectif de marge '+MG_TARGET+' %</span></div><div class="pb" style="display:grid;gap:14px">';
   h += '<div class="syn-k"><div><span class="lbl">Vente HT</span><b>'+(sell !== null ? eur(sell) : '—')+'</b><span class="small muted">'+(S.best ? esc(S.best.v.label) : 'hors grille de vente')+'</span></div>'+
-    '<div><span class="lbl">Achat HT</span><b>'+(B ? eur(B.price) : '—')+'</b><span class="small muted">'+(B ? esc(B.carrier)+(B.picked ? ' · retenu' : ' · option la moins chère, non retenue') : 'aucune grille transporteur')+'</span></div>'+
+    '<div><span class="lbl">Achat HT</span><b>'+(B ? eur(B.price) : '—')+'</b><span class="small muted">'+(B ? esc(B.carrier)+(B.picked ? ' · retenu' : ' · option la moins chère, non retenue') : 'devis spécifique à demander aux transporteurs')+'</span></div>'+
     '<div class="'+cls+'"><span class="lbl">Marge</span><b>'+(mg !== null ? (mg >= 0 ? '+' : '')+n2(mg)+' €' : '—')+'</b><span class="small">'+(pc !== null ? '' : '&nbsp;')+'</span></div>'+
     '<div class="'+cls+' syn-pc"><span class="lbl">Taux de marge</span><b>'+(pc !== null ? fr(pc, 1)+' %' : '—')+'</b><span class="small">'+(pc === null ? '&nbsp;' : pc < MG_LOW ? 'sous le seuil de '+MG_LOW+' %' : pc < MG_TARGET ? 'sous l\'objectif de '+MG_TARGET+' %' : 'objectif atteint')+'</span></div></div>';
   if (pc !== null){ var M = 60, pos = Math.max(0, Math.min(M, pc)) / M * 100;
@@ -4564,6 +4647,108 @@ function calcSyn(){
 }
 /* Mise à jour sans recréer un bloc identique : un clic sur « Valider » juste après une saisie n'est pas perdu */
 function setHtml(box, h){ if (box._h === h) return; box._h = h; box.innerHTML = h; }
+/* ============ INFO OTIS : correspondances n° d'affaire ↔ n° d'appareil ↔ code contremaître ============
+   Collection Firestore « otisref » : une ligne par correspondance { ag, aff, app, cm (code), cmNom, note, src:'manuel'|'import', n, m1, m2, by, at }.
+   Saisie manuelle (ADV, admin), import Excel, ou alimentation depuis les exports Odoo déposés dans les mois de facturation
+   (colonnes « Client » → entité et contremaître, « Code contremaître », « N° de commande » → appareil / affaire, lus par le moteur de calcul). */
+var INFO = { list:null, q:'', ag:'', src:'', edit:null, busy:'', err:'', per:6, sort:'aff' };
+function infoKey(ag, aff, app, cm){ return [ag, aff, app, cm].map(function(x){ return String(x || '').trim().toUpperCase(); }).join('|'); }
+function infoId(k){ var h = 0; for (var i = 0; i < k.length; i++){ h = ((h << 5) - h + k.charCodeAt(i)) | 0; } return 'r'+(h >>> 0).toString(36)+k.length.toString(36); }
+function infoLoad(){ if (!STORE.listRef){ INFO.list = []; return Promise.resolve(); } INFO.err = '';
+  return STORE.listRef().then(function(L){ INFO.list = L; render(); }, function(e){ INFO.list = []; INFO.err = e.message; render(); }); }
+function infoCanEdit(){ return role() === 'admin' || role() === 'adv'; }
+function infoCmName(ag, code){ var a = ST.cfg.agencies[ag] || {}, c = (a.cmList || []).filter(function(x){ return String(x.code) === String(code); })[0]; return c ? c.nom : ''; }
+function infoRows(){
+  var q = kbNorm(INFO.q || ''), L = (INFO.list || []).filter(function(r){
+    if (INFO.ag && r.ag !== INFO.ag) return false; if (INFO.src && r.src !== INFO.src) return false;
+    if (!q) return true; var t = kbNorm([r.ag, agLabel(r.ag), r.aff, r.app, r.cm, r.cmNom, r.note].join(' ')); return q.split(' ').every(function(w){ return t.indexOf(w) >= 0; }); });
+  var k = INFO.sort; return L.sort(function(a, b){ return String(a[k] || '~').localeCompare(String(b[k] || '~')) || String(a.app || '').localeCompare(String(b.app || '')); });
+}
+function vInfo(){
+  if (!INFO.list){ infoLoad(); return '<section class="view"><div class="panel empty">Chargement des correspondances…</div></section>'; }
+  var ed = infoCanEdit(), E0 = INFO.edit || {}, R = infoRows(), A = agencies(), all = INFO.list.length;
+  var h = '<section class="view info"><div class="md-intro"><b>Info OTIS</b><span>Retrouver le lien entre n° d\'affaire, n° d\'appareil et contremaître. Saisie manuelle, import Excel ou alimentation automatique depuis les exports Odoo déposés sur la plateforme.</span></div>';
+  if (INFO.err) h += '<div class="panel pb note"><b>Accès à la base refusé.</b> '+esc(INFO.err)+(isAdmin() ? '<br>Les règles Firestore doivent inclure le bloc « otisref » (v5.8) : Console Firebase › Firestore › Règles.' : '')+'</div>';
+  if (ed) h += '<div class="panel"><div class="ph"><h3>'+(E0.id ? 'Modifier la correspondance' : 'Ajouter une correspondance')+'</h3>'+(E0.id ? '<button class="lnk small" data-infocancel>Annuler</button>' : '')+'</div><form class="pb info-f" id="infoform" autocomplete="off">'+
+    '<div class="fld"><label class="lbl" for="if_ag">Entité</label><select id="if_ag">'+A.map(function(a){ return '<option value="'+esc(a.code)+'"'+((E0.ag || ST.ent || (A[0] || {}).code) === a.code ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></div>'+
+    '<div class="fld"><label class="lbl" for="if_aff">N° d\'affaire</label><input id="if_aff" value="'+esc(E0.aff || '')+'" placeholder="45KRX…"></div>'+
+    '<div class="fld"><label class="lbl" for="if_app">N° d\'appareil</label><input id="if_app" value="'+esc(E0.app || '')+'" placeholder="R5N7A728"></div>'+
+    '<div class="fld"><label class="lbl" for="if_cm">Code contremaître</label><input id="if_cm" value="'+esc(E0.cm || '')+'"></div>'+
+    '<div class="fld"><label class="lbl" for="if_cmn">Contremaître</label><input id="if_cmn" value="'+esc(E0.cmNom || '')+'"></div>'+
+    '<div class="fld"><label class="lbl" for="if_note">Note</label><input id="if_note" value="'+esc(E0.note || '')+'" placeholder="adresse chantier, remarque…"></div>'+
+    '<div class="fld info-act"><button class="btn pri" type="button" data-infosave'+(INFO.busy ? ' disabled' : '')+'>'+(E0.id ? 'Enregistrer' : 'Ajouter')+'</button></div></form></div>';
+  h += '<div class="panel"><div class="ph"><h3>Correspondances</h3><span class="muted small">'+R.length+' / '+all+' ligne(s)</span><div class="sp">'+
+    (ed ? '<label class="small">Exports Odoo des <select id="infoper">'+[3, 6, 12, 18].map(function(n){ return '<option value="'+n+'"'+(INFO.per === n ? ' selected' : '')+'>'+n+' derniers mois</option>'; }).join('')+'</select></label><button class="btn sm" data-a="infoFeed"'+(INFO.busy ? ' disabled' : '')+'>Alimenter depuis les extractions</button><label class="btn sm">Importer (.xlsx)<input type="file" id="infoin" hidden accept=".xlsx,.xls,.csv"></label>' : '')+
+    '<button class="btn sm g" data-a="infoXls">Exporter (.xlsx)</button></div></div>';
+  if (INFO.busy) h += '<div class="pb small muted">'+esc(INFO.busy)+'</div>';
+  h += '<div class="pb info-bar"><input type="search" id="infoq" placeholder="Rechercher un n° d\'affaire, d\'appareil, un contremaître…" value="'+esc(INFO.q)+'">'+
+    '<select id="infoag"><option value="">Toutes les entités</option>'+A.map(function(a){ return '<option value="'+esc(a.code)+'"'+(INFO.ag === a.code ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select>'+
+    '<select id="infosrc"><option value="">Toutes les sources</option><option value="manuel"'+(INFO.src === 'manuel' ? ' selected' : '')+'>Saisie manuelle</option><option value="import"'+(INFO.src === 'import' ? ' selected' : '')+'>Extractions Odoo</option></select></div>';
+  var th = function(k, l){ return '<th><button class="lnk small'+(INFO.sort === k ? ' on' : '')+'" data-infosort="'+k+'">'+l+(INFO.sort === k ? ' ▾' : '')+'</button></th>'; };
+  h += '<div class="tw" style="max-height:62vh"><table class="info-t"><thead><tr>'+th('ag', 'Entité')+th('aff', 'N° d\'affaire')+th('app', 'N° d\'appareil')+th('cm', 'Code contremaître')+th('cmNom', 'Contremaître')+'<th>Note</th><th>Source</th>'+(ed ? '<th></th>' : '')+'</tr></thead><tbody>'+
+    (R.length ? R.slice(0, 1500).map(function(r){ var cmn = r.cmNom || infoCmName(r.ag, r.cm);
+      return '<tr><td>'+esc(agLabel(r.ag) || r.ag || '')+'</td><td class="mono">'+esc(r.aff || '—')+'</td><td class="mono">'+esc(r.app || '—')+'</td><td class="mono">'+esc(r.cm || '—')+'</td><td>'+esc(cmn || '')+'</td><td class="small">'+esc(r.note || '')+'</td>'+
+        '<td class="small">'+(r.src === 'import' ? '<span class="pill p-info">Odoo</span> '+(r.n || 0)+' ligne(s)'+(r.m1 ? ' · '+esc(monthLabel(r.m1))+(r.m2 && r.m2 !== r.m1 ? ' → '+esc(monthLabel(r.m2)) : '') : '') : '<span class="pill p-ok">Saisie</span> '+esc(r.byName || r.by || ''))+'</td>'+
+        (ed ? '<td class="nowrap">'+(INFO.del === r.id ? '<button class="btn sm danger" data-infodelok="'+esc(r.id)+'">Supprimer</button><button class="btn sm g" data-infodelno>×</button>' : '<button class="lnk small" data-infoedit="'+esc(r.id)+'">Modifier</button><button class="lnk small neg" data-infodel="'+esc(r.id)+'">×</button>')+'</td>' : '')+'</tr>'; }).join('') :
+      '<tr><td colspan="'+(ed ? 8 : 7)+'" class="empty">'+(all ? 'Aucune correspondance pour cette recherche.' : 'Aucune correspondance enregistrée. '+(ed ? 'Ajoute-en à la main ou alimente le tableau depuis les extractions Odoo.' : ''))+'</td></tr>')+'</tbody></table></div>'+(R.length > 1500 ? '<p class="pb small muted">1 500 premières lignes affichées : affiner la recherche.</p>' : '')+'</div>';
+  return h + '</section>';
+}
+function infoSave(){
+  var g = function(id){ return String(($(id) || {}).value || '').trim(); }, E0 = INFO.edit || {}, me = ST.user || {};
+  var d = { ag:g('if_ag'), aff:g('if_aff').toUpperCase(), app:g('if_app').toUpperCase(), cm:g('if_cm'), cmNom:g('if_cmn'), note:g('if_note') };
+  if (!d.aff && !d.app){ toast('Indiquer au moins un n° d\'affaire ou d\'appareil'); return; }
+  var dup = (INFO.list || []).filter(function(r){ return r.id !== E0.id && infoKey(r.ag, r.aff, r.app, r.cm) === infoKey(d.ag, d.aff, d.app, d.cm); })[0];
+  if (dup){ toast('Cette correspondance existe déjà'); return; }
+  var id = E0.id || 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2, 5);
+  d.src = E0.src === 'import' ? 'import' : 'manuel'; if (E0.src === 'import'){ d.n = E0.n; d.m1 = E0.m1; d.m2 = E0.m2; d.src = 'manuel'; }
+  d.by = me.email || ''; d.byName = me.name || ''; d.at = new Date().toISOString();
+  INFO.busy = 'Enregistrement…'; render();
+  STORE.saveRef(id, d).then(function(){ d.id = id; INFO.list = (INFO.list || []).filter(function(r){ return r.id !== id; }).concat([d]); INFO.edit = null; INFO.busy = ''; render(); toast(E0.id ? 'Correspondance modifiée' : 'Correspondance ajoutée'); },
+    function(e){ INFO.busy = ''; render(); toast('Enregistrement impossible : '+e.message); });
+}
+/* Alimentation depuis les exports Odoo déposés : un passage sur les mois de la période, regroupement par entité × affaire × appareil × code contremaître */
+function infoFeed(){
+  var per = INFO.per || 6, lim = last18().slice(0, per), agg = {}, nf = 0, nl = 0;
+  INFO.busy = 'Lecture des mois déposés…'; render();
+  STORE.listMonths().then(function(M){
+    M = M.filter(function(m){ var p = String(m.id).split('_'); return lim.indexOf(p[p.length - 1]) >= 0 && (m.files || []).length; });
+    var chain = Promise.resolve();
+    M.forEach(function(m){ var p = String(m.id).split('_'), ym = p.pop(), ag0 = p.join('_');
+      (m.files || []).forEach(function(meta){ chain = chain.then(function(){ INFO.busy = 'Lecture de '+meta.name+' ('+agLabel(ag0)+' · '+monthLabel(ym)+')…'; render();
+        return STORE.loadImportRows(meta).then(function(rows){ var pf = E.parseFile(meta.name, rows); nf++;
+          (pf.records || []).forEach(function(r){ if (!r.appareil && !r.affaireCmd) return; nl++; var ag = r.ag || ag0, k = infoKey(ag, r.affaireCmd, r.appareil, r.cmCode), x = agg[k];
+            if (!x) x = agg[k] = { ag:ag, aff:r.affaireCmd || '', app:r.appareil || '', cm:r.cmCode || '', names:{}, n:0, m1:ym, m2:ym };
+            x.n++; if (r.cm) x.names[r.cm] = (x.names[r.cm] || 0) + 1; if (ym < x.m1) x.m1 = ym; if (ym > x.m2) x.m2 = ym; }); }, function(){}); }); }); });
+    return chain;
+  }).then(function(){
+    var man = {}, cur = {}; (INFO.list || []).forEach(function(r){ var k = infoKey(r.ag, r.aff, r.app, r.cm); if (r.src === 'manuel') man[k] = 1; else cur[k] = r; });
+    var W = [], me = ST.user || {}; Object.keys(agg).forEach(function(k){ if (man[k]) return; var x = agg[k], nm = Object.keys(x.names).sort(function(a, b){ return x.names[b] - x.names[a]; })[0] || infoCmName(x.ag, x.cm) || '', old = cur[k];
+      var d = { ag:x.ag, aff:x.aff, app:x.app, cm:x.cm, cmNom:nm, note:old ? old.note || '' : '', src:'import', n:x.n, m1:old && old.m1 < x.m1 ? old.m1 : x.m1, m2:old && old.m2 > x.m2 ? old.m2 : x.m2, by:me.email || '', byName:me.name || '', at:new Date().toISOString() };
+      if (old && old.n === d.n && old.m1 === d.m1 && old.m2 === d.m2 && old.cmNom === d.cmNom) return; W.push([old ? old.id : infoId(k), d]); });
+    INFO.busy = W.length ? 'Enregistrement de '+W.length+' correspondance(s)…' : ''; render();
+    return (W.length ? STORE.saveRefs(W) : Promise.resolve()).then(function(){ var byId = {}; (INFO.list || []).forEach(function(r){ byId[r.id] = r; }); W.forEach(function(w){ w[1].id = w[0]; byId[w[0]] = w[1]; });
+      INFO.list = Object.keys(byId).map(function(k){ return byId[k]; }); INFO.busy = ''; render();
+      toast(nf ? nf+' export(s) lu(s), '+nl+' ligne(s) avec appareil ou affaire : '+W.length+' correspondance(s) ajoutée(s) ou mise(s) à jour' : 'Aucun export Odoo déposé sur la période'); });
+  }).catch(function(e){ INFO.busy = ''; render(); toast('Alimentation impossible : '+e.message); });
+}
+function infoXls(){ var R = infoRows(), wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(function(r){ return { 'Entité':agLabel(r.ag) || r.ag, 'Code entité':r.ag, 'N° d\'affaire':r.aff, 'N° d\'appareil':r.app, 'Code contremaître':r.cm, 'Contremaître':r.cmNom || infoCmName(r.ag, r.cm), 'Note':r.note || '', 'Source':r.src === 'import' ? 'Extraction Odoo' : 'Saisie', 'Lignes Odoo':r.n || '', 'Premier mois':r.m1 || '', 'Dernier mois':r.m2 || '' }; })), 'Info OTIS');
+  saveXlsx(wb, 'Info OTIS - affaires appareils contremaitres.xlsx'); }
+function infoImport(file){
+  readBuf(file).then(function(buf){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' }), R = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+    var col = function(r, re){ var k = Object.keys(r).filter(function(x){ return re.test(kbNorm(x)); })[0]; return k ? String(r[k]).trim() : ''; }, A = agencies(), me = ST.user || {}, have = {}, W = [];
+    (INFO.list || []).forEach(function(r){ have[infoKey(r.ag, r.aff, r.app, r.cm)] = 1; });
+    R.forEach(function(r){ var agv = col(r, /^code entite$|^entite$|^agence$/), ag = (A.filter(function(a){ return a.code === agv || kbNorm(a.label) === kbNorm(agv) || new RegExp('\\b'+a.code+'\\b').test(agv); })[0] || {}).code || agv;
+      var d = { ag:ag, aff:col(r, /affaire/).toUpperCase(), app:col(r, /appareil/).toUpperCase(), cm:col(r, /code contremaitre|^code cm/), cmNom:col(r, /^contremaitre$|^nom contremaitre/), note:col(r, /^note|commentaire/), src:'manuel', by:me.email || '', byName:me.name || '', at:new Date().toISOString() };
+      if (!d.aff && !d.app) return; var k = infoKey(d.ag, d.aff, d.app, d.cm); if (have[k]) return; have[k] = 1; W.push(['m'+infoId(k).slice(1), d]); });
+    if (!W.length){ toast('Aucune nouvelle correspondance dans le fichier (colonnes attendues : Entité, N° d\'affaire, N° d\'appareil, Code contremaître, Contremaître)'); return; }
+    INFO.busy = 'Import de '+W.length+' ligne(s)…'; render();
+    return STORE.saveRefs(W).then(function(){ W.forEach(function(w){ w[1].id = w[0]; INFO.list.push(w[1]); }); INFO.busy = ''; render(); toast(W.length+' correspondance(s) importée(s)'); });
+  }).catch(function(e){ INFO.busy = ''; render(); toast('Import impossible : '+e.message); });
+}
+/* ---- Modélisation transport (accueil) : livraison à réaliser + achat, pour tous, sans entité ni prix de vente ---- */
+function vModel(){
+  return '<section class="view"><div class="md-intro"><b>Modélisation transport</b><span>Simule le coût d\'achat d\'une livraison selon les grilles tarifaires de nos transporteurs partenaires ('+carriers().filter(function(c){ return c.active !== false; }).map(function(c){ return esc(c.name); }).join(', ')+'). Aucun enregistrement.</span></div><div class="two">'+trForm('model')+'<div style="display:grid;gap:16px;align-content:start"><div id="tbuy" class="blk blk-buy"></div></div></div></section>'; }
 function vDevis(){ var V = ST.trDone;
   var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+(V.ville ? ' · '+esc(V.cp+' '+V.ville) : '')+'</span><span class="sp"></span><button class="btn sm" data-ttab="hist">Voir l\'historique</button><button class="btn sm g" data-trdone>Nouveau devis</button></div>' : '';
   return '<section class="view">'+ban+'<div class="two">'+trForm()+'<div style="display:grid;gap:16px;align-content:start"><div id="treco" class="blk blk-sell"></div><div id="tbuy" class="blk blk-buy"></div><div id="tsyn" class="blk blk-syn"></div></div></div></section>'; }
@@ -4993,19 +5178,73 @@ function gridDraftSave(id){
 }
 var GKIND = { course:'Courses / commune', lots:'Lots t / ml', vehicule:'Location véhicule', messagerie:'Messagerie' };
 /* ---- Visionneuse du document d'origine (grille transporteur) : PDF rendu en images (pages pivotées respectées), Word en texte, Excel en tableau ---- */
+/* ---- Word 97 (.doc) : texte brut avec marques de cellule (\x07) et de paragraphe (\r) conservées, pour reconstruire les tableaux ---- */
+function docRaw(buf){
+  var z = XLSX.CFB.read(new Uint8Array(buf), { type:'array' }), f = XLSX.CFB.find(z, 'WordDocument'); if (!f) throw new Error('document Word illisible');
+  var b = f.content, rd = function(o){ return b[o] | (b[o+1] << 8) | (b[o+2] << 16) | (b[o+3] << 24); }, s = rd(0x18), e = rd(0x1C);
+  if (!(s > 0 && e > s && e <= b.length)) { s = 0; e = b.length; }
+  var out = []; for (var i = s; i < e; i++){ var c = b[i]; if (c === 0) continue; if (c === 0xAC && b[i+1] === 0x20){ out.push('€'); i++; continue; } out.push(String.fromCharCode(c)); }
+  return out.join('').replace(/\x13[^\x14\x15]*\x14?/g, '').replace(/[\x01\x15\x08\x0c]/g, '').replace(/\x0b/g, '\r').replace(/\t/g, '  ');
+}
+/* Rendu lisible d'un .doc : paragraphes + tableaux. Dans le flux Word, chaque cellule se termine par \x07 et chaque ligne de tableau
+   par une marque \x07 supplémentaire (cellule vide) ; le nombre de colonnes est celui pour lequel toutes ces marques de fin de ligne tombent juste. */
+function docHtml(buf){
+  var raw = docRaw(buf), seg = raw.split('\x07'), out = [], cells = null;
+  var para = function(t){ String(t).split('\r').forEach(function(p){ p = p.trim(); if (p) out.push('<p>'+esc(p)+'</p>'); }); };
+  var flush = function(){ if (!cells || !cells.length) { cells = null; return; }
+    var n = 0; for (var k = 1; k <= 16 && !n; k++){ if (cells.length % (k + 1) === 0 && cells.length >= 2 * (k + 1) || cells.length === k + 1){ var okk = true; for (var j = k; j < cells.length; j += k + 1) if (cells[j].trim()) { okk = false; break; } if (okk) n = k; } }
+    if (!n){ out.push('<p>'+cells.map(function(c){ return esc(c.trim()); }).filter(Boolean).join(' · ')+'</p>'); cells = null; return; }
+    var rows = []; for (var r = 0; r < cells.length; r += n + 1) rows.push(cells.slice(r, r + n));
+    out.push('<table class="dvt">'+rows.map(function(R, ri){ return '<tr>'+R.map(function(c){ var t = esc(c.trim()).replace(/\r/g, '<br>'); return ri === 0 ? '<th>'+t+'</th>' : '<td>'+t+'</td>'; }).join('')+'</tr>'; }).join('')+'</table>'); cells = null; };
+  for (var i = 0; i < seg.length; i++){
+    var s = seg[i], last = i === seg.length - 1;
+    if (last){ if (cells) flush(); para(s); break; }
+    if (!cells){ var p = s.lastIndexOf('\r'); para(p >= 0 ? s.slice(0, p) : ''); cells = [p >= 0 ? s.slice(p + 1) : s]; continue; }
+    // texte avec retour à la ligne juste après une fin de ligne de tableau : fin du tableau, paragraphes, puis premier cellule du tableau suivant
+    if (/\r/.test(s) && cells.length && !cells[cells.length - 1].trim() && !/^\r?$/.test(s)){ var q = s.lastIndexOf('\r');
+      flush(); para(s.slice(0, q)); cells = [s.slice(q + 1)]; continue; }
+    cells.push(s);
+  }
+  if (cells) flush();
+  return '<div class="dvdoc">'+out.join('')+'</div>';
+}
+/* ---- Visionneuse générique : tout document déposé (grilles, contrats, documents d'entité, exports, fichier ADV) s'ouvre dans une fenêtre ---- */
+var DOCM = {};
+function openDoc(meta){ if (!meta) return; var id = String(meta.id || meta.path || meta.name); DOCM[id] = meta; ST.docView = 'm:'+id; render(); }
+function docMetaOf(k){ if (!k) return null;
+  if (k.indexOf('m:') === 0) return DOCM[k.slice(2)] || null;
+  if (k.indexOf('c:') === 0){ var c = carriers().filter(function(x){ return x.id === k.slice(2); })[0]; return c && c.doc || null; }
+  if (k.indexOf('d:') === 0) return null;
+  var m = null; carriers().forEach(function(c){ (c.grids || []).forEach(function(g){ if (g.id === k && g.doc) m = g.doc; }); }); return m; }
+/* Boutons « Voir » des documents : retrouve le fichier conservé derrière chaque bouton */
+function docMetaFromBtn(d){
+  if (d.kdl){ var kf = knFind(d.kdl); return (kf && kf.d && kf.d.file) || null; }
+  if (d.dqdl){ var fx = DQ.f[d.dqdl]; return (fx && fx.meta) || null; }
+  if (d.advdl !== undefined){ return (ST.adv && ST.adv.meta) || null; }
+  if (d.gdl !== undefined){ var gA = ST.cfg.agencies[ST.ag]; return (gA && gA.docs && gA.docs.grille) || null; }
+  if (d.docdl){ var a0 = ST.cfg.agencies[ST.parAg || ST.ent]; return (a0 && a0.docs && a0.docs[d.docdl]) || null; }
+  if (d.griddocdl){ var gd = d.griddocdl.split('|'), gc = carriers()[+gd[0]], gg = gc && gc.grids[+gd[1]]; return (gg && gg.doc) || null; }
+  if (d.cardocdl !== undefined){ var cd = carriers()[+d.cardocdl]; return (cd && cd.doc) || null; }
+  return undefined;
+}
 var DOCV = {};
 function docRender(buf, name){
   var ext = (String(name).split('.').pop() || '').toLowerCase();
   if (ext === 'pdf'){ var pdfjs = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
-    return pdfjs.getDocument({ data:new Uint8Array(buf), isEvalSupported:false }).promise.then(function(doc){ var P = []; for (var n = 1; n <= doc.numPages; n++) P.push(n);
-      return Promise.all(P.map(function(n){ return doc.getPage(n).then(function(pg){ var v1 = pg.getViewport({ scale:1 }), vp = pg.getViewport({ scale:Math.min(2, 1400 / v1.width) }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
-        return pg.render({ canvasContext:cv.getContext('2d'), viewport:vp }).promise.then(function(){ return '<img src="'+cv.toDataURL('image/png')+'" alt="page '+n+'">'; }); }); })); }).then(function(I){ return I.join(''); }); }
+    // pages rendues l'une après l'autre (rendu parallèle peu fiable sur certains PDF), chacune numérotée
+    return pdfjs.getDocument({ data:new Uint8Array(buf), isEvalSupported:false }).promise.then(function(doc){ var N = doc.numPages, I = [], chain = Promise.resolve();
+      for (var n = 1; n <= N; n++) (function(n){ chain = chain.then(function(){ return doc.getPage(n); }).then(function(pg){ var v1 = pg.getViewport({ scale:1 }), vp = pg.getViewport({ scale:Math.min(2, 1400 / v1.width) }), cv = document.createElement('canvas'); cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
+        var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+        return pg.render({ canvasContext:cx, viewport:vp }).promise.then(function(){ I.push('<figure class="dvp"><img src="'+cv.toDataURL('image/png')+'" alt="page '+n+'"><figcaption>Page '+n+' / '+N+'</figcaption></figure>'); }); }); })(n);
+      return chain.then(function(){ return (N > 1 ? '<p class="dvn">'+N+' pages · faire défiler</p>' : '')+I.join(''); }); }); }
+  if (ext === 'doc') return Promise.resolve(docHtml(buf));
   if (/^(xlsx|xls|csv)$/.test(ext)){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' }); return Promise.resolve(wb.SheetNames.map(function(sn){ return '<h4>'+esc(sn)+'</h4>'+XLSX.utils.sheet_to_html(wb.Sheets[sn], { header:'', footer:'' }).replace(/<\/?(html|head|body|meta)[^>]*>/g, ''); }).join('')); }
   return gridLines(new File([buf], name)).then(function(L){ return '<pre>'+esc(L.join('\n').replace(/\n{3,}/g, '\n\n'))+'</pre>'; });
 }
 function docvHtml(key){ var d = DOCV[key]; return '<div class="docv" id="docv" data-key="'+esc(key)+'">'+(!d || d.busy ? '<p class="small muted">Chargement du document…</p>' : d.err ? '<p class="small neg">'+esc(d.err)+'</p>' : d.html)+'</div>'; }
 function docvFill(){ var e = $('docv'); if (!e) return; var key = e.dataset.key; if (DOCV[key]) return; DOCV[key] = { busy:true };
   var src; if (key.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === key.slice(2); })[0]; src = dr ? readBuf(dr.file).then(function(b){ return [b, dr.name]; }) : Promise.reject(new Error('brouillon introuvable')); }
+  else if (key.indexOf('m:') === 0){ var mm = DOCM[key.slice(2)]; src = mm ? STORE.getFileBytes(mm).then(function(b){ return [b, mm.name]; }) : Promise.reject(new Error('document introuvable')); }
   else if (key.indexOf('c:') === 0){ var cc = carriers().filter(function(x){ return x.id === key.slice(2); })[0]; src = cc && cc.doc ? STORE.getFileBytes(cc.doc).then(function(b){ return [b, cc.doc.name]; }) : Promise.reject(new Error('document absent')); }
   else { var G = null; carriers().forEach(function(c){ (c.grids || []).forEach(function(g){ if (g.id === key) G = g; }); }); src = G && G.doc ? STORE.getFileBytes(G.doc).then(function(b){ return [b, G.doc.name]; }) : Promise.reject(new Error('document d\'origine non conservé')); }
   src.then(function(x){ return docRender(x[0], x[1]); }).then(function(h){ DOCV[key] = { html:h }; render(); }, function(err){ DOCV[key] = { err:'Affichage impossible : '+err.message }; render(); }); }
@@ -5117,18 +5356,21 @@ function buyQuote(G, I){
 function buyAll(I){ var out = []; carriers().forEach(function(c){ if (c.active === false) return; (c.grids || []).forEach(function(G){ if (G.active === false) return; var q = buyQuote(G, I); q.carrier = c.name; q.c = c; q.G = G;
   if (q.ok && G.validTo && G.validTo < new Date().toISOString().slice(0, 10)){ q.expired = true; q.detail += ' · grille échue le '+G.validTo.split('-').reverse().join('/'); } out.push(q); }); }); return out; }
 function calcBuy(){
-  var box = $('tbuy'); if (!box) return; var I = trSave(), A = buyAll(I), ok = A.filter(function(q){ return q.ok; }).sort(function(a, b){ return a.price - b.price; }), S = sellCalc(I), sell = S.best ? S.best.q.total : null;
-  var h = '<div class="panel"><div class="ph"><h2><span class="bn">2</span>Achat · les 2 options les plus économiques</h2><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
+  var box = $('tbuy'); if (!box) return; var MOD = ST.module === 'mod', I = trSave(), A = buyAll(I), ok = A.filter(function(q){ return q.ok; }).sort(function(a, b){ return a.price - b.price; }), S = MOD ? {} : sellCalc(I), sell = S.best ? S.best.q.total : null;
+  var h = '<div class="panel"><div class="ph"><h2>'+(MOD ? '' : '<span class="bn">2</span>')+'Achat · les 2 options les plus économiques</h2><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
   if (!carriers().length) h += '<p class="note">Aucun transporteur paramétré. '+(isAdmin() ? '<button class="lnk" data-cfgtab="ach">Créer les transporteurs et leurs grilles</button> (Paramétrage › Grille achat transport).' : 'Un administrateur doit créer les transporteurs dans Paramétrage › Grille achat transport.')+'</p>';
-  else if (!ok.length) h += '<p class="note"><span class="pill p-bloquant">Aucune option</span> Aucune grille de transporteur ne couvre cette livraison : demander un devis.</p>';
+  else if (!ok.length){ var dep0 = String(I.cp || '').slice(0, 2), zoneKO = A.every(function(q){ return (q.why || []).some(function(w){ return /desservi|absente|zone/.test(w); }); });
+    h += '<div class="tr-none"><b>'+(zoneKO ? 'Destination non couverte par les grilles tarifaires'+(I.cp ? ' ('+esc(I.cp+(I.ville ? ' '+I.ville : ''))+')' : '') : 'Aucune grille tarifaire ne permet cette livraison')+'</b>'+
+      '<p>Veuillez consulter les transporteurs pour obtenir un devis spécifique.</p>'+
+      '<ul>'+carriers().filter(function(c){ return c.active !== false; }).map(function(c){ return '<li><b>'+esc(c.name)+'</b>'+(c.contact || c.phone || c.email ? ' · '+[c.contact, c.phone ? '<a href="tel:'+esc(String(c.phone).replace(/\s/g, ''))+'">'+esc(c.phone)+'</a>' : '', c.email ? '<a href="mailto:'+esc(c.email)+'?subject='+encodeURIComponent('Demande de devis transport · '+(I.cp || '')+' '+(I.ville || ''))+'">'+esc(c.email)+'</a>' : ''].filter(Boolean).join(' · ') : ' · <span class="muted">coordonnées à compléter dans la fiche</span>')+'</li>'; }).join('')+'</ul></div>'; }
   else h += '<div class="tr-opts">'+ok.slice(0, 2).map(function(q, i){ var mg = sell !== null ? E.r2(sell - q.price) : null, pick = ST.trBuyPick && ST.trBuyPick.key === q.c.id+'|'+q.G.id;
     return '<div class="tr-opt'+(i === 0 ? ' first' : '')+(pick ? ' pick' : '')+'"><span class="lbl">Option '+(i + 1)+(i === 0 ? ' · la plus économique' : '')+'</span><strong>'+esc(q.carrier)+'</strong><span class="muted small">'+esc(q.G.label || '')+' · '+esc(q.what)+'</span><span class="price">'+eur(q.price)+' HT</span><span class="formula">'+esc(q.detail)+'</span>'+
       (mg !== null ? '<span class="small">Marge <b class="'+mgClass(mg / sell * 100)+'">'+(mg >= 0 ? '+' : '')+n2(mg)+' € · '+fr(mg / sell * 100, 1)+' %</b></span>' : '')+
       (q.c.contact || q.c.phone || q.c.email ? '<span class="small muted">'+esc([q.c.contact, q.c.phone, q.c.email].filter(Boolean).join(' · '))+'</span>' : '')+
-      '<button class="btn sm'+(pick ? '' : ' pri')+'" data-trbuy="'+esc(q.c.id+'|'+q.G.id)+'">'+(pick ? 'Retenu ✓' : 'Retenir ce transporteur')+'</button></div>'; }).join('')+'</div>';
+      (MOD ? '' : '<button class="btn sm'+(pick ? '' : ' pri')+'" data-trbuy="'+esc(q.c.id+'|'+q.G.id)+'">'+(pick ? 'Retenu ✓' : 'Retenir ce transporteur')+'</button>')+'</div>'; }).join('')+'</div>';
   if (A.length) h += '<div class="tw"><table><thead><tr><th>Transporteur</th><th>Grille</th><th>Solution</th><th class="n">Achat HT</th></tr></thead><tbody>'+
     A.sort(function(a, b){ return (b.ok - a.ok) || ((a.price || 0) - (b.price || 0)); }).map(function(q){ return '<tr'+(q.ok ? '' : ' class="excl"')+'><td>'+esc(q.carrier)+'</td><td class="small">'+esc(q.G.label || '')+(q.zone ? ' · zone '+esc(q.zone) : '')+'</td><td class="small">'+(q.ok ? esc(q.what) : '<span class="muted">'+esc(q.why.join(' · '))+'</span>')+'</td><td class="n">'+(q.ok ? n2(q.price) : '—')+'</td></tr>'; }).join('')+'</tbody></table></div>';
-  h += '<p class="muted small" style="margin:0">Messagerie : poids taxable = max(poids réel ; volume × ratio de la grille). Affrètement : véhicule le moins cher compatible, forfait de la zone + km au-delà du forfait + suppléments. Prix de vente : grille de vente de l\'entité (section 1).</p></div></div>';
+  h += '<p class="muted small" style="margin:0">Messagerie : poids taxable = max(poids réel ; volume × ratio de la grille). Affrètement : véhicule le moins cher compatible, forfait de la zone + km au-delà du forfait + suppléments. '+(MOD ? 'Modélisation : prix d\'achat des grilles transporteurs, sans prix de vente ni marge.' : 'Prix de vente : grille de vente de l\'entité (section 1).')+'</p></div></div>';
   setHtml(box, h);
 }
 
@@ -5288,12 +5530,13 @@ function vAnalyses(){
   return h + '<p class="small muted an-l">Prix de base des grilles (€ HT), hors suppléments, heures et km au-delà des forfaits ; détail au survol d\'une case. Lot : colonne couvrant la charge utile et les mètres linéaires du type. Couleurs : vert = le moins cher de la ligne, puis écart croissant (jaune ≤ 5 %, orange ≤ 15 %, rose ≤ 30 %, rouge au-delà).</p></div>';
 }
 /* ---- Fenêtre de visualisation d'un document ---- */
-function docName(k){ if (k.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === k.slice(2); })[0]; return dr ? dr.name : ''; }
+function docName(k){ if (k.indexOf('m:') === 0){ var mm = DOCM[k.slice(2)]; return mm ? mm.name : ''; }
+  if (k.indexOf('d:') === 0){ var dr = (ST.gimp || []).filter(function(x){ return x.id === k.slice(2); })[0]; return dr ? dr.name : ''; }
   if (k.indexOf('c:') === 0){ var c = carriers().filter(function(x){ return x.id === k.slice(2); })[0]; return c && c.doc ? c.doc.name : ''; }
   var n = ''; carriers().forEach(function(c){ (c.grids || []).forEach(function(g){ if (g.id === k && g.doc) n = g.doc.name; }); }); return n; }
 function docModal(){ var k = ST.docView; if (!k) return '';
   var P = ST.dvPos;
-  return '<div class="dv-ov"><div class="dv-w"'+(P ? ' style="position:fixed;left:'+P.x+'px;top:'+P.y+'px"' : '')+'><div class="dv-h" title="Glisser pour déplacer la fenêtre"><span class="dv-grip">⠿</span><b>'+esc(docName(k))+'</b><span class="sp"></span>'+(k.indexOf('d:') === 0 ? '' : '<button class="btn sm g" data-docdl="'+esc(k)+'">Télécharger</button>')+'<button class="btn sm" data-docview="'+esc(k)+'">Fermer</button></div>'+docvHtml(k)+'</div></div>'; }
+  return '<div class="dv-ov"><div class="dv-w"'+(P ? ' style="position:fixed;left:'+P.x+'px;top:'+P.y+'px"' : '')+'><div class="dv-h" title="Glisser pour déplacer la fenêtre"><span class="dv-grip">⠿</span><b>'+esc(docName(k))+'</b><span class="sp"></span>'+(k.indexOf('d:') === 0 ? '' : '<button class="btn sm g" data-dvdl="'+esc(k)+'">Télécharger</button>')+'<button class="btn sm" data-docview="'+esc(k)+'">Fermer</button></div>'+docvHtml(k)+'</div></div>'; }
 function vCarriers(){
   if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
   var C = carriers(), D = ST.gimp || [], sel = /^(an|veh|dest)$/.test(ST.carSel) ? ST.carSel : Math.min(+ST.carSel || 0, Math.max(0, C.length - 1)), c = sel === 'cmp' ? null : C[sel];
@@ -5427,7 +5670,7 @@ function vEntTrp(a){
   var h = '<div class="panel"><div class="ph"><h2>Grille de vente transport</h2><span class="muted">Prix facturé au client pour une livraison (onglet « Vente » du transport)</span></div><div class="pb" style="display:grid;gap:10px">'+
     '<p class="small" style="margin:0">'+(own ? 'Grille <b>spécifique à '+esc(a.label || a.code)+'</b>, modifiable ci-dessous.' : 'Grille <b>OTIS 2023</b> (01/07/2023), commune à toutes les entités. Pour des prix propres à cette entité, crée une grille spécifique à partir de celle-ci.')+'</p>'+
     (isAdmin() ? '<div class="row">'+(own ? '<button class="btn sm g" data-salereset>Revenir à la grille OTIS 2023</button>' : '<button class="btn sm pri" data-saleown>Créer une grille spécifique (copie de la grille OTIS 2023)</button>')+'</div>' : '')+
-    field('Grille transport signée (document)', d ? '<span class="small"><b>'+esc(d.name)+'</b> · '+esc(dt(d.at))+' <button class="lnk small" data-docdl="trp">Télécharger</button></span>'+(isAdmin() ? ' <label class="btn sm g">Remplacer<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx"></label>' : '') : (isAdmin() ? '<label class="btn sm">Charger le document<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx"></label>' : '<span class="muted small">Aucun document</span>'))+'</div>';
+    field('Grille transport signée (document)', d ? '<span class="small"><b>'+esc(d.name)+'</b> · '+esc(dt(d.at))+' <button class="lnk small" data-docdl="trp">Voir</button></span>'+(isAdmin() ? ' <label class="btn sm g">Remplacer<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx"></label>' : '') : (isAdmin() ? '<label class="btn sm">Charger le document<input type="file" hidden data-docup="trp" accept=".pdf,.xls,.xlsx"></label>' : '<span class="muted small">Aucun document</span>'))+'</div>';
   var inp = function(path, v, w){ return ed ? cIn(p+path, v, 'number', w || '72px') : '<span class="num">'+esc(v === null || v === undefined ? '—' : v)+'</span>'; };
   h += '<div class="pb"><span class="lbl">Zones</span><div class="grd-f">'+field('Zone A (départements)', ed ? cIn(p+'zA', G.zA) : esc(G.zA))+field('Zone B (départements)', ed ? cIn(p+'zB', G.zB) : esc(G.zB))+field('Zone C', '<span class="small">reste de la France</span>')+field('Yvelines (78) partagé A / B', ed ? cYN(p+'split78', G.split78) : (G.split78 ? 'oui' : 'non'))+'</div></div>';
   h += '<div class="pb"><span class="lbl">Véhicules et prix (€ HT : ½ journée / journée)</span><div class="tw"><table class="grd-t"><thead><tr><th>Véhicule</th><th class="n">Pal.</th><th class="n">Kg max</th><th class="n">Long. mm</th><th>Hayon</th><th>Grue</th><th class="n">A ½</th><th class="n">A j.</th><th class="n">B ½</th><th class="n">B j.</th><th class="n">C ½</th><th class="n">C j.</th><th class="n">€ / h sup.</th><th class="n">€ / km sup.</th>'+(ed ? '<th></th>' : '')+'</tr></thead><tbody>'+
@@ -5623,11 +5866,23 @@ document.addEventListener('click', function(e){
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
   if (d.trbuy){ var kq = d.trbuy.split('|'), cq = carriers().filter(function(x){ return x.id === kq[0]; })[0], gq = cq && (cq.grids || []).filter(function(x){ return x.id === kq[1]; })[0]; if (gq){ var qq = buyQuote(gq, trSave()); if (qq.ok){ ST.trBuyPick = { key:d.trbuy, carrier:cq.name, grid:gq.label, what:qq.what, price:qq.price }; toast('Achat retenu : '+cq.name+' · '+eur(qq.price)+' HT'); trCalc(); } } return; }
+  if (d.affview){ ST.affView = d.affview; render(); return; }
+  if (d.asgt && isAdmin()){ var at = d.asgt.split('|'), cur3 = (ST.cfg.assign || {})[at[0]] || []; affSet(at[0], at[1], cur3.indexOf(at[1]) < 0); return; }
+  if (d.asgall && isAdmin()){ ST.cfg.assign = ST.cfg.assign || {}; ST.cfg.assign[d.asgall] = allAgencies().map(function(a){ return a.code; }); affNames(); saveCfg('Affectation '+d.asgall+' : toutes les entités'); render(); return; }
+  if (d.asgnone && isAdmin()){ ST.cfg.assign = ST.cfg.assign || {}; ST.cfg.assign[d.asgnone] = []; affNames(); saveCfg('Affectation '+d.asgnone+' : aucune entité'); render(); return; }
+  if (d.infosave !== undefined){ infoSave(); return; }
+  if (d.infocancel !== undefined){ INFO.edit = null; render(); return; }
+  if (d.infoedit){ INFO.edit = (INFO.list || []).filter(function(r){ return r.id === d.infoedit; })[0] || null; INFO.del = null; render(); window.scrollTo(0, 0); return; }
+  if (d.infodel){ INFO.del = d.infodel; render(); return; }
+  if (d.infodelno !== undefined){ INFO.del = null; render(); return; }
+  if (d.infodelok){ var rid = d.infodelok; STORE.deleteRef(rid).then(function(){ INFO.list = INFO.list.filter(function(r){ return r.id !== rid; }); INFO.del = null; render(); toast('Correspondance supprimée'); }, function(e){ toast('Suppression impossible : '+e.message); }); return; }
+  if (d.infosort){ INFO.sort = d.infosort; render(); return; }
   if (d.trdone !== undefined){ ST.trDone = null; render(); return; }
   if (d.trbuyclr !== undefined){ ST.trBuyPick = null; trCalc(); return; }
   if (d.gisave){ gridDraftSave(d.gisave); return; }
   if (d.gidrop){ ST.gimp = (ST.gimp || []).filter(function(x){ return x.id !== d.gidrop; }); render(); return; }
   if (d.gridchk){ var gk = d.gridchk.split('|'), gc = carriers()[+gk[0]].grids[+gk[1]]; gc.checks = []; saveCfg('Grille transporteur vérifiée : '+gc.label); render(); return; }
+  var dmb = docMetaFromBtn(d); if (dmb !== undefined){ if (dmb) openDoc(dmb); else toast('Document introuvable'); return; }
   if (d.griddocdl){ var gd = d.griddocdl.split('|'), gg = carriers()[+gd[0]].grids[+gd[1]]; if (gg.doc) STORE.getFileBytes(gg.doc).then(function(b){ saveBlob(gg.doc.name, new Blob([b]), ''); }); return; }
   if (d.carsel !== undefined){ ST.carSel = /^(an|veh|dest)$/.test(d.carsel) ? d.carsel : +d.carsel; ST.carSub = null; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (d.carsub !== undefined){ ST.carSub = d.carsub; ST.carDel = null; ST.gridDel = null; render(); return; }
@@ -5635,7 +5890,7 @@ document.addEventListener('click', function(e){
   if (d.antab){ ST.an = ST.an || {}; ST.an.tab = d.antab; render(); return; }
   if (d.anclr !== undefined){ ST.an.cp = ''; ST.an.ville = ''; render(); return; }
   if (d.docview){ ST.docView = ST.docView === d.docview ? null : d.docview; render(); return; }
-  if (d.docdl){ var kk = d.docdl, meta = null; if (kk.indexOf('c:') === 0){ var c3 = carriers().filter(function(x){ return x.id === kk.slice(2); })[0]; meta = c3 && c3.doc; } else carriers().forEach(function(c4){ (c4.grids || []).forEach(function(g4){ if (g4.id === kk) meta = g4.doc; }); }); if (meta) STORE.getFileBytes(meta).then(function(b){ saveBlob(meta.name, new Blob([b]), ''); }); return; }
+  if (d.dvdl){ var dm0 = docMetaOf(d.dvdl); if (dm0) STORE.getFileBytes(dm0).then(function(b){ saveBlob(dm0.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
   if (d.giopen){ var go = (ST.gimp || []).filter(function(x){ return x.id === d.giopen; })[0]; if (go){ gridDraftKeep(go); go.open = !go.open; } render(); return; }
   if (d.carnewno !== undefined){ ST.carNew = false; render(); return; }
   if (d.carnewok !== undefined){ carCreate(); return; }
@@ -5802,6 +6057,8 @@ document.addEventListener('click', function(e){
   else if (a === 'invfReset'){ ST.invF = {}; ST.fOpen = null; ST.fq = {}; render(); }
   else if (a === 'agmenu'){ ST.agMenu = !ST.agMenu; render(); }
   else if (a === 'addTr') validateTransport();
+  else if (a === 'infoFeed') infoFeed();
+  else if (a === 'infoXls') infoXls();
   else if (a === 'agcreate') createAgency();
   else if (a === 'agcancel'){ ST.newAg = false; render(); }
   else if (a === 'gridreset' && isAdmin()){ var ag = ST.cfg.agencies[ST.parAg], tpl = $('tplsel').value; ST.cfg.grids[ag.grid] = clone(E.DEFAULT_CONFIG.grids[tpl]); ST.cfg.grids[ag.grid].label = 'Grille '+ag.label+' (base '+(tpl==='STD'?'OTIS 2022':'Tours')+')'; ag.template = tpl; saveCfg(ag.label+' : grille réinitialisée ('+tpl+')'); render(); }
@@ -5813,6 +6070,11 @@ document.addEventListener('click', function(e){
 });
 document.addEventListener('change', function(e){
   var t = e.target, d = t.dataset;
+  if (d.asgadd && isAdmin() && t.value){ affSet(t.value, d.asgadd, true); return; }
+  if (t.id === 'infoag'){ INFO.ag = t.value; render(); return; }
+  if (t.id === 'infosrc'){ INFO.src = t.value; render(); return; }
+  if (t.id === 'infoper'){ INFO.per = +t.value; return; }
+  if (t.id === 'infoin'){ if (t.files[0]) infoImport(t.files[0]); t.value = ''; return; }
   if (d.an){ ST.an = ST.an || {}; ST.an[d.an] = t.value; if (d.an === 'dest'){ ST.an.cp = ''; ST.an.ville = ''; } if (d.an === 'cp' && !ST.an.ville) return; render(); return; }
   if (d.gridorig){ var go2 = d.gridorig.split('|'), G2 = carriers()[+go2[0]].grids[+go2[1]], o2 = t.value; G2.origin = o2; (G2.vehicles || []).forEach(function(v){ if (v.od && v.od[o2]){ v.prices = {}; G2.odHdr.forEach(function(dd, k){ v.prices[dd] = v.od[o2][k]; }); } }); saveCfg('Grille '+G2.label+' : départ '+o2); render(); return; }
   if (d.gicar){ var gc = (ST.gimp || []).filter(function(x){ return x.id === d.gicar; })[0]; if (gc){ gridDraftKeep(gc); render(); var gn = $('gi_new_'+gc.id); if (gn) gn.focus(); } return; }
@@ -5862,6 +6124,7 @@ document.addEventListener('change', function(e){
   if (t.closest && t.closest('#tform')) trCalc();
 });
 document.addEventListener('input', function(e){
+  if (e.target.id === 'infoq'){ INFO.q = e.target.value; var pq = e.target.selectionStart; render(); var q2 = $('infoq'); if (q2){ q2.focus(); q2.setSelectionRange(pq, pq); } return; }
   if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
     else if (ti === 't_ville'){ TI.kmMan = false; TI.hMan = false; trGeo(false); }
