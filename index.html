@@ -4672,12 +4672,12 @@ function infoRows(){
 function vInfo(){
   if (!INFO.list){ infoLoad(); return '<section class="view"><div class="panel empty">Chargement des correspondances…</div></section>'; }
   var ed = infoCanEdit(), E0 = INFO.edit || {}, R = infoRows(), A = agencies(), all = INFO.list.length;
-  var h = '<section class="view info"><div class="md-intro"><b>Info OTIS</b><span>Retrouver le lien entre n° d\'affaire, n° d\'appareil et contremaître. Saisie manuelle, import Excel ou alimentation automatique depuis les exports Odoo déposés sur la plateforme.</span></div>';
+  var h = '<section class="view info"><div class="md-intro"><b>Info OTIS</b><span>Retrouver le lien entre n° d\'affaire, n° d\'appareil/contrat et contremaître. Saisie manuelle, import Excel ou alimentation automatique depuis les exports Odoo déposés sur la plateforme.</span></div>';
   if (INFO.err) h += '<div class="panel pb note"><b>Accès à la base refusé.</b> '+esc(INFO.err)+(isAdmin() ? '<br>Les règles Firestore doivent inclure le bloc « otisref » (v5.8) : Console Firebase › Firestore › Règles.' : '')+'</div>';
   if (ed) h += '<div class="panel"><div class="ph"><h3>'+(E0.id ? 'Modifier la correspondance' : 'Ajouter une correspondance')+'</h3>'+(E0.id ? '<button class="lnk small" data-infocancel>Annuler</button>' : '')+'</div><form class="pb info-f" id="infoform" autocomplete="off">'+
     '<div class="fld"><label class="lbl" for="if_ag">Entité</label><select id="if_ag">'+A.map(function(a){ return '<option value="'+esc(a.code)+'"'+((E0.ag || ST.ent || (A[0] || {}).code) === a.code ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></div>'+
     '<div class="fld"><label class="lbl" for="if_aff">N° d\'affaire</label><input id="if_aff" value="'+esc(E0.aff || '')+'" placeholder="45KRX…"></div>'+
-    '<div class="fld"><label class="lbl" for="if_app">N° d\'appareil</label><input id="if_app" value="'+esc(E0.app || '')+'" placeholder="R5N7A728"></div>'+
+    '<div class="fld"><label class="lbl" for="if_app">N° d\'appareil/contrat</label><input id="if_app" value="'+esc(E0.app || '')+'" placeholder="R5N7A728"></div>'+
     '<div class="fld"><label class="lbl" for="if_cm">Code contremaître</label><input id="if_cm" value="'+esc(E0.cm || '')+'"></div>'+
     '<div class="fld"><label class="lbl" for="if_cmn">Contremaître</label><input id="if_cmn" value="'+esc(E0.cmNom || '')+'"></div>'+
     '<div class="fld"><label class="lbl" for="if_note">Note</label><input id="if_note" value="'+esc(E0.note || '')+'" placeholder="adresse chantier, remarque…"></div>'+
@@ -4686,11 +4686,11 @@ function vInfo(){
     (ed ? '<label class="small">Exports Odoo des <select id="infoper">'+[3, 6, 12, 18].map(function(n){ return '<option value="'+n+'"'+(INFO.per === n ? ' selected' : '')+'>'+n+' derniers mois</option>'; }).join('')+'</select></label><button class="btn sm" data-a="infoFeed"'+(INFO.busy ? ' disabled' : '')+'>Alimenter depuis les extractions</button><label class="btn sm">Importer (.xlsx)<input type="file" id="infoin" hidden accept=".xlsx,.xls,.csv"></label>' : '')+
     '<button class="btn sm g" data-a="infoXls">Exporter (.xlsx)</button></div></div>';
   if (INFO.busy) h += '<div class="pb small muted">'+esc(INFO.busy)+'</div>';
-  h += '<div class="pb info-bar"><input type="search" id="infoq" placeholder="Rechercher un n° d\'affaire, d\'appareil, un contremaître…" value="'+esc(INFO.q)+'">'+
+  h += '<div class="pb info-bar"><input type="search" id="infoq" placeholder="Rechercher un n° d\'affaire, d\'appareil/contrat, un contremaître…" value="'+esc(INFO.q)+'">'+
     '<select id="infoag"><option value="">Toutes les entités</option>'+A.map(function(a){ return '<option value="'+esc(a.code)+'"'+(INFO.ag === a.code ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select>'+
     '<select id="infosrc"><option value="">Toutes les sources</option><option value="manuel"'+(INFO.src === 'manuel' ? ' selected' : '')+'>Saisie manuelle</option><option value="import"'+(INFO.src === 'import' ? ' selected' : '')+'>Extractions Odoo</option></select></div>';
   var th = function(k, l){ return '<th><button class="lnk small'+(INFO.sort === k ? ' on' : '')+'" data-infosort="'+k+'">'+l+(INFO.sort === k ? ' ▾' : '')+'</button></th>'; };
-  h += '<div class="tw" style="max-height:62vh"><table class="info-t"><thead><tr>'+th('ag', 'Entité')+th('aff', 'N° d\'affaire')+th('app', 'N° d\'appareil')+th('cm', 'Code contremaître')+th('cmNom', 'Contremaître')+'<th>Note</th><th>Source</th>'+(ed ? '<th></th>' : '')+'</tr></thead><tbody>'+
+  h += '<div class="tw" style="max-height:62vh"><table class="info-t"><thead><tr>'+th('ag', 'Entité')+th('aff', 'N° d\'affaire')+th('app', 'N° d\'appareil/contrat')+th('cm', 'Code contremaître')+th('cmNom', 'Contremaître')+'<th>Note</th><th>Source</th>'+(ed ? '<th></th>' : '')+'</tr></thead><tbody>'+
     (R.length ? R.slice(0, 1500).map(function(r){ var cmn = r.cmNom || infoCmName(r.ag, r.cm);
       return '<tr><td>'+esc(agLabel(r.ag) || r.ag || '')+'</td><td class="mono">'+esc(r.aff || '—')+'</td><td class="mono">'+esc(r.app || '—')+'</td><td class="mono">'+esc(r.cm || '—')+'</td><td>'+esc(cmn || '')+'</td><td class="small">'+esc(r.note || '')+'</td>'+
         '<td class="small">'+(r.src === 'import' ? '<span class="pill p-info">Odoo</span> '+(r.n || 0)+' ligne(s)'+(r.m1 ? ' · '+esc(monthLabel(r.m1))+(r.m2 && r.m2 !== r.m1 ? ' → '+esc(monthLabel(r.m2)) : '') : '') : '<span class="pill p-ok">Saisie</span> '+esc(r.byName || r.by || ''))+'</td>'+
@@ -4701,7 +4701,7 @@ function vInfo(){
 function infoSave(){
   var g = function(id){ return String(($(id) || {}).value || '').trim(); }, E0 = INFO.edit || {}, me = ST.user || {};
   var d = { ag:g('if_ag'), aff:g('if_aff').toUpperCase(), app:g('if_app').toUpperCase(), cm:g('if_cm'), cmNom:g('if_cmn'), note:g('if_note') };
-  if (!d.aff && !d.app){ toast('Indiquer au moins un n° d\'affaire ou d\'appareil'); return; }
+  if (!d.aff && !d.app){ toast('Indiquer au moins un n° d\'affaire ou d\'appareil/contrat'); return; }
   var dup = (INFO.list || []).filter(function(r){ return r.id !== E0.id && infoKey(r.ag, r.aff, r.app, r.cm) === infoKey(d.ag, d.aff, d.app, d.cm); })[0];
   if (dup){ toast('Cette correspondance existe déjà'); return; }
   var id = E0.id || 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2, 5);
@@ -4737,7 +4737,7 @@ function infoFeed(){
   }).catch(function(e){ INFO.busy = ''; render(); toast('Alimentation impossible : '+e.message); });
 }
 function infoXls(){ var R = infoRows(), wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(function(r){ return { 'Entité':agLabel(r.ag) || r.ag, 'Code entité':r.ag, 'N° d\'affaire':r.aff, 'N° d\'appareil':r.app, 'Code contremaître':r.cm, 'Contremaître':r.cmNom || infoCmName(r.ag, r.cm), 'Note':r.note || '', 'Source':r.src === 'import' ? 'Extraction Odoo' : 'Saisie', 'Lignes Odoo':r.n || '', 'Premier mois':r.m1 || '', 'Dernier mois':r.m2 || '' }; })), 'Info OTIS');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(R.map(function(r){ return { 'Entité':agLabel(r.ag) || r.ag, 'Code entité':r.ag, 'N° d\'affaire':r.aff, 'N° d\'appareil/contrat':r.app, 'Code contremaître':r.cm, 'Contremaître':r.cmNom || infoCmName(r.ag, r.cm), 'Note':r.note || '', 'Source':r.src === 'import' ? 'Extraction Odoo' : 'Saisie', 'Lignes Odoo':r.n || '', 'Premier mois':r.m1 || '', 'Dernier mois':r.m2 || '' }; })), 'Info OTIS');
   saveXlsx(wb, 'Info OTIS - affaires appareils contremaitres.xlsx'); }
 function infoImport(file){
   readBuf(file).then(function(buf){ var wb = XLSX.read(new Uint8Array(buf), { type:'array' }), R = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
@@ -4746,7 +4746,7 @@ function infoImport(file){
     R.forEach(function(r){ var agv = col(r, /^code entite$|^entite$|^agence$/), ag = (A.filter(function(a){ return a.code === agv || kbNorm(a.label) === kbNorm(agv) || new RegExp('\\b'+a.code+'\\b').test(agv); })[0] || {}).code || agv;
       var d = { ag:ag, aff:col(r, /affaire/).toUpperCase(), app:col(r, /appareil/).toUpperCase(), cm:col(r, /code contremaitre|^code cm/), cmNom:col(r, /^contremaitre$|^nom contremaitre/), note:col(r, /^note|commentaire/), src:'manuel', by:me.email || '', byName:me.name || '', at:new Date().toISOString() };
       if (!d.aff && !d.app) return; var k = infoKey(d.ag, d.aff, d.app, d.cm); if (have[k]) return; have[k] = 1; W.push(['m'+infoId(k).slice(1), d]); });
-    if (!W.length){ toast('Aucune nouvelle correspondance dans le fichier (colonnes attendues : Entité, N° d\'affaire, N° d\'appareil, Code contremaître, Contremaître)'); return; }
+    if (!W.length){ toast('Aucune nouvelle correspondance dans le fichier (colonnes attendues : Entité, N° d\'affaire, N° d\'appareil/contrat, Code contremaître, Contremaître)'); return; }
     INFO.busy = 'Import de '+W.length+' ligne(s)…'; render();
     return STORE.saveRefs(W).then(function(){ W.forEach(function(w){ w[1].id = w[0]; INFO.list.push(w[1]); }); INFO.busy = ''; render(); toast(W.length+' correspondance(s) importée(s)'); });
   }).catch(function(e){ INFO.busy = ''; render(); toast('Import impossible : '+e.message); });
