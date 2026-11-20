@@ -91,6 +91,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Propositions d'amélioration (v6.0) : tout compte actif propose (à son nom, horodatage serveur) et soutient ;
+    // l'administrateur change le statut ; l'auteur ou l'administrateur supprime.
+    match /idees/{id} {
+      allow read: if active();
+      allow create: if active()
+        && request.resource.data.keys().hasOnly(['title', 'text', 'module', 'by', 'byUid', 'at', 'status', 'votes'])
+        && request.resource.data.byUid == request.auth.uid
+        && request.resource.data.at == request.time
+        && request.resource.data.status == 'proposee'
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120
+        && request.resource.data.text is string && request.resource.data.text.size() <= 2000
+        && request.resource.data.votes == [request.auth.uid];
+      allow update: if (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusBy', 'statusAt', 'votes'])
+          && request.resource.data.status in ['proposee', 'retenue', 'realisee', 'ecartee'])
+        || (active() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes'])
+          && request.resource.data.votes.toSet().difference(resource.data.votes.toSet()).hasOnly([request.auth.uid])
+          && resource.data.votes.toSet().difference(request.resource.data.votes.toSet()).hasOnly([request.auth.uid]));
+      allow delete: if isAdmin() || (active() && resource.data.byUid == request.auth.uid);
+    }
+
     // Journal : création par l'utilisateur connecté (identité et horodatage serveur imposés), jamais modifiable.
     // Suppression uniquement des entrées de plus de 18 mois (purge).
     match /logs/{id} {
