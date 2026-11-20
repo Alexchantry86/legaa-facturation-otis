@@ -106,3 +106,7 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Flux A → A (livraison directe) / A → B (livraison 1ère heure, « débord ») : par grille, supplément A → B en € HT ou « A → B non proposé » ; grille normée affichable en A → A ou A → B ; type de flux choisi dans les contraintes de la demande de transport ; filtre de flux dans les deux onglets d'Analyses. Débord non renseigné : prix A → A signalé « * à confirmer ».
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
+
+## v6.5 — KPI et Qualité des données
+- Piloter : unité de mesure (Unité, m², m³) choisie dans chaque graphique Entrées, Sorties, Stockage ; tuiles et tableau suivent l'unité de chaque famille.
+- Nouvelle section « Qualité des données » (ADV et administrateurs) : Contrôle des données Odoo + Suivi des anomalies, sortis de Piloter. Piloter ne garde que les volumes et le chiffre d'affaires.
