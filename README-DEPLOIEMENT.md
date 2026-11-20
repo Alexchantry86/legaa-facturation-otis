@@ -86,3 +86,9 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Piloter : barre de filtres pour tous les comptes (ADV réservé admin), filtre repris de Facturer, Suivi des anomalies ouvert aux ADV, nouveau tableau « Anomalies par nature et par mois » (6 mois) avec retour vers Facturer sur le mois cliqué.
 - Gestion transporteurs : la grille achat transport sort de Paramétrage et devient une section de la barre latérale (administrateurs) : analyses, types de véhicules, destinations, fiches et grilles des transporteurs.
 - Pas de changement de règles Firestore.
+
+## v6.2 — application installable (PWA)
+- Fichiers : `manifest.webmanifest`, `sw.js`, dossier `icons/` (à publier avec `index.html` et `config.js`).
+- Installation : Chrome / Edge sur PC → bouton « Installer l'application » dans la barre latérale (ou icône d'installation de la barre d'adresse) ; Android → menu ⋮ › Installer l'application ; iPhone / iPad → Safari › Partager › « Sur l'écran d'accueil ».
+- Mises à jour : la page est toujours rechargée depuis le réseau quand il est disponible ; rien à faire côté utilisateurs après une publication.
+- Hors connexion : l'application s'ouvre (page et bibliothèques en cache) avec un bandeau « Hors connexion » ; les données Firebase ne sont pas conservées sur l'appareil.
