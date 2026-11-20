@@ -92,3 +92,8 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Installation : Chrome / Edge sur PC → bouton « Installer l'application » dans la barre latérale (ou icône d'installation de la barre d'adresse) ; Android → menu ⋮ › Installer l'application ; iPhone / iPad → Safari › Partager › « Sur l'écran d'accueil ».
 - Mises à jour : la page est toujours rechargée depuis le réseau quand il est disponible ; rien à faire côté utilisateurs après une publication.
 - Hors connexion : l'application s'ouvre (page et bibliothèques en cache) avec un bandeau « Hors connexion » ; les données Firebase ne sont pas conservées sur l'appareil.
+
+## v6.3 — mobile
+- Sous 900 px : bouton menu (☰) à gauche de l'en-tête ; la barre latérale s'ouvre en tiroir (fermeture : choix d'un module, clic sur le fond, touche Échap).
+- Accueil compact sur téléphone (tuiles sur une colonne, recherche en 16 px pour éviter le zoom iOS).
+- Prénom affiché à partir de l'e-mail quand le compte n'a pas de nom.

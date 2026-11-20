@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.2 · 20/11/2026 (application installable : manifeste, service worker, icônes) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.3 · 20/11/2026 (mobile : menu hamburger, accueil compact) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1298,7 +1298,7 @@ table.info-t td.nowrap{white-space:nowrap}
 #tabs .entsel{display:flex;align-items:center;gap:8px;margin-right:18px;font-family:var(--f-label);font-size:13px}
 #tabs .entsel select{background:transparent;color:inherit;border:1px solid currentColor;border-radius:3px;padding:3px 6px;font:inherit}
 #tabs .entsel select option{color:#141618}
-@media (max-width:900px){#app{flex-direction:column}.rail{flex:0 0 auto;height:auto;position:static;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:8px}.rail .rb{display:none}.rail .ri{width:auto;white-space:nowrap}.rail .rsep{margin:0;border:0;padding:0;flex-direction:row}}
+/* mobile : la barre latérale devient un tiroir ouvert par le bouton menu */
 /* Accueil */
 .home6{width:100%;box-sizing:border-box;max-width:1180px;margin:0 auto;padding:28px 0 40px;display:flex;flex-direction:column;gap:22px}
 .home6 h2.hello{font-family:var(--f-label);font-size:26px;font-weight:600;margin:0}
@@ -1379,6 +1379,39 @@ table.info-t td.nowrap{white-space:nowrap}
 @media (display-mode: standalone){ .rail{padding-top:calc(14px + env(safe-area-inset-top))} .top{padding-top:env(safe-area-inset-top)} body{overscroll-behavior-y:none} }
 .rail .ri.inst{opacity:.9;border:1px dashed rgba(255,255,255,.35)}
 .offl{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:90;background:#3b4046;color:#fff;font-size:13px;padding:8px 14px;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+
+body{margin:0}
+.rail .ri.who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* ---- v6.3 : mobile — menu hamburger (tiroir), en-tête et accueil compacts ---- */
+.menubtn{display:none;align-items:center;justify-content:center;width:44px;height:44px;margin-right:6px;background:none;border:1px solid rgba(255,255,255,.35);border-radius:4px;color:inherit;cursor:pointer;flex:0 0 auto}
+.navscrim{display:none}
+@media (max-width:900px){
+  .menubtn{display:inline-flex}
+  .rail{position:fixed;top:0;left:0;bottom:0;width:min(84vw,300px);height:100vh;height:100dvh;z-index:70;transform:translateX(-105%);transition:transform .2s ease;box-shadow:none;padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+  body.nav-open .rail{transform:none;box-shadow:6px 0 24px rgba(0,0,0,.3)}
+  body.nav-open .navscrim{display:block;position:fixed;inset:0;z-index:65;background:rgba(10,14,20,.45)}
+  body.nav-open{overflow:hidden}
+  .rail .ri{min-height:46px;font-size:15px}
+  .top .modname{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .top .modname .bc{display:none}
+  #src{display:none}
+  .top .chatbtn{margin-left:auto}
+}
+@media (prefers-reduced-motion: reduce){.rail{transition:none}}
+@media (max-width:600px){
+  .home6{padding:14px 0 28px;gap:16px}
+  .home6 h2.hello{font-size:22px}
+  .hsearch{padding:4px 4px 4px 10px}
+  .hsearch label{display:none}
+  .hsearch input{font-size:16px}
+  .hsearch-n{display:none}
+  .tiles6{grid-template-columns:minmax(0,1fr);gap:10px}
+  .tile6{min-height:0;padding:14px;display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:12px;row-gap:6px}
+  .tile6 .ti{width:40px;height:40px;grid-row:span 2}
+  .tile6 .tn{font-size:16.5px}
+  .tile6 .ts{font-size:12.5px}
+  .tile6 .tl{grid-column:2;padding-top:6px;margin-top:0}
+}
 </style>
 </head>
 <body>
@@ -1399,6 +1432,7 @@ table.info-t td.nowrap{white-space:nowrap}
 <div class="appcol">
 <header class="top">
   <div class="top-in">
+    <button class="menubtn" id="menubtn" data-menu aria-label="Ouvrir le menu" aria-controls="rail" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <button class="brand" data-home title="Accueil : choix de l'entité"><h1>Pilotage Logistique</h1><span>LEGAA</span></button><button class="entgear" id="entgear" data-entgear title="Paramètres de l'entité" aria-label="Paramètres de l'entité" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg></button><button class="entgear" id="entbook" data-entbook title="Connaissance : documents de l'entité" aria-label="Connaissance" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4.5c2.2-.9 4.5-.9 7 .6v11c-2.5-1.5-4.8-1.5-7-.6zM17 4.5c-2.2-.9-4.5-.9-7 .6v11c2.5-1.5 4.8-1.5 7-.6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
     <span class="modname" id="modname"></span>
     <span id="src" class="num" style="opacity:.7;margin-left:auto"></span>
@@ -6000,10 +6034,11 @@ document.addEventListener('click', function(e){
   var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
   if (!t || t.disabled) return;
   var d = t.dataset;
-  if (d.rail){ railGo(d.rail); return; }
+  if (d.menu !== undefined){ navOpen(!document.body.classList.contains('nav-open')); return; }
+  if (d.rail){ navOpen(false); railGo(d.rail); return; }
   if (d.pwainstall !== undefined){ pwaInstall(); return; }
   if (d.closego !== undefined){ ST.sub = 'ctl'; render(); setTimeout(function(){ var cb = document.querySelector('.closebar'); if (cb) cb.scrollIntoView({ behavior:'smooth', block:'center' }); }, 30); return; }
-  if (d.entfac){ ST.ltab = 'fac'; enterEnt(d.entfac, 'log'); return; }
+  if (d.entfac){ navOpen(false); ST.ltab = 'fac'; enterEnt(d.entfac, 'log'); return; }
   if (d.facall !== undefined){ ST.facAll = !ST.facAll; render(); return; }
   if (d.trtab){ if (d.trtab === 'mod'){ ST.module = 'mod'; render(); window.scrollTo(0,0); return; } ST.ttab = d.trtab; if (ST.ent && entScreens(ST.cfg.agencies[ST.ent] || {}).trp) enterEnt(ST.ent, 'trp'); else railGo('trp'); return; }
   if (d.ideasend !== undefined){ ideaSend(); return; }
@@ -6865,7 +6900,7 @@ function railGo(key){
 }
 /* Accueil : recherche Info OTIS + 6 usages */
 function vLanding(){
-  var first = ST.user ? ST.user.name.split(' ')[0] : '', m = ST.month || defaultMonth();
+  var first = firstName(), m = ST.month || defaultMonth();
   var L = logEnts(), clos = L.filter(function(a){ return monthStatus(a.code, m) === 'clos'; }).length, enc = L.filter(function(a){ return monthStatus(a.code, m) === 'ouvert'; }).length;
   var trV = (ST.transports || []).filter(function(t){ return t.status === 'valide'; }).length;
   var qz = SAV.list ? qzRemaining() : 0;
@@ -6883,6 +6918,11 @@ function vLanding(){
     '</div>';
   return h + '</section>';
 }
+function firstName(){ var n = ST.user ? String(ST.user.name || ST.user.email || '') : ''; if (n.indexOf('@') >= 0) n = n.split('@')[0].split(/[._-]/)[0]; else n = n.split(' ')[0]; return n ? n.charAt(0).toUpperCase() + n.slice(1) : ''; }
+function navOpen(on){ document.body.classList.toggle('nav-open', !!on); var b = $('menubtn'); if (b){ b.setAttribute('aria-expanded', !!on); b.setAttribute('aria-label', on ? 'Fermer le menu' : 'Ouvrir le menu'); }
+  var sc = document.getElementById('navscrim'); if (on && !sc){ sc = document.createElement('div'); sc.id = 'navscrim'; sc.className = 'navscrim'; sc.setAttribute('data-menu', ''); document.body.appendChild(sc); }
+  if (on){ var cur = document.querySelector('.rail [aria-current="page"]') || document.querySelector('.rail .ri'); if (cur) cur.focus(); } }
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && document.body.classList.contains('nav-open')){ navOpen(false); var b = $('menubtn'); if (b) b.focus(); } });
 function homeSearch(){ var q = ($('homeq') || {}).value || ''; INFO.q = q.trim(); railGo('info'); setTimeout(function(){ var qi = $('infoq'); if (qi){ qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); } }, 0); }
 /* Facturer : entités du mois (parcours) */
 function entBlk(code, m){ var d = suiData(m)[code]; if (!d || !d.byCode) return 0; return Object.keys(d.byCode).reduce(function(t, c){ return t + (d.byCode[c].sev === 'bloquant' ? d.byCode[c].n : 0); }, 0); }
