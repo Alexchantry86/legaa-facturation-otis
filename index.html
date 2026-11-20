@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.4 · 20/11/2026 (Gestion transporteurs : accueil en 4 blocs, cartes, fil d'Ariane ; flux A→A / A→B dans les grilles, la demande et les analyses ; 3 solutions d'achat) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.5 · 20/11/2026 (KPI : unité par graphique ; section Qualité des données) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1501,6 +1501,13 @@ body{margin:0}
 .gflux .gf-set{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
 .norm-t td.unk{color:var(--warn)}
 @media (max-width:900px){.tr-opts3{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- v6.5 : unité par graphique, section Qualité des données ---- */
+.chart figcaption{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.chart figcaption .useg{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.chart figcaption .useg button{background:var(--surface);border:0;border-right:1px solid var(--line);font:inherit;font-size:12px;padding:3px 9px;cursor:pointer;color:var(--ink-2);min-height:28px}
+.chart figcaption .useg button:last-child{border-right:0}
+.chart figcaption .useg button.on{background:var(--ink);color:#fff;font-weight:600}
 </style>
 </head>
 <body>
@@ -2670,7 +2677,7 @@ function renderTop(){
   var ent = (mod === 'log' || mod === 'trp' || mod === 'entchoice') && ST.ent ? ST.cfg.agencies[ST.ent] : null;
   if (mod === 'log'){ tabs = [['fac','Parcours de facturation'],['con','Documents de l\'entité']].concat(isAdmin() ? [['par','Paramètres de l\'entité']] : []); cur = ST.ltab; att = 'ltab'; }
   else if (mod === 'trp' || mod === 'mod'){ tabs = [['devis','Nouveau devis'],['hist','Historique des transports'],['mod','Modélisation']]; cur = mod === 'mod' ? 'mod' : ST.ttab === 'hist' ? 'hist' : 'devis'; att = 'trtab'; }
-  else if (mod === 'pil' || mod === 'dq'){ tabs = [['syn','Volumes']].concat(role() !== 'lecture' ? [['dq','Qualité des données']] : []).concat(role() !== 'lecture' ? [['sui','Suivi des anomalies']] : []); cur = mod === 'dq' ? 'dq' : pilTab(); att = 'piltab'; }
+  else if (railKey() === 'qual'){ tabs = [['dq','Contrôle des données Odoo'],['sui','Suivi des anomalies']]; cur = mod === 'dq' ? 'dq' : 'sui'; att = 'piltab'; }
   else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
   var h = '';
   if (mod === 'trp' || mod === 'mod'){ var TE = trpEnts(); if (TE.length) h += '<label class="entsel"><span>Entité</span><select id="railent" aria-label="Entité du transport">'+(mod === 'mod' && !ST.ent ? '<option value="">—</option>' : '')+TE.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === ST.ent ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></label>'; }
@@ -2686,7 +2693,7 @@ function renderTop(){
   var pb2 = $('pilbtn'); if (pb2){ pb2.hidden = !isAdmin(); pb2.classList.toggle('on', mod === 'pil'); }
   var gb = $('gearbtn'); if (gb){ gb.hidden = !isAdmin(); gb.classList.toggle('on', mod === 'cfg' || !!ST.gearOpen); }
   var gp = $('gearpop'); if (gp) gp.innerHTML = gearMenu();
-  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Transport', fac:'Facturer', pil:'Piloter', sav:'Savoir des experts', car:'Gestion transporteurs', cfg:'Paramétrage', acc:'Mon compte' };
+  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Transport', fac:'Facturer', pil:'Piloter', qual:'Qualité des données', sav:'Savoir des experts', car:'Gestion transporteurs', cfg:'Paramétrage', acc:'Mon compte' };
   $('modname').innerHTML = esc(RN[rk] || '') + (rk === 'fac' && ST.ent && ST.cfg.agencies[ST.ent] ? ' <span class="bc">› '+esc(ST.cfg.agencies[ST.ent].label || ST.ent)+(ST.month ? ' › '+esc(monthLabel(ST.month)) : '')+'</span>' : '');
   [ 'qzbtn', 'pilbtn', 'infobtn', 'dqbtn', 'gearbtn', 'entgear', 'entbook' ].forEach(function(id){ var b = $(id); if (b) b.hidden = true; });
   renderRail();
@@ -4714,22 +4721,20 @@ function vSynth(){
     (miss.length ? '<p class="note syn-miss">Grisées : agences sans factures générées ('+esc(miss.map(function(a){ return a.label||a.code; }).join(', '))+'). La synthèse reprend les montants enregistrés à la génération des factures : ouvrir l\'entité dans Facturer, puis « Générer les factures ».</p>' : '');
   var filled = data.filter(function(d){ return d.v; });
   if (!filled.length) return h + '<div class="panel empty">Aucun mois facturé sur les 18 derniers mois.</div></section>';
-  var last = filled[filled.length-1], U = ST.kpiU || 'm3', UL = KPI_U[U];
-  var noQ = filled.some(function(d){ return U !== 'u' && ['E','S','STK'].some(function(f){ return kq(d.v, f, U) === null; }); });
-  h += '<div class="unitbar"><span class="lbl">Unité de mesure</span><span class="seg2">'+Object.keys(KPI_U).map(function(k){ return '<button class="'+(U === k ? 'on' : '')+'" data-kpiu="'+k+'" title="'+esc(KPI_U[k].tip)+'">'+KPI_U[k].b+'</button>'; }).join('')+'</span><span class="muted small">'+esc(UL.tip)+'</span></div>'+
-    (noQ ? '<p class="note syn-miss">Volumes et surfaces non enregistrés pour les mois calculés avant la v4.0 (barres absentes) : ouvrir le mois dans Facturer pour mettre à jour le résumé. Les mois clôturés gardent leur résumé d\'origine.</p>' : '');
-  h += '<div class="kpis">'+kpi('Dernier mois', monthLabel(last.id), STATUS[last.status])+kpi('Total HT', eur(last.v.HT), last.v.inv+' factures')+kpi('Entrées', kqf(last.v, 'E', U), eur(last.v.E.eur))+kpi('Sorties', kqf(last.v, 'S', U), eur(last.v.S.eur))+kpi('Stockage', kqf(last.v, 'STK', U), eur(last.v.STK.eur))+'</div>';
+  var last = filled[filled.length-1], UF = ST.kpiUF = ST.kpiUF || { E:'m3', S:'m3', STK:'m3' }, uf = function(f){ return KPI_U[UF[f]] ? UF[f] : 'm3'; };
+  var noQ = filled.some(function(d){ return ['E','S','STK'].some(function(f){ return uf(f) !== 'u' && kq(d.v, f, uf(f)) === null; }); });
+  var useg = function(f){ return '<span class="seg2 useg" role="group" aria-label="Unité">'+Object.keys(KPI_U).map(function(k){ return '<button class="'+(uf(f) === k ? 'on' : '')+'" data-kpiu="'+f+'|'+k+'" aria-pressed="'+(uf(f) === k)+'" title="'+esc(KPI_U[k].tip)+'">'+KPI_U[k].b+'</button>'; }).join('')+'</span>'; };
+  h += (noQ ? '<p class="note syn-miss">Volumes et surfaces non enregistrés pour les mois calculés avant la v4.0 (barres absentes) : ouvrir le mois dans Facturer pour mettre à jour le résumé. Les mois clôturés gardent leur résumé d\'origine.</p>' : '');
+  h += '<div class="kpis">'+kpi('Dernier mois', monthLabel(last.id), STATUS[last.status])+kpi('Total HT', eur(last.v.HT), last.v.inv+' factures')+kpi('Entrées', kqf(last.v, 'E', uf('E')), eur(last.v.E.eur))+kpi('Sorties', kqf(last.v, 'S', uf('S')), eur(last.v.S.eur))+kpi('Stockage', kqf(last.v, 'STK', uf('STK')), eur(last.v.STK.eur))+'</div>';
   h += '<div class="charts">'+
-    chart('Entrées', UL.ax('E'), data, function(v){ return kq(v, 'E', U); }, function(v){ return kqf(v, 'E', U)+' · '+eur(v.E.eur); })+
-    chart('Sorties', UL.ax('S'), data, function(v){ return kq(v, 'S', U); }, function(v){ return kqf(v, 'S', U)+' · '+eur(v.S.eur); })+
-    chart('Stockage', UL.ax('STK'), data, function(v){ return kq(v, 'STK', U); }, function(v){ return kqf(v, 'STK', U)+' · '+eur(v.STK.eur); })+
+    ['E','S','STK'].map(function(f){ var u = uf(f), T = { E:'Entrées', S:'Sorties', STK:'Stockage' }[f]; return chart(T, KPI_U[u].ax(f), data, function(v){ return kq(v, f, u); }, function(v){ return kqf(v, f, u)+' · '+eur(v[f].eur); }, useg(f)); }).join('')+
     chart('Chiffre d\'affaires', '€ HT', data, function(v){ return v.HT; }, function(v){ return eur(v.HT)+' · '+v.inv+' factures'; })+'</div>';
-  h += '<div class="panel"><div class="ph"><h2>Détail mensuel</h2><span class="muted">'+(!ag.length?'Toutes agences':esc(ag.map(function(k){ return ags[k]; }).join(', ')))+' · 18 derniers mois · un mois en cours est recalculé à chaque modification</span><div class="sp"><button class="btn" data-a="xlsSyn"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div><div class="tw"><table class="syn"><thead><tr><th rowspan="2">Mois</th><th rowspan="2">Statut</th><th colspan="2" class="grp">Entrées</th><th colspan="2" class="grp">Sorties</th><th colspan="2" class="grp">Stockage</th><th rowspan="2" class="n">Total HT</th><th rowspan="2" class="n">Var. M-1</th></tr><tr>'+['E','S','STK'].map(function(f){ return '<th class="n">'+esc(UL.col(f))+'</th><th class="n">€ HT</th>'; }).join('')+'</tr></thead><tbody>';
+  h += '<div class="panel"><div class="ph"><h2>Détail mensuel</h2><span class="muted">'+(!ag.length?'Toutes agences':esc(ag.map(function(k){ return ags[k]; }).join(', ')))+' · 18 derniers mois · un mois en cours est recalculé à chaque modification</span><div class="sp"><button class="btn" data-a="xlsSyn"'+(canSave()?'':' disabled')+'>Exporter (.xlsx)</button></div></div><div class="tw"><table class="syn"><thead><tr><th rowspan="2">Mois</th><th rowspan="2">Statut</th><th colspan="2" class="grp">Entrées</th><th colspan="2" class="grp">Sorties</th><th colspan="2" class="grp">Stockage</th><th rowspan="2" class="n">Total HT</th><th rowspan="2" class="n">Var. M-1</th></tr><tr>'+['E','S','STK'].map(function(f){ return '<th class="n">'+esc(KPI_U[uf(f)].col(f))+'</th><th class="n">€ HT</th>'; }).join('')+'</tr></thead><tbody>';
   data.slice().reverse().forEach(function(d, i, arr){
     var v = d.v, prev = arr[i+1] && arr[i+1].v;
     if (!v){ h += '<tr class="zero"><td>'+monthLabel(d.id)+'</td><td class="muted">vide</td><td colspan="11"></td></tr>'; return; }
     var dv = prev && prev.HT ? (v.HT - prev.HT) / prev.HT * 100 : null;
-    h += '<tr><td>'+monthLabel(d.id)+'</td><td><span class="pill '+(d.status==='clos'?'p-ok':'p-verifier')+'">'+STATUS[d.status]+'</span></td>'+['E','S','STK'].map(function(f){ var q = kq(v, f, U); return '<td class="n">'+(q === null ? '<span class="muted">—</span>' : UL.f(q))+'</td><td class="n">'+n2(v[f].eur)+'</td>'; }).join('')+'<td class="n"><strong>'+n2(v.HT)+'</strong></td><td class="n">'+(dv===null?'—':(dv>0?'+':'')+dv.toFixed(1).replace('.',',')+' %')+'</td></tr>';
+    h += '<tr><td>'+monthLabel(d.id)+'</td><td><span class="pill '+(d.status==='clos'?'p-ok':'p-verifier')+'">'+STATUS[d.status]+'</span></td>'+['E','S','STK'].map(function(f){ var q = kq(v, f, uf(f)); return '<td class="n">'+(q === null ? '<span class="muted">—</span>' : KPI_U[uf(f)].f(q))+'</td><td class="n">'+n2(v[f].eur)+'</td>'; }).join('')+'<td class="n"><strong>'+n2(v.HT)+'</strong></td><td class="n">'+(dv===null?'—':(dv>0?'+':'')+dv.toFixed(1).replace('.',',')+' %')+'</td></tr>';
   });
   return h + '</tbody></table></div></div></section>';
 }
@@ -4742,7 +4747,7 @@ var KPI_U = {
 function kq(v, f, U){ var x = v[f]; if (U === 'u') return x.n; if (U === 'm2') return f === 'STK' ? x.m2 : (x.m2 === undefined ? null : x.m2); return x.m3 === undefined ? null : x.m3; }
 function kqf(v, f, U){ var q = kq(v, f, U), K = KPI_U[U]; return q === null ? '—' : K.f(q)+' '+(U === 'u' ? K.ax(f) : K.ax(f)); }
 /* petit histogramme SVG (une série, une unité) */
-function chart(title, unit, data, get, tip){
+function chart(title, unit, data, get, tip, ctl){
   var W = 360, H = 170, L = 44, R = 8, T = 10, B = 26, n = data.length, vals = data.map(function(d){ return d.v ? get(d.v) : null; });
   var max = Math.max.apply(null, vals.filter(function(v){ return v !== null; }).concat([0])), step = niceStep(max / 4), top = Math.max(step * 4, step);
   var bw = (W - L - R) / n, bar = Math.max(4, Math.min(18, bw - 4));
@@ -4755,7 +4760,7 @@ function chart(title, unit, data, get, tip){
     var hgt = (H - T - B) * v / top, y0 = H - B;
     s += '<path class="bar'+(i===n-1?' cur':'')+'" d="'+barPath(cx - bar/2, y0 - hgt, bar, hgt)+'" data-tip="'+esc(monthLabel(d.id)+' · '+tip(d.v))+'"/>';
   });
-  return '<figure class="chart"><figcaption><span class="t">'+esc(title)+'</span> <span class="muted">'+esc(unit)+'</span></figcaption>'+s+'</svg></figure>';
+  return '<figure class="chart"><figcaption><span class="t">'+esc(title)+'</span> <span class="muted">'+esc(unit)+'</span>'+(ctl || '')+'</figcaption>'+s+'</svg></figure>';
 }
 var MCOURT = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 function barPath(x, y, w, h){ var r = Math.min(3, w/2, h); return 'M'+x+','+(y+h)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(y+h)+'Z'; }
@@ -6288,7 +6293,7 @@ document.addEventListener('click', function(e){
   if (d.aisend !== undefined){ var ai0 = $('aiinput'); if (ai0){ var t0 = ai0.value; ai0.value = ''; kbAsk(t0); } return; }
   if (d.aiclear !== undefined){ KB.hist = []; renderChat(true); return; }
   if (d.aireidx !== undefined){ KB.built = false; KB.busy = true; renderChat(true); kbBuild(true).then(function(){ KB.busy = false; renderChat(true); toast(KB.sources.length+' document(s) relus'); }); return; }
-  if (d.kpiu){ ST.kpiU = d.kpiu; render(); return; }
+  if (d.kpiu){ var ku = d.kpiu.split('|'); ST.kpiUF = ST.kpiUF || { E:'m3', S:'m3', STK:'m3' }; if (ku.length === 2) ST.kpiUF[ku[0]] = ku[1]; render(); return; }
   if (d.cdff){ ST.cdfF = d.cdff; render(); return; }
   if (d.cdfall !== undefined){ ST.modal.cdf.all = !ST.modal.cdf.all; renderModal(); return; }
   if (d.cdfx){ cdfExport(d.cdfx); return; }
@@ -7027,12 +7032,13 @@ var RAIL_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 24 24" wid
     trp: sv('<path d="M2 16V6h12v10M14 9h4l3 4v3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>'),
     fac: sv('<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/>'),
     pil: sv('<path d="M4 20v-8M10 20V5M16 20v-6M22 20V9"/>'),
+    qual: sv('<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M8.8 12.2l2.2 2.2 4.4-4.6"/>'),
     sav: sv('<path d="M3 5.5c2.6-1 5.4-1 9 .8v13c-3.6-1.8-6.4-1.8-9-.8zM21 5.5c-2.6-1-5.4-1-9 .8v13c3.6-1.8 6.4-1.8 9-.8z"/>'),
     cfg: sv('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
     car: sv('<path d="M3 6h11v9H3zM14 9h4l3 3v3h-7"/><path d="M6 19h0M17 19h0"/><circle cx="6.5" cy="17" r="1.6"/><circle cx="17.5" cy="17" r="1.6"/><path d="M6 9h5M6 12h3"/>'),
     acc: sv('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/>')
   }; })();
-function railKey(){ var m = ST.module; return m === 'trp' || m === 'mod' ? 'trp' : m === 'log' || m === 'entchoice' ? 'fac' : m === 'pil' || m === 'dq' ? 'pil' : m; }
+function railKey(){ var m = ST.module; return m === 'trp' || m === 'mod' ? 'trp' : m === 'log' || m === 'entchoice' ? 'fac' : m === 'dq' || (m === 'pil' && pilTab() === 'sui') ? 'qual' : m === 'pil' ? 'pil' : m; }
 function pilTab(){ var t = ST.piltab; if (t === 'sui' && role() === 'lecture') t = 'syn'; return t === 'sui' ? 'sui' : 'syn'; }
 function logEnts(){ return myEnts().filter(function(a){ return entScreens(a).log; }); }
 function trpEnts(){ return myEnts().filter(function(a){ return entScreens(a).trp; }); }
@@ -7047,7 +7053,7 @@ function renderRail(){
   el.innerHTML = '<button class="rb" data-rail="home" title="Accueil"><b>Pilotage Logistique</b><span>LEGAA · OTIS'+(STORE.mode === 'demo' ? ' · démo' : '')+'</span></button>'+
     it('home', 'Accueil')+it('info', 'Info OTIS')+it('trp', 'Transport')+
     it('fac', 'Facturer', blk ? '<span class="rn crit" title="Lignes bloquantes de l\'entité en cours">'+blk+'</span>' : '')+
-    it('pil', 'Piloter')+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
+    it('pil', 'Piloter')+(role() !== 'lecture' ? it('qual', 'Qualité des données') : '')+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
     '<div class="rsep">'+(isAdmin() ? it('car', 'Gestion transporteurs')+it('cfg', 'Paramétrage') : '')+
     (PWA.prompt ? '<button class="ri inst" data-pwainstall>'+RAIL_SVG.home.replace('M3 11 12 4l9 7', 'M12 3v12M7 10l5 5 5-5').replace('M5 10v10h14V10', 'M4 19h16')+'<span>Installer l\'application</span></button>' : '')+
     '<button class="ri who" data-rail="acc"'+(k === 'acc' ? ' aria-current="page"' : '')+'>'+RAIL_SVG.acc+'<span>'+esc(ST.user.name)+' · '+esc(({admin:'admin',adv:'ADV',lecture:'lecture'})[ST.user.role] || '')+'</span></button></div>';
@@ -7058,7 +7064,8 @@ function railGo(key){
   else if (key === 'info'){ ST.ent = null; ST.module = 'info'; render(); }
   else if (key === 'trp'){ var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
   else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
-  else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; if (!ST.piltab) ST.piltab = 'syn'; render(); }
+  else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; ST.piltab = 'syn'; render(); }
+  else if (key === 'qual'){ if (role() === 'lecture') return; ST.ent = null; ST.module = 'dq'; render(); }
   else if (key === 'sav'){ ST.ent = null; ST.module = 'sav'; if (!SAV.list) savLoad(); render(); }
   else if (key === 'car'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'car'; ST.carSel = 'home'; ST.carNew = false; render(); }
   else if (key === 'cfg'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'cfg'; ST.cfgTab = !ST.cfgTab || ST.cfgTab === 'ach' ? 'adm' : ST.cfgTab; ST.newAg = false; render(); if (ST.cfgTab === 'adm') loadAdmin(); }
@@ -7078,7 +7085,8 @@ function vLanding(){
     tile('info', RAIL_SVG.info, 'Rechercher une information OTIS', 'Affaires ↔ appareils / contrats ↔ contremaîtres, par agence.', INFO.list ? '<span>'+INFO.list.length+' correspondances</span>' : '<span>Référentiel Info OTIS</span>')+
     tile('trp', RAIL_SVG.trp, 'Modéliser un transport', 'Devis de vente, prix d\'achat transporteur, marge, historique.', '<span>'+(ST.transports ? trV+' transport'+(trV > 1 ? 's' : '')+' validé'+(trV > 1 ? 's' : '')+' à facturer' : 'Devis · Historique · Modélisation')+'</span>')+
     tile('fac', RAIL_SVG.fac, 'Contrôler et facturer', 'Import Odoo, anomalies, factures, contrôle et clôture, entité par entité.', '<span>'+esc(monthLabel(m))+'</span><span>'+clos+' / '+L.length+' clôturée'+(clos > 1 ? 's' : '')+'</span>'+(enc ? '<span>'+enc+' en cours</span>' : ''))+
-    tile('pil', RAIL_SVG.pil, 'Piloter', 'KPI de volumes et qualité des données Odoo, toutes entités.', '<span>Volumes</span>'+(role() !== 'lecture' ? '<span>Qualité des données</span>' : '')+(isAdmin() ? '<span>Suivi des anomalies</span>' : ''))+
+    tile('pil', RAIL_SVG.pil, 'Piloter', 'KPI de volumes (entrées, sorties, stockage) et chiffre d\'affaires, toutes entités.', '<span>Volumes</span><span>Chiffre d\'affaires</span>')+
+    (role() !== 'lecture' ? tile('qual', RAIL_SVG.qual, 'Qualité des données', 'Contrôle des exports Odoo et suivi des anomalies de facturation, par entité et par mois.', '<span>Contrôle des données Odoo</span><span>Suivi des anomalies</span>') : '')+
     tile('sav', RAIL_SVG.sav, 'Savoir des experts', 'Questions / réponses des experts, questionnaires et quiz ; l\'assistant s\'appuie dessus.', qz ? '<span>'+qz+' question'+(qz > 1 ? 's' : '')+' à traiter</span>' : '<span>'+(SAV.list ? SAV.list.length+' fiches' : 'Fiches, questionnaires, quiz')+'</span>')+
     (isAdmin() ? tile('car', RAIL_SVG.car, 'Gérer les transporteurs', 'Fiches transporteurs, grilles tarifaires d\'achat, destinations, types de véhicules, analyses.', '<span class="lbl">Administrateurs</span><span>'+carriers().length+' transporteur'+(carriers().length > 1 ? 's' : '')+'</span>', 'adm') : '')+
     (isAdmin() ? tile('cfg', RAIL_SVG.cfg, 'Paramétrer l\'application', 'Utilisateurs, affectation des entités, écrans et paramètres par entité.', '<span class="lbl">Administrateurs</span>', 'adm') : '')+
@@ -7145,7 +7153,7 @@ function facNext(){
 /* ============ v6.0 · PROPOSITIONS D'AMÉLIORATION (panneau de discussion) ============ */
 var IDEA = { list:null, f:'ouvertes', err:'', busy:false };
 var IDEA_ST = { proposee:['p-info','Proposée'], retenue:['p-verifier','Retenue'], realisee:['p-ok','Réalisée'], ecartee:['p-info','Écartée'] };
-var IDEA_MOD = [['', 'Général'], ['info', 'Info OTIS'], ['trp', 'Transport'], ['fac', 'Facturer'], ['pil', 'Piloter'], ['sav', 'Savoir des experts'], ['car', 'Gestion transporteurs'], ['cfg', 'Paramétrage']];
+var IDEA_MOD = [['', 'Général'], ['info', 'Info OTIS'], ['trp', 'Transport'], ['fac', 'Facturer'], ['pil', 'Piloter'], ['qual', 'Qualité des données'], ['sav', 'Savoir des experts'], ['car', 'Gestion transporteurs'], ['cfg', 'Paramétrage']];
 function ideaLoad(){ if (!STORE.listIdeas){ IDEA.list = []; IDEA.err = 'indisponible'; return Promise.resolve(); } IDEA.err = '';
   return STORE.listIdeas().then(function(L){ IDEA.list = L; renderChat(true); }, function(e){ IDEA.list = []; IDEA.err = e.message; renderChat(true); }); }
 function renderIdeas(){
