@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v6.1 · 20/11/2026 (écrans Facturer et Piloter : stepper compact + clôture, entités par statut, filtres communs, anomalies par mois) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.1 · 20/11/2026 (écrans Facturer et Piloter : stepper compact + clôture, entités par statut, filtres communs, anomalies par mois ; section Gestion transporteurs) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -2535,7 +2535,7 @@ function renderTop(){
   if (mod === 'log'){ tabs = [['fac','Parcours de facturation'],['con','Documents de l\'entité']].concat(isAdmin() ? [['par','Paramètres de l\'entité']] : []); cur = ST.ltab; att = 'ltab'; }
   else if (mod === 'trp' || mod === 'mod'){ tabs = [['devis','Nouveau devis'],['hist','Historique des transports'],['mod','Modélisation']]; cur = mod === 'mod' ? 'mod' : ST.ttab === 'hist' ? 'hist' : 'devis'; att = 'trtab'; }
   else if (mod === 'pil' || mod === 'dq'){ tabs = [['syn','Volumes']].concat(role() !== 'lecture' ? [['dq','Qualité des données']] : []).concat(role() !== 'lecture' ? [['sui','Suivi des anomalies']] : []); cur = mod === 'dq' ? 'dq' : pilTab(); att = 'piltab'; }
-  else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage'],['ach','Grille achat transport']]; cur = ST.cfgTab; att = 'cfgtab'; }
+  else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
   var h = '';
   if (mod === 'trp' || mod === 'mod'){ var TE = trpEnts(); if (TE.length) h += '<label class="entsel"><span>Entité</span><select id="railent" aria-label="Entité du transport">'+(mod === 'mod' && !ST.ent ? '<option value="">—</option>' : '')+TE.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === ST.ent ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></label>'; }
   h += tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+att+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
@@ -2550,7 +2550,7 @@ function renderTop(){
   var pb2 = $('pilbtn'); if (pb2){ pb2.hidden = !isAdmin(); pb2.classList.toggle('on', mod === 'pil'); }
   var gb = $('gearbtn'); if (gb){ gb.hidden = !isAdmin(); gb.classList.toggle('on', mod === 'cfg' || !!ST.gearOpen); }
   var gp = $('gearpop'); if (gp) gp.innerHTML = gearMenu();
-  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Transport', fac:'Facturer', pil:'Piloter', sav:'Savoir des experts', cfg:'Paramétrage', acc:'Mon compte' };
+  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Transport', fac:'Facturer', pil:'Piloter', sav:'Savoir des experts', car:'Gestion transporteurs', cfg:'Paramétrage', acc:'Mon compte' };
   $('modname').innerHTML = esc(RN[rk] || '') + (rk === 'fac' && ST.ent && ST.cfg.agencies[ST.ent] ? ' <span class="bc">› '+esc(ST.cfg.agencies[ST.ent].label || ST.ent)+(ST.month ? ' › '+esc(monthLabel(ST.month)) : '')+'</span>' : '');
   [ 'qzbtn', 'pilbtn', 'infobtn', 'dqbtn', 'gearbtn', 'entgear', 'entbook' ].forEach(function(id){ var b = $(id); if (b) b.hidden = true; });
   renderRail();
@@ -2566,7 +2566,8 @@ function render(){
   else if (ST.module === 'entchoice') h = vEntChoice();
   else if (ST.module === 'sav') h = vSavoir();
   else if (ST.module === 'pil') h = '<section class="view">'+pilBar()+pilInh()+'</section>' + (pilTab() === 'sui' ? vSuivi() : vSynth());
-  else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : ST.cfgTab === 'ach' ? vCarriers() : vAdmin();
+  else if (ST.module === 'car') h = vCarriers();
+  else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : vAdmin();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vDevis();
   else if (ST.module === 'mod') h = vModel();
   else if (ST.module === 'info') h = vInfo();
@@ -2583,7 +2584,7 @@ function render(){
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && pilTab() === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if ((ST.module === 'trp' && ST.ttab !== 'hist') || ST.module === 'mod'){ trGeo(false); trCalc(); }
-  if (ST.module === 'cfg' && ST.cfgTab === 'ach') bindGridDrop();
+  if (ST.module === 'car') bindGridDrop();
   if (ST.docView) docvFill();
 }
 
@@ -3001,7 +3002,7 @@ function pilBar(){
 }
 function gearMenu(){
   if (!ST.gearOpen) return '';
-  return '<div class="gearpop" role="menu">'+[['adm','Administration','Utilisateurs, journal, données'],['aff','Affectation','ADV ↔ entités (import Excel)'],['par','Paramétrage','Écrans Logistique / Transport par entité'],['ach','Grille achat transport','Transporteurs et leurs grilles d\'achat']].map(function(x){ return '<button role="menuitem" data-cfgtab="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>'; }).join('')+'<button role="menuitem" data-savgo=""><b>Savoir des experts</b><span>Questionnaires '+esc(expertName())+', questions des ADV</span></button></div>';
+  return '<div class="gearpop" role="menu">'+[['adm','Administration','Utilisateurs, journal, données'],['aff','Affectation','ADV ↔ entités (import Excel)'],['par','Paramétrage','Écrans Logistique / Transport par entité'],['ach','Gestion transporteurs','Transporteurs et leurs grilles d\'achat']].map(function(x){ return '<button role="menuitem" data-cfgtab="'+x[0]+'"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>'; }).join('')+'<button role="menuitem" data-savgo=""><b>Savoir des experts</b><span>Questionnaires '+esc(expertName())+', questions des ADV</span></button></div>';
 }
 /* Paramétrage : écrans par entité */
 function vEntParams(){
@@ -4649,7 +4650,7 @@ function exportSynth(){
 }
 
 /* ============ TRANSPORT ============
-   Deux faces : ACHAT (ce que LEGAA paie aux transporteurs : grilles des transporteurs, Paramétrage › Grille achat transport)
+   Deux faces : ACHAT (ce que LEGAA paie aux transporteurs : grilles des transporteurs, section Gestion transporteurs)
    et VENTE (ce que LEGAA facture au client : grille de vente de l'entité, Paramètres de l'entité › Transport ; par défaut grille OTIS 2023). */
 var VEH = [
   { id:'break', label:'Break 500 kg', pal:1, kg:500, len:null, dims:'—', hayon:false, grue:false, p:{A:[156,277],B:[175,296],C:[194,315]}, h:41, km:0.63 },
@@ -5482,7 +5483,7 @@ function buyAll(I){ var out = []; carriers().forEach(function(c){ if (c.active =
 function calcBuy(){
   var box = $('tbuy'); if (!box) return; var MOD = ST.module === 'mod', I = trSave(), A = buyAll(I), ok = A.filter(function(q){ return q.ok; }).sort(function(a, b){ return a.price - b.price; }), S = MOD ? {} : sellCalc(I), sell = S.best ? S.best.q.total : null;
   var h = '<div class="panel"><div class="ph"><h2>'+(MOD ? '' : '<span class="bn">2</span>')+'Achat · les 2 options les plus économiques</h2><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
-  if (!carriers().length) h += '<p class="note">Aucun transporteur paramétré. '+(isAdmin() ? '<button class="lnk" data-cfgtab="ach">Créer les transporteurs et leurs grilles</button> (Paramétrage › Grille achat transport).' : 'Un administrateur doit créer les transporteurs dans Paramétrage › Grille achat transport.')+'</p>';
+  if (!carriers().length) h += '<p class="note">Aucun transporteur paramétré. '+(isAdmin() ? '<button class="lnk" data-rail="car">Créer les transporteurs et leurs grilles</button> (Gestion transporteurs).' : 'Un administrateur doit créer les transporteurs dans Gestion transporteurs.')+'</p>';
   else if (!ok.length){ var dep0 = String(I.cp || '').slice(0, 2), zoneKO = A.every(function(q){ return (q.why || []).some(function(w){ return /desservi|absente|zone/.test(w); }); });
     h += '<div class="tr-none"><b>'+(zoneKO ? 'Destination non couverte par les grilles tarifaires'+(I.cp ? ' ('+esc(I.cp+(I.ville ? ' '+I.ville : ''))+')' : '') : 'Aucune grille tarifaire ne permet cette livraison')+'</b>'+
       '<p>Veuillez consulter les transporteurs pour obtenir un devis spécifique.</p>'+
@@ -6085,6 +6086,7 @@ document.addEventListener('click', function(e){
   if (d.entchoice !== undefined){ ST.module = 'entchoice'; ST.modal = null; render(); window.scrollTo(0,0); return; }
   if (d.entbook !== undefined){ if (ST.ent){ enterEnt(ST.ent, 'log'); ST.ltab = 'con'; render(); } return; }
   if (d.entgear !== undefined){ if (ST.ent){ ST.ltab = 'par'; enterEnt(ST.ent, 'log'); ST.ltab = 'par'; render(); } return; }
+  if (d.cfgtab === 'ach'){ railGo('car'); return; }
   if (d.cfgtab){ ST.module = 'cfg'; ST.cfgTab = d.cfgtab; ST.gearOpen = false; ST.newAg = false; render(); window.scrollTo(0,0); if (d.cfgtab === 'adm') loadAdmin(); return; }
   if (d.entpar){ enterEnt(d.entpar, 'log'); ST.ltab = 'par'; render(); return; }
   if (d.kdl){ var kf = knFind(d.kdl); if (kf.d && kf.d.file) STORE.getFileBytes(kf.d.file).then(function(b){ saveBlob(kf.d.file.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
@@ -6227,7 +6229,7 @@ document.addEventListener('change', function(e){
     if (v === 'true') v = true; else if (v === 'false') v = false; else if (/\.cas$/.test(d.cf)) v = +v;
     if (d.cf === 'trpEst.depotCp'){ var DL = CPGEO[String(v).trim()]; if (DL){ ST.cfg.trpEst = trEst(); ST.cfg.trpEst.depotCp = String(v).trim(); ST.cfg.trpEst.depotVille = DL[0][0]; ST.cfg.trpEst.lat = DL[0][1]; ST.cfg.trpEst.lon = DL[0][2]; saveCfg('Point de départ des transports : '+v+' '+DL[0][0]); render(); return; } }
     if (/^trpEst\./.test(d.cf) && !ST.cfg.trpEst) ST.cfg.trpEst = trEst();
-    if (ST.module === 'cfg' && ST.cfgTab === 'ach') setTimeout(function(){ var a = document.activeElement, k = a && a.dataset && a.dataset.cf; render(); if (k){ var n = document.querySelector('[data-cf="'+k+'"]'); if (n){ n.focus(); if (n.select) n.select(); } } }, 0);
+    if (ST.module === 'car') setTimeout(function(){ var a = document.activeElement, k = a && a.dataset && a.dataset.cf; render(); if (k){ var n = document.querySelector('[data-cf="'+k+'"]'); if (n){ n.focus(); if (n.select) n.select(); } } }, 0);
     setPath(ST.cfg, d.cf, v); saveCfg(d.cf.replace(/^agencies\./,'agence ').replace(/^grids\./,'grille ')+' = '+v); if (/\.(label|active)$/.test(d.cf)) render(); return;
   }
   if (d.docup){ if (t.files[0]) agDocUpload(d.docup, t.files[0]); t.value = ''; return; }
@@ -6805,6 +6807,7 @@ var RAIL_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 24 24" wid
     pil: sv('<path d="M4 20v-8M10 20V5M16 20v-6M22 20V9"/>'),
     sav: sv('<path d="M3 5.5c2.6-1 5.4-1 9 .8v13c-3.6-1.8-6.4-1.8-9-.8zM21 5.5c-2.6-1-5.4-1-9 .8v13c3.6-1.8 6.4-1.8 9-.8z"/>'),
     cfg: sv('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
+    car: sv('<path d="M3 6h11v9H3zM14 9h4l3 3v3h-7"/><path d="M6 19h0M17 19h0"/><circle cx="6.5" cy="17" r="1.6"/><circle cx="17.5" cy="17" r="1.6"/><path d="M6 9h5M6 12h3"/>'),
     acc: sv('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/>')
   }; })();
 function railKey(){ var m = ST.module; return m === 'trp' || m === 'mod' ? 'trp' : m === 'log' || m === 'entchoice' ? 'fac' : m === 'pil' || m === 'dq' ? 'pil' : m; }
@@ -6823,7 +6826,7 @@ function renderRail(){
     it('home', 'Accueil')+it('info', 'Info OTIS')+it('trp', 'Transport')+
     it('fac', 'Facturer', blk ? '<span class="rn crit" title="Lignes bloquantes de l\'entité en cours">'+blk+'</span>' : '')+
     it('pil', 'Piloter')+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
-    '<div class="rsep">'+(isAdmin() ? it('cfg', 'Paramétrage') : '')+
+    '<div class="rsep">'+(isAdmin() ? it('car', 'Gestion transporteurs')+it('cfg', 'Paramétrage') : '')+
     '<button class="ri who" data-rail="acc"'+(k === 'acc' ? ' aria-current="page"' : '')+'>'+RAIL_SVG.acc+'<span>'+esc(ST.user.name)+' · '+esc(({admin:'admin',adv:'ADV',lecture:'lecture'})[ST.user.role] || '')+'</span></button></div>';
 }
 function railGo(key){
@@ -6834,7 +6837,8 @@ function railGo(key){
   else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
   else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; if (!ST.piltab) ST.piltab = 'syn'; render(); }
   else if (key === 'sav'){ ST.ent = null; ST.module = 'sav'; if (!SAV.list) savLoad(); render(); }
-  else if (key === 'cfg'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'cfg'; ST.cfgTab = ST.cfgTab || 'adm'; ST.newAg = false; render(); if (ST.cfgTab === 'adm') loadAdmin(); }
+  else if (key === 'car'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'car'; render(); }
+  else if (key === 'cfg'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'cfg'; ST.cfgTab = !ST.cfgTab || ST.cfgTab === 'ach' ? 'adm' : ST.cfgTab; ST.newAg = false; render(); if (ST.cfgTab === 'adm') loadAdmin(); }
   else if (key === 'acc'){ ST.module = 'acc'; render(); }
   window.scrollTo(0, 0);
 }
@@ -6853,7 +6857,8 @@ function vLanding(){
     tile('fac', RAIL_SVG.fac, 'Contrôler et facturer', 'Import Odoo, anomalies, factures, contrôle et clôture, entité par entité.', '<span>'+esc(monthLabel(m))+'</span><span>'+clos+' / '+L.length+' clôturée'+(clos > 1 ? 's' : '')+'</span>'+(enc ? '<span>'+enc+' en cours</span>' : ''))+
     tile('pil', RAIL_SVG.pil, 'Piloter', 'KPI de volumes et qualité des données Odoo, toutes entités.', '<span>Volumes</span>'+(role() !== 'lecture' ? '<span>Qualité des données</span>' : '')+(isAdmin() ? '<span>Suivi des anomalies</span>' : ''))+
     tile('sav', RAIL_SVG.sav, 'Savoir des experts', 'Questions / réponses des experts, questionnaires et quiz ; l\'assistant s\'appuie dessus.', qz ? '<span>'+qz+' question'+(qz > 1 ? 's' : '')+' à traiter</span>' : '<span>'+(SAV.list ? SAV.list.length+' fiches' : 'Fiches, questionnaires, quiz')+'</span>')+
-    (isAdmin() ? tile('cfg', RAIL_SVG.cfg, 'Paramétrer l\'application', 'Utilisateurs, affectation des entités, paramètres et grilles.', '<span class="lbl">Administrateurs</span>', 'adm') : '')+
+    (isAdmin() ? tile('car', RAIL_SVG.car, 'Gérer les transporteurs', 'Fiches transporteurs, grilles tarifaires d\'achat, destinations, types de véhicules, analyses.', '<span class="lbl">Administrateurs</span><span>'+carriers().length+' transporteur'+(carriers().length > 1 ? 's' : '')+'</span>', 'adm') : '')+
+    (isAdmin() ? tile('cfg', RAIL_SVG.cfg, 'Paramétrer l\'application', 'Utilisateurs, affectation des entités, écrans et paramètres par entité.', '<span class="lbl">Administrateurs</span>', 'adm') : '')+
     '</div>';
   return h + '</section>';
 }
@@ -6912,7 +6917,7 @@ function facNext(){
 /* ============ v6.0 · PROPOSITIONS D'AMÉLIORATION (panneau de discussion) ============ */
 var IDEA = { list:null, f:'ouvertes', err:'', busy:false };
 var IDEA_ST = { proposee:['p-info','Proposée'], retenue:['p-verifier','Retenue'], realisee:['p-ok','Réalisée'], ecartee:['p-info','Écartée'] };
-var IDEA_MOD = [['', 'Général'], ['info', 'Info OTIS'], ['trp', 'Transport'], ['fac', 'Facturer'], ['pil', 'Piloter'], ['sav', 'Savoir des experts'], ['cfg', 'Paramétrage']];
+var IDEA_MOD = [['', 'Général'], ['info', 'Info OTIS'], ['trp', 'Transport'], ['fac', 'Facturer'], ['pil', 'Piloter'], ['sav', 'Savoir des experts'], ['car', 'Gestion transporteurs'], ['cfg', 'Paramétrage']];
 function ideaLoad(){ if (!STORE.listIdeas){ IDEA.list = []; IDEA.err = 'indisponible'; return Promise.resolve(); } IDEA.err = '';
   return STORE.listIdeas().then(function(L){ IDEA.list = L; renderChat(true); }, function(e){ IDEA.list = []; IDEA.err = e.message; renderChat(true); }); }
 function renderIdeas(){

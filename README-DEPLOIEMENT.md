@@ -84,4 +84,5 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 ## v6.1 — écrans Facturer et Piloter
 - Facturer : étapes en ligne compacte A → E + Clôture, entités « à traiter » / « clôturées » avec nombre de lignes bloquantes ou étape en cours, lien « KPI de l'entité » vers Piloter filtré.
 - Piloter : barre de filtres pour tous les comptes (ADV réservé admin), filtre repris de Facturer, Suivi des anomalies ouvert aux ADV, nouveau tableau « Anomalies par nature et par mois » (6 mois) avec retour vers Facturer sur le mois cliqué.
+- Gestion transporteurs : la grille achat transport sort de Paramétrage et devient une section de la barre latérale (administrateurs) : analyses, types de véhicules, destinations, fiches et grilles des transporteurs.
 - Pas de changement de règles Firestore.
