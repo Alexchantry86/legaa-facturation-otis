@@ -80,3 +80,8 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 **Règles Firestore** : ajouter le bloc `match /idees/{id}` de `firestore.rules` aux règles publiées
 (Console Firebase → Firestore → Règles), sans remplacer le reste, puis Publier. Sans ce bloc, l'onglet
 « Améliorations » affiche « Propositions inaccessibles ».
+
+## v6.1 — écrans Facturer et Piloter
+- Facturer : étapes en ligne compacte A → E + Clôture, entités « à traiter » / « clôturées » avec nombre de lignes bloquantes ou étape en cours, lien « KPI de l'entité » vers Piloter filtré.
+- Piloter : barre de filtres pour tous les comptes (ADV réservé admin), filtre repris de Facturer, Suivi des anomalies ouvert aux ADV, nouveau tableau « Anomalies par nature et par mois » (6 mois) avec retour vers Facturer sur le mois cliqué.
+- Pas de changement de règles Firestore.
