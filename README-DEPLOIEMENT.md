@@ -98,3 +98,8 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Accueil compact sur téléphone (tuiles sur une colonne, recherche en 16 px pour éviter le zoom iOS).
 - Prénom affiché à partir de l'e-mail quand le compte n'a pas de nom.
 - Gestion transporteurs sur mobile : deux menus déroulants (« Vue » : analyses, référentiels, transporteurs, + nouveau ; « Section » : fiche, grilles, + ajouter, commentaires) à la place des rangées d'onglets.
+
+## v6.4 — Gestion transporteurs
+- Accueil de la section en 4 blocs : Analyses, Types de véhicules, Destinations, Transporteurs (+ dépôt de grilles).
+- Transporteurs : une carte par transporteur (statut, grilles, points à vérifier) et une carte « + Ajouter un transporteur ».
+- Fil d'Ariane avec retour (Gestion transporteurs › Transporteurs › CCE) et sélecteur de transporteur sur la fiche ; les rangées d'onglets du haut disparaissent.

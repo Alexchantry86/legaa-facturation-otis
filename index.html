@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.3 · 20/11/2026 (mobile : menu hamburger, accueil compact, menus déroulants dans Gestion transporteurs) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.4 · 20/11/2026 (Gestion transporteurs : accueil en 4 blocs, transporteurs en cartes, fil d'Ariane) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1424,6 +1424,40 @@ body{margin:0}
   .car-tabs{border-bottom:0;gap:8px}
   .car-nav,.car-sub{display:none}
 }
+
+/* ---- v6.4 : Gestion transporteurs — blocs, cartes, fil d'Ariane ---- */
+.car-msel:not(.car-msel2),.car-tabs{display:none!important}
+.car-home{display:flex;flex-direction:column;gap:16px}
+.tiles6.car4{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.tile6 .tl .warn,.carcard .warn{color:var(--warn)}
+.car-bc{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 14px}
+.car-bc .bcp{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:14px;min-width:0}
+.car-bc .bcp .lnk{background:none;border:0;padding:0;font:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
+.car-bc .bcp b{font-weight:600}
+.car-bc .sep{color:var(--muted)}
+.car-bc .car-sw{margin-left:auto;display:flex;align-items:center;gap:8px}
+.car-bc .car-sw select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:3px;padding:6px 8px;background:var(--surface);color:var(--ink);min-height:36px}
+.carcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:14px}
+.carcard{display:flex;flex-direction:column;gap:12px;align-items:stretch;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;font:inherit;color:var(--ink);cursor:pointer;min-height:150px;transition:border-color .12s,box-shadow .12s}
+.carcard:hover,.carcard:focus-visible{border-color:var(--ink);box-shadow:0 4px 14px rgba(15,42,77,.10)}
+.carcard.off{background:var(--sunk);color:var(--ink-2)}
+.carcard .cc-h{display:flex;align-items:center;gap:10px}
+.carcard .cc-h b{flex:1;font-family:var(--f-label);font-weight:600;font-size:18px;letter-spacing:.02em}
+.carcard .cc-g{display:flex;flex-wrap:wrap;gap:6px}
+.carcard .cc-t{font-size:12.5px;border:1px solid var(--line);border-radius:3px;padding:2px 8px;background:var(--sunk);color:var(--ink-2)}
+.carcard .cc-t.off{opacity:.6}
+.carcard .cc-t .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warn);vertical-align:middle}
+.carcard .cc-f{margin-top:auto;display:flex;align-items:center;gap:12px;border-top:1px solid var(--line-2);padding-top:10px;font-size:12.5px;color:var(--ink-2)}
+.carcard .cc-go{margin-left:auto;font-size:16px}
+.carcard.add{border-style:dashed;align-items:center;justify-content:center;text-align:center;color:var(--ink-2);background:transparent}
+.carcard.add .cc-plus{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1.5px dashed currentColor;font-size:24px;line-height:1}
+.carcard.add.on{cursor:default;align-items:stretch;text-align:left;background:var(--surface)}
+.carcard.add.on .cc-plus{align-self:center}
+.carcard.add input{font:inherit;font-size:15px;border:1px solid var(--line);border-radius:3px;padding:8px 10px;min-height:40px}
+.carcard .cc-a{display:flex;gap:8px}
+.gdrop.mini2{display:block;text-align:center;padding:12px;border:1.5px dashed var(--line);border-radius:6px;color:var(--muted);cursor:pointer}
+@media (max-width:900px){ .car-bc .car-sw{margin-left:0;width:100%} .car-bc .car-sw select{flex:1;font-size:16px} }
+@media (max-width:600px){ .tiles6.car4{grid-template-columns:minmax(0,1fr)} .carcards{grid-template-columns:minmax(0,1fr)} .carcard{min-height:0} }
 </style>
 </head>
 <body>
@@ -5723,19 +5757,48 @@ function docModal(){ var k = ST.docView; if (!k) return '';
   var P = ST.dvPos;
   return '<div class="dv-ov"><div class="dv-w"'+(P ? ' style="position:fixed;left:'+P.x+'px;top:'+P.y+'px"' : '')+'><div class="dv-h" title="Glisser pour déplacer la fenêtre"><span class="dv-grip">⠿</span><b>'+esc(docName(k))+'</b><span class="sp"></span>'+(!/\.pdf$/i.test(docName(k)) && DOCV[k] && DOCV[k].html ? '<button class="btn sm g" data-dvprint="'+esc(k)+'" title="Ouvre l\'impression : choisir « Enregistrer au format PDF »">Enregistrer en PDF</button>' : '')+
     (k.indexOf('sale:') === 0 ? (saleDocOf(k.slice(5)) ? '<button class="btn sm g" data-saledoc="'+esc(k.slice(5))+'">Grille signée</button>' : '') : k.indexOf('d:') === 0 ? '' : '<button class="btn sm g" data-dvdl="'+esc(k)+'">Télécharger</button>')+'<button class="btn sm" data-docview="'+esc(k)+'">Fermer</button></div>'+docvHtml(k)+'</div></div>'; }
+/* ============ v6.4 · GESTION TRANSPORTEURS : accueil en blocs, transporteurs en cartes ============ */
+var CAR_SVG = {
+  an:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20v-8M10 20V5M16 20v-6M22 20V9"/></svg>',
+  veh:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16V6h12v10M14 9h4l3 4v3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>',
+  dest:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11.2A6.5 6.5 0 0 1 18.5 9.8C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+  list:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7"/><circle cx="6.5" cy="17" r="1.6"/><circle cx="17.5" cy="17" r="1.6"/><path d="M6 9h5M6 12h3"/></svg>'
+};
+function carChecks(x){ return (x.grids || []).reduce(function(t, g){ return t + (g.checks || []).length; }, 0); }
+function carBc(path, cur, extra){
+  var back = path[path.length - 1];
+  return '<nav class="car-bc" aria-label="Fil d\'Ariane"><button class="btn sm" data-carsel="'+back[0]+'" aria-label="Retour : '+esc(back[1])+'">←</button><span class="bcp">'+path.map(function(p){ return '<button class="lnk" data-carsel="'+p[0]+'">'+esc(p[1])+'</button>'; }).join('<span class="sep">›</span>')+'<span class="sep">›</span><b>'+esc(cur)+'</b></span>'+(extra || '')+'</nav>';
+}
+function carHome(C){
+  var A = C.filter(function(x){ return x.active !== false; }), nG = C.reduce(function(t, x){ return t + (x.grids || []).length; }, 0), nK = C.reduce(function(t, x){ return t + carChecks(x); }, 0), T = vehTypes(), Dd = dests();
+  function tile(k, name, sub, line){ return '<button class="tile6" data-carsel="'+k+'"><span class="ti">'+CAR_SVG[k]+'</span><span><span class="tn">'+name+'</span><br><span class="ts">'+sub+'</span></span><span class="tl">'+line+'</span></button>'; }
+  return '<div class="car-home"><div class="tiles6 car4">'+
+    tile('an', 'Analyses', 'Comparer le prix d\'achat des transporteurs actifs par destination et type de véhicule.', '<span>'+A.length+' transporteur'+(A.length > 1 ? 's' : '')+' actif'+(A.length > 1 ? 's' : '')+'</span>')+
+    tile('veh', 'Types de véhicules', 'Référentiel des véhicules (charge utile, longueur) auquel les grilles sont rattachées.', '<span>'+T.length+' type'+(T.length > 1 ? 's' : '')+'</span>')+
+    tile('dest', 'Destinations', 'Référentiel des destinations desservies et paramètres d\'estimation des trajets.', '<span>'+Dd.length+' destination'+(Dd.length > 1 ? 's' : '')+'</span>')+
+    tile('list', 'Transporteurs', 'Fiches, grilles tarifaires d\'achat et commentaires, transporteur par transporteur.', '<span>'+C.length+' transporteur'+(C.length > 1 ? 's' : '')+'</span><span>'+nG+' grille'+(nG > 1 ? 's' : '')+'</span>'+(nK ? '<span class="warn">'+nK+' point'+(nK > 1 ? 's' : '')+' à vérifier</span>' : ''))+
+    '</div><label class="gdrop"><input type="file" hidden multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.csv"><b>Déposer des grilles tarifaires</b><span class="small muted">PDF, Word ou Excel : le transporteur et ses grilles sont créés ou complétés à partir des documents</span></label></div>';
+}
+function carList(C){
+  var h = '<div class="carcards">'+C.map(function(x, k){ var G = x.grids || [], nk = carChecks(x), off = x.active === false;
+    return '<button class="carcard'+(off ? ' off' : '')+'" data-carsel="'+k+'"><span class="cc-h"><b>'+esc(x.name || 'Sans nom')+'</b><span class="pill '+(off ? 'p-info' : 'p-ok')+'">'+(off ? 'Inactif' : 'Actif')+'</span></span>'+
+      '<span class="cc-g">'+(G.length ? G.slice(0, 4).map(function(g){ return '<span class="cc-t'+(g.active === false ? ' off' : '')+'">'+esc(g.label || 'Grille')+((g.checks || []).length ? ' <i class="dot" aria-hidden="true"></i>' : '')+'</span>'; }).join('')+(G.length > 4 ? '<span class="cc-t more">+'+(G.length - 4)+'</span>' : '') : '<span class="muted small">Aucune grille</span>')+'</span>'+
+      '<span class="cc-f"><span>'+G.length+' grille'+(G.length > 1 ? 's' : '')+'</span>'+(nk ? '<span class="warn">'+nk+' à vérifier</span>' : '')+'<span class="cc-go" aria-hidden="true">→</span></span></button>'; }).join('');
+  h += ST.carNew ? '<div class="carcard add on"><span class="cc-plus" aria-hidden="true">+</span><label class="lbl" for="carnewname">Nom du transporteur</label><input id="carnewname" placeholder="Ex. : TRANSPORTS DUPONT" autofocus><span class="cc-a"><button class="btn sm pri" data-carnewok>Créer</button><button class="btn sm g" data-carnewno>Annuler</button></span></div>'
+    : '<button class="carcard add" data-carnew><span class="cc-plus" aria-hidden="true">+</span><b>Ajouter un transporteur</b><span class="muted small">Créer la fiche, puis déposer ou saisir ses grilles</span></button>';
+  return h + '</div><label class="gdrop mini2"><input type="file" hidden multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.csv">Déposer des grilles (PDF, Word, Excel)</label>';
+}
 function vCarriers(){
   if (!isAdmin()) return '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
-  var C = carriers(), D = ST.gimp || [], sel = /^(an|veh|dest)$/.test(ST.carSel) ? ST.carSel : Math.min(+ST.carSel || 0, Math.max(0, C.length - 1)), c = sel === 'cmp' ? null : C[sel];
-  if (!C.length && typeof sel === 'number') sel = -1;
+  var C = carriers(), D = ST.gimp || [], sel = ST.carSel === undefined || ST.carSel === null || ST.carSel === '' ? 'home' : /^(an|veh|dest|home|list)$/.test(ST.carSel) ? ST.carSel : Math.min(+ST.carSel || 0, Math.max(0, C.length - 1)), c = sel === 'cmp' ? null : C[sel];
+  if (!C.length && typeof sel === 'number') sel = 'list';
   var h = '<section class="view car2">';
   if (D.length) h += '<div class="panel gi-box"><div class="ph"><h3>Grilles lues à valider · '+D.length+'</h3></div>'+D.map(gridDraftHtml).join('')+'</div>';
-  h += '<div class="car-msel"><label class="lbl" for="carmsel">Vue</label><select id="carmsel">'+
-    [['an','Analyses'],['veh','Types de véhicules'],['dest','Destinations']].map(function(o){ return '<option value="'+o[0]+'"'+(sel === o[0] ? ' selected' : '')+'>'+o[1]+'</option>'; }).join('')+
-    (C.length ? '<optgroup label="Transporteurs">'+C.map(function(x, k){ return '<option value="'+k+'"'+(k === sel ? ' selected' : '')+'>'+esc(x.name || 'Sans nom')+' · '+(x.grids || []).length+' grille'+((x.grids || []).length > 1 ? 's' : '')+(x.active === false ? ' (inactif)' : '')+'</option>'; }).join('')+'</optgroup>' : '')+
-    '<option value="new">+ Nouveau transporteur…</option></select></div>';
-  h += '<div class="car-tabs"><button class="car-tab an'+(sel === 'an' ? ' on' : '')+'" data-carsel="an"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 14V8h3v6zM6.5 14V3h3v11zM11 14V6h3v8z" fill="currentColor"/></svg>Analyses</button><button class="car-tab ref'+(sel === 'veh' ? ' on' : '')+'" data-carsel="veh">Types de véhicules</button><button class="car-tab ref last'+(sel === 'dest' ? ' on' : '')+'" data-carsel="dest">Destinations</button>'+C.map(function(x, k){ return '<button class="car-tab'+(k === sel ? ' on' : '')+(x.active === false ? ' off' : '')+'" data-carsel="'+k+'">'+esc(x.name || 'Sans nom')+'<span>'+(x.grids || []).length+'</span></button>'; }).join('')+
-    (ST.carNew ? '<span class="car-new"><input id="carnewname" placeholder="Nom du transporteur" autofocus><button class="btn sm pri" data-carnewok>Créer</button><button class="btn sm g" data-carnewno>×</button></span>' : '<button class="car-tab add" data-carnew>+ Transporteur</button>')+
-    '<label class="gdrop mini"><input type="file" hidden multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.csv">Déposer des grilles (PDF, Word, Excel)</label></div>';
+  if (sel === 'home') return h + carHome(C) + '</section>';
+  if (sel === 'list') return h + carBc([['home','Gestion transporteurs']], 'Transporteurs') + carList(C) + '</section>';
+  var NM = { an:'Analyses', veh:'Types de véhicules', dest:'Destinations' };
+  if (NM[sel]) h += carBc([['home','Gestion transporteurs']], NM[sel]);
+  else h += carBc([['home','Gestion transporteurs'], ['list','Transporteurs']], c ? (c.name || 'Sans nom') : '', '<label class="car-sw"><span class="lbl">Transporteur</span><select id="carmsel" aria-label="Changer de transporteur">'+C.map(function(x, k){ return '<option value="'+k+'"'+(k === sel ? ' selected' : '')+'>'+esc(x.name || 'Sans nom')+(x.active === false ? ' (inactif)' : '')+'</option>'; }).join('')+'</select></label>');
   if (sel === 'an') return h + vAnalyses() + '</section>';
   if (sel === 'veh') return h + vVehTypes() + '</section>';
   if (sel === 'dest') return h + vDests() + '</section>';
@@ -6090,7 +6153,7 @@ document.addEventListener('click', function(e){
   if (d.gridchk){ var gk = d.gridchk.split('|'), gc = carriers()[+gk[0]].grids[+gk[1]]; gc.checks = []; saveCfg('Grille transporteur vérifiée : '+gc.label); render(); return; }
   var dmb = docMetaFromBtn(d); if (dmb !== undefined){ if (dmb) openDoc(dmb); else toast('Document introuvable'); return; }
   if (d.griddocdl){ var gd = d.griddocdl.split('|'), gg = carriers()[+gd[0]].grids[+gd[1]]; if (gg.doc) STORE.getFileBytes(gg.doc).then(function(b){ saveBlob(gg.doc.name, new Blob([b]), ''); }); return; }
-  if (d.carsel !== undefined){ ST.carSel = /^(an|veh|dest)$/.test(d.carsel) ? d.carsel : +d.carsel; ST.carSub = null; ST.carDel = null; ST.gridDel = null; render(); return; }
+  if (d.carsel !== undefined){ ST.carSel = /^(an|veh|dest|home|list)$/.test(d.carsel) ? d.carsel : +d.carsel; ST.carSub = null; ST.carDel = null; ST.gridDel = null; if (ST.carSel !== 'list') ST.carNew = false; render(); window.scrollTo(0, 0); return; }
   if (d.carsub !== undefined){ ST.carSub = d.carsub; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (d.anset){ var as = d.anset.split('|'); ST.an = ST.an || {}; ST.an[as[0]] = as[1]; if (as[0] === 'dest'){ ST.an.cp = ''; ST.an.ville = ''; } render(); return; }
   if (d.antab){ ST.an = ST.an || {}; ST.an.tab = d.antab; render(); return; }
@@ -6106,7 +6169,7 @@ document.addEventListener('click', function(e){
   if (d.carmerge !== undefined){ carMerge(+d.carmerge); return; }
   if (d.carcom !== undefined){ var cm = carriers()[+d.carcom], tx = ($('carcom') || {}).value || ''; if (!cm || !tx.trim()) return; cm.comments = (cm.comments || []).concat([{ id:'m'+Date.now().toString(36), text:tx.trim(), by:ST.user ? ST.user.name : '', at:new Date().toLocaleDateString('fr-FR') }]); saveCfg('Commentaire transporteur : '+cm.name); render(); return; }
   if (d.carcomdel){ var cd2 = d.carcomdel.split('|'), cm2 = carriers()[+cd2[0]]; cm2.comments = (cm2.comments || []).filter(function(m){ return m.id !== cd2[1]; }); saveCfg('Commentaire transporteur supprimé'); render(); return; }
-  if (d.carnew !== undefined){ if (!isAdmin()) return; ST.carNew = true; render(); var cn = $('carnewname'); if (cn) cn.focus(); return; }
+  if (d.carnew !== undefined){ if (!isAdmin()) return; ST.carNew = true; ST.carSel = 'list'; render(); var cn = $('carnewname'); if (cn) cn.focus(); return; }
   if (d.cardel){ ST.carDel = d.cardel; ST.gridDel = null; render(); return; }
   if (d.cardelno !== undefined){ ST.carDel = null; ST.gridDel = null; render(); return; }
   if (d.cardelok !== undefined){ var cc = carriers()[+d.cardelok]; if (cc && cc.doc) STORE.deleteFile(cc.doc).catch(function(){}); ST.cfg.carriers.splice(+d.cardelok, 1); ST.carSel = 0; ST.carDel = null; saveCfg('Transporteur supprimé : '+(cc ? cc.name : '')); render(); return; }
@@ -6279,7 +6342,7 @@ document.addEventListener('click', function(e){
   else if (a === 'mypw') changeMyPassword();
 });
 document.addEventListener('change', function(e){
-  if (e.target && e.target.id === 'carmsel'){ var cv = e.target.value; if (cv === 'new'){ if (!isAdmin()) return; ST.carNew = true; render(); var cn0 = $('carnewname'); if (cn0) cn0.focus(); return; } ST.carSel = /^(an|veh|dest)$/.test(cv) ? cv : +cv; ST.carSub = null; ST.carDel = null; ST.gridDel = null; ST.carNew = false; render(); return; }
+  if (e.target && e.target.id === 'carmsel'){ var cv = e.target.value; ST.carSel = /^(an|veh|dest|home|list)$/.test(cv) ? cv : +cv; ST.carSub = null; ST.carDel = null; ST.gridDel = null; ST.carNew = false; render(); return; }
   if (e.target && e.target.id === 'carsubsel'){ ST.carSub = e.target.value; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (e.target && e.target.id === 'railent'){ var rc = e.target.value; if (rc){ if (ST.module === 'mod'){ ST.ent = rc; render(); } else enterEnt(rc, 'trp'); } return; }
   var t = e.target, d = t.dataset;
@@ -6913,7 +6976,7 @@ function railGo(key){
   else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
   else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; if (!ST.piltab) ST.piltab = 'syn'; render(); }
   else if (key === 'sav'){ ST.ent = null; ST.module = 'sav'; if (!SAV.list) savLoad(); render(); }
-  else if (key === 'car'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'car'; render(); }
+  else if (key === 'car'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'car'; ST.carSel = 'home'; ST.carNew = false; render(); }
   else if (key === 'cfg'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'cfg'; ST.cfgTab = !ST.cfgTab || ST.cfgTab === 'ach' ? 'adm' : ST.cfgTab; ST.newAg = false; render(); if (ST.cfgTab === 'adm') loadAdmin(); }
   else if (key === 'acc'){ ST.module = 'acc'; render(); }
   window.scrollTo(0, 0);
