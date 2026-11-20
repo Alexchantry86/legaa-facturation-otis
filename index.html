@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Pilotage Logistique · LEGAA</title>
-<!-- Version : v5.12 · 05/11/2026 — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.0 · 20/11/2026 (navigation par usage, parcours de facturation, propositions d'amélioration) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1267,6 +1267,81 @@ table.info-t td.nowrap{white-space:nowrap}
 .dvx h1,.dvx h2,.dvx h3{margin:12px 0 6px;color:#14233d}.dvx table{border-collapse:collapse;width:100%;margin:8px 0}.dvx td,.dvx th{border:1px solid #c9ced4;padding:4px 6px;vertical-align:top}.dvx img{max-width:100%}.dvx ul,.dvx ol{margin:4px 0 8px 20px}
 .dvdoc h3{margin:0 0 8px}
 .ds-f{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--acc,#1f5fa6);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+/* ---- v6.0 : navigation par usage (barre latérale), accueil 6 usages, parcours de facturation, améliorations ---- */
+#app{display:flex;min-height:100vh;align-items:stretch}
+.appcol{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.appcol>main,.appcol>header{width:100%;box-sizing:border-box}
+.rail{flex:0 0 232px;background:var(--bar);color:var(--bar-ink);display:flex;flex-direction:column;gap:2px;padding:14px 10px;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:25}
+.rail .rb{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:0;color:inherit;padding:4px 12px 16px;cursor:pointer;text-align:left}
+.rail .rb b{font-family:var(--f-label);font-weight:600;font-size:16px;letter-spacing:.04em;text-transform:uppercase}
+.rail .rb span{font-family:var(--f-label);font-size:12px;opacity:.65;letter-spacing:.05em}
+.rail .ri{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;background:none;border:0;border-radius:4px;color:inherit;opacity:.78;padding:8px 12px;font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.rail .ri svg{flex:0 0 18px;opacity:.9}
+.rail .ri:hover{opacity:1;background:rgba(255,255,255,.07)}
+.rail .ri[aria-current="page"]{opacity:1;background:rgba(255,255,255,.14);font-weight:600}
+.rail .ri .rn{margin-left:auto;font-family:var(--f-num);font-size:11px;padding:0 6px;border-radius:2px;background:rgba(255,255,255,.14)}
+.rail .ri .rn.crit{background:#a8261b;color:#fff}
+.rail .rsep{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding-top:8px;display:flex;flex-direction:column;gap:2px}
+.rail .ri.who{font-size:12.5px;opacity:.7}
+.top .brand,.top #who,.top .gearwrap,.top #qzbtn,.top #pilbtn,.top #infobtn,.top #dqbtn,.top #entgear,.top #entbook{display:none!important}
+.top .modname{font-family:var(--f-label);font-size:16px;font-weight:600;letter-spacing:.02em;opacity:1}
+.top .modname .bc{opacity:.65;font-weight:500}
+#tabs .entsel{display:flex;align-items:center;gap:8px;margin-right:18px;font-family:var(--f-label);font-size:13px}
+#tabs .entsel select{background:transparent;color:inherit;border:1px solid currentColor;border-radius:3px;padding:3px 6px;font:inherit}
+#tabs .entsel select option{color:#141618}
+@media (max-width:900px){#app{flex-direction:column}.rail{flex:0 0 auto;height:auto;position:static;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:8px}.rail .rb{display:none}.rail .ri{width:auto;white-space:nowrap}.rail .rsep{margin:0;border:0;padding:0;flex-direction:row}}
+/* Accueil */
+.home6{width:100%;box-sizing:border-box;max-width:1180px;margin:0 auto;padding:28px 0 40px;display:flex;flex-direction:column;gap:22px}
+.home6 h2.hello{font-family:var(--f-label);font-size:26px;font-weight:600;margin:0}
+.hsearch{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--ink);border-radius:4px;padding:6px 6px 6px 14px}
+.hsearch label{white-space:nowrap}
+.hsearch input{flex:1;min-width:0;border:0;background:transparent;font-size:15px;min-height:38px;color:var(--ink)}
+.hsearch input:focus{outline:none}
+.hsearch-n{font-size:12.5px;color:var(--muted);margin-top:-14px}
+.tiles6{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tile6{display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 18px 14px;text-align:left;cursor:pointer;min-height:180px;font:inherit;color:var(--ink);transition:border-color .12s,box-shadow .12s}
+.tile6:hover,.tile6:focus-visible{border-color:var(--ink);box-shadow:0 4px 14px rgba(15,42,77,.10)}
+.tile6 .ti{display:grid;place-items:center;width:42px;height:42px;border-radius:4px;background:var(--sunk);color:var(--ink)}
+.tile6 .tn{font-family:var(--f-label);font-weight:600;font-size:18px}
+.tile6 .ts{font-size:13px;color:var(--muted);line-height:1.4}
+.tile6 .tl{margin-top:auto;align-self:stretch;border-top:1px solid var(--line-2);padding-top:10px;font-size:12.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 12px}
+.tile6 .tl .crit{color:var(--crit)}
+.tile6.adm{background:var(--sunk)}
+/* Facturer : liste des entités + parcours */
+.facwrap{display:flex;gap:18px;align-items:flex-start}
+.entlist{flex:0 0 220px;position:sticky;top:12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 8px;display:flex;flex-direction:column;gap:2px;margin-top:14px}
+.entlist .lbl{padding:4px 10px 6px}
+.entlist .el{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;background:none;border:0;border-radius:4px;padding:6px 10px;font:inherit;font-size:13.5px;color:var(--ink-2);text-align:left;cursor:pointer}
+.entlist .el:hover{background:var(--hover)}
+.entlist .el[aria-current="true"]{background:var(--sel);color:var(--sel-ink)}
+.entlist .el .ed{width:8px;height:8px;border-radius:50%;flex:0 0 8px;border:1.5px solid #a3a9ae;background:transparent}
+.entlist .el .ed.ouvert{border-color:var(--warn);background:var(--warn)}
+.entlist .el .ed.clos{border-color:var(--ok);background:var(--ok)}
+.entlist .el .es{margin-left:auto;font-size:11.5px;opacity:.7}
+.entlist .lnk2{background:none;border:0;font:inherit;font-size:12.5px;color:var(--muted);text-decoration:underline;padding:8px 10px;cursor:pointer;text-align:left}
+.facmain{flex:1 1 auto;min-width:0}
+.subtabs .stb.done .stl{background:var(--ok);color:#fff}
+.subtabs .stb[aria-selected="true"].done .stl{background:#fff;color:var(--ok)}
+.nextbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:18px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.nextbar .why{font-size:13px;color:var(--muted)}
+.nextbar .why.crit{color:var(--crit)}
+.nextbar .btn{margin-left:auto}
+@media (max-width:900px){.facwrap{flex-direction:column}.entlist{position:static;flex:auto;width:100%}}
+/* Améliorations (panneau de discussion) */
+.idf{display:flex;flex-direction:column;gap:8px}
+.idf input,.idf select,.idf textarea{width:100%;font:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:3px;padding:7px 9px;background:var(--surface);color:var(--ink)}
+.idf textarea{resize:vertical;min-height:70px}
+.idfl{display:flex;flex-wrap:wrap;gap:4px}
+.idl{display:flex;flex-direction:column;gap:8px}
+.idc{border:1px solid var(--line);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.idc .idt{display:flex;gap:8px;align-items:flex-start}
+.idc .idt b{flex:1;font-weight:600;font-size:14px;line-height:1.3}
+.idc .idx{font-size:13px;color:var(--ink-2);white-space:pre-wrap}
+.idc .idm{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px;color:var(--muted)}
+.idc .idv{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:3px;background:var(--surface);font:inherit;font-size:12.5px;padding:3px 8px;cursor:pointer;color:var(--ink-2);min-height:28px}
+.idc .idv.on{border-color:var(--ink);color:var(--ink);font-weight:600}
+.idc .ida{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 </head>
 <body>
@@ -1283,6 +1358,8 @@ table.info-t td.nowrap{white-space:nowrap}
   </div>
 </section>
 <div id="app" hidden>
+<nav id="rail" class="rail" aria-label="Navigation principale"></nav>
+<div class="appcol">
 <header class="top">
   <div class="top-in">
     <button class="brand" data-home title="Accueil : choix de l'entité"><h1>Pilotage Logistique</h1><span>LEGAA</span></button><button class="entgear" id="entgear" data-entgear title="Paramètres de l'entité" aria-label="Paramètres de l'entité" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M11.3 1.5l.4 2.1c.5.2 1 .5 1.4.8l2-.8 1.3 2.2-1.6 1.4c.1.5.1 1 0 1.6l1.6 1.4-1.3 2.2-2-.8c-.4.3-.9.6-1.4.8l-.4 2.1H8.7l-.4-2.1c-.5-.2-1-.5-1.4-.8l-2 .8-1.3-2.2 1.6-1.4c-.1-.5-.1-1 0-1.6L3.6 6.6l1.3-2.2 2 .8c.4-.3.9-.6 1.4-.8l.4-2.1zM10 7a3 3 0 100 6 3 3 0 000-6z"/></svg></button><button class="entgear" id="entbook" data-entbook title="Connaissance : documents de l'entité" aria-label="Connaissance" hidden><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4.5c2.2-.9 4.5-.9 7 .6v11c-2.5-1.5-4.8-1.5-7-.6zM17 4.5c-2.2-.9-4.5-.9-7 .6v11c2.5-1.5 4.8-1.5 7-.6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
@@ -1299,6 +1376,7 @@ table.info-t td.nowrap{white-space:nowrap}
   <nav class="tabs" role="tablist" id="tabs" hidden></nav>
 </header>
 <main id="main"></main>
+</div>
 </div>
 <div id="modal" hidden></div>
 <aside id="chat" class="chat" hidden aria-label="Discussion"></aside>
@@ -1665,6 +1743,14 @@ var STORE = (function () {
     saveRefs: function (W) { var chain = Promise.resolve(); for (var i = 0; i < W.length; i += 400) (function (part) { chain = chain.then(function () { var b = db.batch(); part.forEach(function (w) { var x = clean(w[1]); delete x.id; x.updatedAt = TS(); b.set(db.doc('otisref/' + w[0]), x); }); return b.commit(); }); })(W.slice(i, i + 400));
       return chain.then(function () { return log('otisref', W.length + ' correspondance(s) affaire / appareil / contremaître'); }); },
     deleteRef: function (id) { return db.doc('otisref/' + id).delete(); },
+    // Propositions d'amélioration (v6.0) : tout compte actif propose et soutient ; l'administrateur change le statut
+    listIdeas: function () { return db.collection('idees').get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.at = x.at && x.at.toMillis ? x.at.toMillis() : (x.at || 0); delete x.statusAt; return x; }); }); },
+    addIdea: function (d) { var u = auth.currentUser; if (!u) return Promise.reject(new Error('non connecté'));
+      return db.collection('idees').add({ title: String(d.title || '').slice(0, 120), text: String(d.text || '').slice(0, 2000), module: String(d.module || ''), by: (profile && profile.name) || u.email, byUid: u.uid, at: TS(), status: 'proposee', votes: [u.uid] })
+        .then(function (r) { log('idee', 'Proposition d\'amélioration : ' + String(d.title || '').slice(0, 200)); return r.id; }); },
+    voteIdea: function (id, on) { var u = auth.currentUser; return db.doc('idees/' + id).update({ votes: on ? FV.arrayUnion(u.uid) : FV.arrayRemove(u.uid) }); },
+    updateIdea: function (id, d) { return db.doc('idees/' + id).update({ status: d.status, statusBy: (profile && profile.name) || '', statusAt: TS() }); },
+    deleteIdea: function (id) { return db.doc('idees/' + id).delete(); },
     presenceStart: presenceStart, presenceStop: presenceStop, onPresence: onPresence, onChats: onChats, openChat: openChat, onMessages: onMessages, sendMessage: sendMessage, markRead: markRead,
     onAuth: onAuth, signIn: signIn, signOut: signOut, resetPasswordEmail: resetPasswordEmail, changeOwnPassword: changeOwnPassword,
     getConfig: getConfig, saveConfig: saveConfig,
@@ -2422,14 +2508,12 @@ function renderTop(){
   var mod = ST.module, tabs = [], att = 'ltab', cur = '';
   if ((mod === 'log' || mod === 'trp') && !ST.ent && ST.ag) ST.ent = ST.ag;
   var ent = (mod === 'log' || mod === 'trp' || mod === 'entchoice') && ST.ent ? ST.cfg.agencies[ST.ent] : null;
-  if (mod === 'log'){ tabs = [['fac','Factures logistiques'],['syn','KPI(s)']]; cur = ST.ltab; att = 'ltab'; }
-  else if (mod === 'trp'){ tabs = [['devis','Devis transport'],['hist','Historique des transports']]; cur = ST.ttab === 'hist' ? 'hist' : 'devis'; att = 'ttab'; }
-  else if (mod === 'pil'){ tabs = [['sui','Suivi des anomalies'],['syn','KPI(s)']]; cur = ST.piltab || 'sui'; att = 'piltab'; }
+  if (mod === 'log'){ tabs = [['fac','Parcours de facturation'],['con','Documents de l\'entité']].concat(isAdmin() ? [['par','Paramètres de l\'entité']] : []); cur = ST.ltab; att = 'ltab'; }
+  else if (mod === 'trp' || mod === 'mod'){ tabs = [['devis','Nouveau devis'],['hist','Historique des transports'],['mod','Modélisation']]; cur = mod === 'mod' ? 'mod' : ST.ttab === 'hist' ? 'hist' : 'devis'; att = 'trtab'; }
+  else if (mod === 'pil' || mod === 'dq'){ tabs = [['syn','Volumes']].concat(role() !== 'lecture' ? [['dq','Qualité des données']] : []).concat(isAdmin() ? [['sui','Suivi des anomalies']] : []); cur = mod === 'dq' ? 'dq' : pilTab(); att = 'piltab'; }
   else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage'],['ach','Grille achat transport']]; cur = ST.cfgTab; att = 'cfgtab'; }
   var h = '';
-  if (ent){ var sc = entScreens(ent); h += '<button class="enttab" data-home title="Changer d\'entité">← Entités</button>';
-    if (mod !== 'entchoice' && sc.log && sc.trp) h += '<button class="enttab" data-entchoice title="Revenir au choix Logistique / Transport">← Activités</button>';
-  }
+  if (mod === 'trp' || mod === 'mod'){ var TE = trpEnts(); if (TE.length) h += '<label class="entsel"><span>Entité</span><select id="railent" aria-label="Entité du transport">'+(mod === 'mod' && !ST.ent ? '<option value="">—</option>' : '')+TE.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === ST.ent ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></label>'; }
   h += tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+att+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
   $('tabs').innerHTML = h; $('tabs').hidden = !h;
   var bt = document.querySelector('.brand h1'), bs = document.querySelector('.brand span'); if (bt){ bt.textContent = ent ? (ent.label || ent.code) : 'Pilotage Logistique'; } if (bs) bs.textContent = ent ? (mod === 'log' ? 'Logistique' : mod === 'trp' ? 'Transport' : 'Choix de l\'activité') : 'LEGAA'; var br = document.querySelector('.brand'); if (br) br.classList.toggle('isent', !!ent);
@@ -2441,7 +2525,10 @@ function renderTop(){
   var pb2 = $('pilbtn'); if (pb2){ pb2.hidden = !isAdmin(); pb2.classList.toggle('on', mod === 'pil'); }
   var gb = $('gearbtn'); if (gb){ gb.hidden = !isAdmin(); gb.classList.toggle('on', mod === 'cfg' || !!ST.gearOpen); }
   var gp = $('gearpop'); if (gp) gp.innerHTML = gearMenu();
-  $('modname').textContent = mod === 'acc' ? 'Mon compte' : mod === 'dq' ? 'Contrôle des données' : mod === 'cfg' ? 'Paramétrage' : mod === 'pil' ? 'Pilotage' : mod === 'sav' ? 'Savoir des experts' : mod === 'mod' ? 'Modélisation transport' : mod === 'info' ? 'Info OTIS' : '';
+  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Transport', fac:'Facturer', pil:'Piloter', sav:'Savoir des experts', cfg:'Paramétrage', acc:'Mon compte' };
+  $('modname').innerHTML = esc(RN[rk] || '') + (rk === 'fac' && ST.ent && ST.cfg.agencies[ST.ent] ? ' <span class="bc">› '+esc(ST.cfg.agencies[ST.ent].label || ST.ent)+(ST.month ? ' › '+esc(monthLabel(ST.month)) : '')+'</span>' : '');
+  [ 'qzbtn', 'pilbtn', 'infobtn', 'dqbtn', 'gearbtn', 'entgear', 'entbook' ].forEach(function(id){ var b = $(id); if (b) b.hidden = true; });
+  renderRail();
   if (ST.user) $('who').textContent = ST.user.name + ' · ' + ({admin:'administrateur',adv:'ADV',lecture:'lecture seule'})[ST.user.role];
   $('src').textContent = STORE.mode === 'demo' ? 'mode démo' : '';
 }
@@ -2453,7 +2540,7 @@ function render(){
   else if (ST.module === 'dq') h = vDQ();
   else if (ST.module === 'entchoice') h = vEntChoice();
   else if (ST.module === 'sav') h = vSavoir();
-  else if (ST.module === 'pil') h = isAdmin() ? '<section class="view">'+pilBar()+'</section>' + (ST.piltab === 'syn' ? vSynth() : vSuivi()) : '<section class="view"><div class="panel empty">Réservé aux administrateurs.</div></section>';
+  else if (ST.module === 'pil') h = (isAdmin() ? '<section class="view">'+pilBar()+'</section>' : '') + (pilTab() === 'sui' ? vSuivi() : vSynth());
   else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : ST.cfgTab === 'ach' ? vCarriers() : vAdmin();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vDevis();
   else if (ST.module === 'mod') h = vModel();
@@ -2469,7 +2556,7 @@ function render(){
   placePop(); placeCmenu(); if (ST.module === 'dq') bindDQ();
   if (ST.module === 'sav'){ var si = $('svin'); if (si) si.onchange = function(){ if (si.files[0]) savImport(si.files[0]); si.value = ''; }; }
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
-  if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && ST.piltab === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
+  if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && pilTab() === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if ((ST.module === 'trp' && ST.ttab !== 'hist') || ST.module === 'mod'){ trGeo(false); trCalc(); }
   if (ST.module === 'cfg' && ST.cfgTab === 'ach') bindGridDrop();
   if (ST.docView) docvFill();
@@ -2834,7 +2921,7 @@ function myEnts(){
 function enterEnt(code, mod){
   var a = ST.cfg.agencies[code]; if (!a) return; var sc = entScreens(a);
   ST.ent = code; ST.parAg = code; ST.synAgs = [code]; ST.trF = ST.trF || {}; ST.trF.ag = code; ST.agMenu = false; ST.gearOpen = false;
-  ST.module = mod || (sc.log && sc.trp ? 'entchoice' : sc.log ? 'log' : 'trp'); if (ST.module === 'log' && (!ST.ltab || ST.ltab === 'adm' || (ST.ltab === 'par' && !mod))) ST.ltab = 'fac';
+  ST.module = mod || (sc.log ? 'log' : 'trp'); if (ST.module === 'log' && (!ST.ltab || ST.ltab === 'adm' || (ST.ltab === 'par' && !mod))) ST.ltab = 'fac';
   if (ST.module === 'entchoice'){ if (ST.ag !== code) selectMonth(code, ST.month || defaultMonth()); render(); window.scrollTo(0, 0); return; }
   if (ST.module === 'trp' && !ST.transports) loadTransports();
   if (ST.ag !== code || !ST.R) selectMonth(code, ST.month || defaultMonth()); else render();
@@ -2845,17 +2932,7 @@ function myAssigned(){ var em = String((ST.user && ST.user.email) || '').toLower
 function entCard(a){ var sc = entScreens(a), ic = entIcon(a), who = assignedTo(a.code);
   return '<button class="ent-card ent-sm" data-ent="'+esc(a.code)+'" style="--ec:'+ic[1]+'"><span class="ent-chip">'+ic[0]+'</span><span class="ent-txt"><span class="ent-name">'+esc(a.label || a.code)+'</span><span class="ent-sub">'+[sc.log ? 'Logistique' : '', sc.trp ? 'Transport' : ''].filter(Boolean).join(' · ')+(who.length ? ' · '+esc(who.map(function(u){ return u.split(' ')[0]; }).join(', ')) : '')+'</span></span></button>'; }
 function assignedTo(code){ var A = ST.cfg.assign || {}, N = ST.cfg.userNames || {}; return Object.keys(A).filter(function(em){ return (A[em] || []).indexOf(code) >= 0; }).map(function(em){ return N[em] || em.split('@')[0]; }); }
-function vLanding(){
-  var mine = myAssigned(), mc = mine.map(function(a){ return a.code; }), others = allAgencies().filter(function(a){ return mc.indexOf(a.code) < 0; }), first = ST.user ? ST.user.name.split(' ')[0] : '';
-  var h = '<section class="ent-home"><div class="ent-in"><p class="ent-hello">'+esc(first ? 'Bonjour '+first : 'Bonjour')+'</p>';
-  h += '<div class="home-h"><h2>Mes entités</h2><span class="home-n">'+mine.length+'</span>'+(isAdmin() ? '<button class="btn sm" data-cfgtab="aff">Affecter les entités aux utilisateurs</button>' : '')+'</div>';
-  h += mine.length ? '<div class="ent-grid">'+mine.map(entCard).join('')+'</div>' : '<p class="ent-empty">Aucune entité ne t\'est affectée'+(isAdmin() ? ' : utilise « Affecter les entités aux utilisateurs ».' : ' : choisis dans « Toutes les entités » ou demande une affectation à un administrateur.')+'</p>';
-  h += '<div class="home-h"><h2>Toutes les entités</h2><span class="home-n">'+allAgencies().length+'</span></div>'+'<div class="ent-grid ent-all">'+allAgencies().map(entCard).join('')+'</div>';
-  h += '<div class="home-h"><h2>Outils</h2></div><div class="ent-grid tools">'+
-    '<button class="ent-card ent-sm tool" data-mod="mod" style="--ec:#d97706"><span class="ent-chip">'+ENT_SVG.truck+'</span><span class="ent-txt"><span class="ent-name">Modélisation transport</span></span></button>'+
-    '<button class="ent-card ent-sm tool" data-mod="info" style="--ec:#2563eb"><span class="ent-chip">'+ENT_SVG.info+'</span><span class="ent-txt"><span class="ent-name">Info OTIS</span></span></button></div>';
-  return h + '</div></section>';
-}
+function vLandingOld(){ return ''; }
 /* Pictogrammes des entités (trait, 28 px) et couleur d'accent, choisis d'après le libellé */
 var ENT_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
   return {
@@ -2895,7 +2972,7 @@ function pilBar(){
   var M = last18(), sel = function(id, v, lab){ return '<span class="lbl">'+lab+'</span><select id="'+id+'" class="chk2" style="border-color:#cfcfcc"><option value="">—</option>'+M.slice().reverse().map(function(m){ return '<option value="'+m+'"'+(v===m?' selected':'')+'>'+monthLabel(m)+'</option>'; }).join('')+'</select>'; };
   return '<div class="card2 pilbar"><div class="h2"><span class="lbl">Entités</span><span class="chips"><button class="chip'+(!(P.ents||[]).length?' on':'')+'" data-pilent="all">Toutes</button>'+L.map(function(a){ var on = (P.ents||[]).indexOf(a.code) >= 0; return '<button class="chip'+(on?' on':'')+'" data-pilent="'+esc(a.code)+'">'+esc(a.label || a.code)+'</button>'; }).join('')+'</span></div>'+
     '<div class="h2"><span class="lbl">ADV</span><select id="piladv" class="chk2" style="border-color:#cfcfcc"><option value="">Tous</option>'+Object.keys(A).filter(function(em){ return (A[em]||[]).length; }).map(function(em){ var u = (ST.users||[]).filter(function(x){ return String(x.email).toLowerCase() === em; })[0]; return '<option value="'+esc(em)+'"'+(P.adv===em?' selected':'')+'>'+esc(u && u.name ? u.name : em)+'</option>'; }).join('')+'</select>'+
-    (ST.piltab === 'syn' ? sel('pilfrom', P.from, 'Du')+sel('pilto', P.to, 'au') : '')+(P.adv || (P.ents||[]).length || P.from || P.to ? '<button class="btn sm g" data-pilreset>Effacer les filtres</button>' : '')+'</div></div>';
+    (pilTab() === 'syn' ? sel('pilfrom', P.from, 'Du')+sel('pilto', P.to, 'au') : '')+(P.adv || (P.ents||[]).length || P.from || P.to ? '<button class="btn sm g" data-pilreset>Effacer les filtres</button>' : '')+'</div></div>';
 }
 function gearMenu(){
   if (!ST.gearOpen) return '';
@@ -3095,15 +3172,16 @@ function vFactures(){
   var ags = agencies();
   if (!ags.length) return '<section class="view"><div class="panel empty">Aucune agence active. Créer une agence dans Paramètres.</div></section>';
   if (!ST.ag || !ags.some(function(a){ return a.code === ST.ag; })){ selectMonth(ags[0].code, ST.month || defaultMonth()); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
-  var h = '<section class="view"><div class="mpanel">' + monthHead(ags);
+  var side = ST.module === 'log', h = '<section class="view">'+(side ? '<div class="facwrap">'+facEntList()+'<div class="facmain">' : '')+'<div class="mpanel">' + monthHead(ags);
   if (ST.busy) h += '<div class="panel empty">'+esc(ST.busy)+'</div>';
   else {
     var blk = ST.R ? ST.R.anomalies.filter(function(a){ return a.sev==='bloquant'; }).reduce(function(s,a){ return s+openCount(a); },0) : 0;
     var pb = ST.pdfs.filter(function(p){ return p.result && p.result.status !== 'conforme'; }).length;
-    h += '<nav class="subtabs">'+[['imp','A · Import'],['ano','B · Anomalies'+(blk?' <span class="cnt">'+blk+'</span>':'')],['fac','C · Factures'],['ctl','D · Contrôle factures'+(pb?' <span class="cnt w">'+pb+'</span>':'')],['cdf','E · Contrôle détaillé factures']].map(function(t){ var lb = t[1].replace(/^([A-E]) · /, ''), le = t[1].charAt(0); return '<button class="stb" data-sub="'+t[0]+'" aria-selected="'+(ST.sub===t[0])+'"><span class="stl">'+le+'</span><span class="stx">'+lb+'</span></button>'; }).join('')+'</nav>';
+    h += '<nav class="subtabs">'+[['imp','A · Import'],['ano','B · Anomalies'+(blk?' <span class="cnt">'+blk+'</span>':'')],['fac','C · Factures'],['ctl','D · Contrôle factures'+(pb?' <span class="cnt w">'+pb+'</span>':'')],['cdf','E · Contrôle détaillé factures']].map(function(t){ var lb = t[1].replace(/^([A-E]) · /, ''), le = t[1].charAt(0); var dn = facDone(t[0]); return '<button class="stb'+(dn ? ' done' : '')+'" data-sub="'+t[0]+'" aria-selected="'+(ST.sub===t[0])+'"><span class="stl"'+(dn ? ' title="Étape terminée"' : '')+'>'+(dn ? '✓' : le)+'</span><span class="stx">'+lb+'</span></button>'; }).join('')+'</nav>';
     h += ST.sub === 'imp' ? vImport() : ST.sub === 'ano' ? vAnomalies() : ST.sub === 'fac' ? vInvoices() : ST.sub === 'cdf' ? vCdf() : vControl();
+    h += facNext();
   }
-  return h + '</div></section>';
+  return h + '</div>'+(side ? '</div></div>' : '')+'</section>';
 }
 var BURGER = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M3 5h14v1.8H3zM3 9.1h14v1.8H3zM3 13.2h14V15H3z"/></svg>';
 function agMenu(ags){
@@ -5882,6 +5960,15 @@ document.addEventListener('click', function(e){
   var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
   if (!t || t.disabled) return;
   var d = t.dataset;
+  if (d.rail){ railGo(d.rail); return; }
+  if (d.entfac){ ST.ltab = 'fac'; enterEnt(d.entfac, 'log'); return; }
+  if (d.facall !== undefined){ ST.facAll = !ST.facAll; render(); return; }
+  if (d.trtab){ if (d.trtab === 'mod'){ ST.module = 'mod'; render(); window.scrollTo(0,0); return; } ST.ttab = d.trtab; if (ST.ent && entScreens(ST.cfg.agencies[ST.ent] || {}).trp) enterEnt(ST.ent, 'trp'); else railGo('trp'); return; }
+  if (d.ideasend !== undefined){ ideaSend(); return; }
+  if (d.ideaf){ IDEA.f = d.ideaf; renderChat(true); return; }
+  if (d.ideavote){ var iv = (IDEA.list || []).filter(function(x){ return x.id === d.ideavote; })[0]; if (!iv) return; var me0 = myUid(), on0 = (iv.votes || []).indexOf(me0) < 0; iv.votes = (iv.votes || []).filter(function(v){ return v !== me0; }); if (on0) iv.votes.push(me0); renderChat(true); STORE.voteIdea(iv.id, on0).catch(function(e){ toast('Vote non enregistré : '+e.message); ideaLoad(); }); return; }
+  if (d.ideastatus){ var is = d.ideastatus.split('|'); if (!isAdmin()) return; STORE.updateIdea(is[0], { status:is[1] }).then(ideaLoad, function(e){ toast('Modification impossible : '+e.message); }); return; }
+  if (d.ideadel){ var idl = d.ideadel; STORE.deleteIdea(idl).then(function(){ toast('Proposition supprimée'); return ideaLoad(); }, function(e){ toast('Suppression impossible : '+e.message); }); return; }
   if (d.cmenu){ if (ST.ctlMenu && ST.ctlMenu.id === d.cmenu){ ST.ctlMenu = null; render(); return; } var rc = t.getBoundingClientRect(); ST.ctlMenu = { id:d.cmenu, x:Math.max(8, Math.round(rc.right - 260)), y:Math.round(rc.bottom + 4), top:Math.round(rc.top) }; render(); placeCmenu(); return; }
   if (t.closest('.cmenu')) ST.ctlMenu = null;
   if (d.gocdf){ ST.sub = 'cdf'; ST.cdfHl = d.gocdf; ST.ctlMenu = null; ST.modal = { cdf:{ pdf:d.gocdf, all:false } }; render(); window.scrollTo(0,0); setTimeout(function(){ var r = document.getElementById('cdf-'+d.gocdf); if (r) r.scrollIntoView({ block:'center' }); }, 0); return; }
@@ -5975,12 +6062,12 @@ document.addEventListener('click', function(e){
   if (d.entpar){ enterEnt(d.entpar, 'log'); ST.ltab = 'par'; render(); return; }
   if (d.kdl){ var kf = knFind(d.kdl); if (kf.d && kf.d.file) STORE.getFileBytes(kf.d.file).then(function(b){ saveBlob(kf.d.file.name, new Blob([b]), ''); }, function(e){ toast('Téléchargement impossible : '+e.message); }); return; }
   if (d.krm){ var kr = knFind(d.krm); if (kr.d && isAdmin()){ if (kr.scope === 'G') ST.cfg.knowledge = kr.list.filter(function(x){ return x !== kr.d; }); else ST.cfg.agencies[ST.ent].know = kr.list.filter(function(x){ return x !== kr.d; }); saveCfg('Connaissance : document retiré ('+kr.d.title+')'); render(); } return; }
-  if (d.home !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'home'; ST.modal = null; if (!ST.transports) loadTransports(); render(); return; }
+  if (d.home !== undefined){ railGo('home'); return; }
   if (d.acc !== undefined){ ST.module = 'acc'; render(); return; }
-  if (d.piltab){ ST.piltab = d.piltab; render(); window.scrollTo(0,0); return; }
+  if (d.piltab){ if (d.piltab === 'dq'){ ST.module = 'dq'; } else { ST.module = 'pil'; ST.piltab = d.piltab; } render(); window.scrollTo(0,0); return; }
   if (d.pilent){ var PF = ST.pf = ST.pf || { ents:[] }; if (d.pilent === 'all') PF.ents = []; else if ((PF.ents||[]).indexOf(d.pilent) >= 0) PF.ents = PF.ents.filter(function(x){ return x !== d.pilent; }); else PF.ents = (PF.ents||[]).concat([d.pilent]); render(); return; }
   if (d.pilreset !== undefined){ ST.pf = { ents:[], adv:'', from:'', to:'' }; render(); return; }
-  if (d.mod){ if (d.mod !== 'log' && d.mod !== 'trp') ST.ent = null; if (d.mod === 'pil' && !ST.piltab) ST.piltab = 'sui'; ST.module = d.mod; if (d.ltabgo) ST.ltab = d.ltabgo; render(); window.scrollTo(0,0); if (ST.module==='log' && ST.ltab==='adm') loadAdmin(); return; }
+  if (d.mod){ if (d.mod !== 'log' && d.mod !== 'trp') ST.ent = null; if (d.mod === 'pil' && !ST.piltab) ST.piltab = 'syn'; ST.module = d.mod; if (d.ltabgo) ST.ltab = d.ltabgo; render(); window.scrollTo(0,0); if (ST.module==='log' && ST.ltab==='adm') loadAdmin(); return; }
   if (d.ltab){ ST.ltab = d.ltab; ST.modal = null; render(); window.scrollTo(0,0); if (d.ltab==='adm') loadAdmin(); return; }
   if (d.ttab){ ST.ttab = d.ttab; render(); return; }
   if (d.agsel){ ST.agMenu = false; selectMonth(d.agsel, ST.month || defaultMonth()); return; }
@@ -6096,6 +6183,7 @@ document.addEventListener('click', function(e){
   else if (a === 'mypw') changeMyPassword();
 });
 document.addEventListener('change', function(e){
+  if (e.target && e.target.id === 'railent'){ var rc = e.target.value; if (rc){ if (ST.module === 'mod'){ ST.ent = rc; render(); } else enterEnt(rc, 'trp'); } return; }
   var t = e.target, d = t.dataset;
   if (d.asgadd && isAdmin() && t.value){ affSet(t.value, d.asgadd, true); return; }
   if (t.id === 'infoag'){ INFO.ag = t.value; render(); return; }
@@ -6181,7 +6269,7 @@ function placePop(){
   p.style.maxHeight = Math.max(160, window.innerHeight - b.bottom - 16)+'px';
 }
 window.addEventListener('scroll', function(){ if (ST.ctlMenu){ ST.ctlMenu = null; var cm = document.querySelector('.cmenu'); if (cm) cm.remove(); } }, true); window.addEventListener('scroll', placePop, true); window.addEventListener('resize', placePop);
-document.addEventListener('submit', function(e){ e.preventDefault(); if (e.target.id === 'loginForm') doLogin(); });
+document.addEventListener('submit', function(e){ e.preventDefault(); if (e.target.id === 'loginForm') doLogin(); else if (e.target.id === 'homeform') homeSearch(); });
 /* Règles d'agence validées (document « AGENCE_58.v2 ») : appliquées une fois à l'agence 58, quel que soit son code interne */
 function isAg58(a){ return /\bAG\s*0?58\b/i.test(String((a.label||'')+' '+(a.match||'')+' '+(a.code||''))) || /^0?58$/.test(String(a.code||'')); }
 /* Table des BU (facturation par BU, CRA) : une ligne « BU = entité facturée : codes contremaîtres » */
@@ -6630,7 +6718,14 @@ function renderChat(full){
   var me = myUid();
   if (CH.tab === 'team' && CH.mode === 'conv' && !full && $('chinput')){ renderMsgs(); return; }
   if (CH.tab === 'ai' && !full && $('aiinput')) return;
-  var tabs = '<div class="ch-tabs" role="tablist"><button role="tab" aria-selected="'+(CH.tab === 'ai')+'" class="'+(CH.tab === 'ai' ? 'on' : '')+'" data-chtab="ai">Assistant</button><button role="tab" aria-selected="'+(CH.tab === 'team')+'" class="'+(CH.tab === 'team' ? 'on' : '')+'" data-chtab="team">Collègues'+(CH.chats.filter(chatUnread).length ? ' <b class="chn">'+CH.chats.filter(chatUnread).length+'</b>' : '')+'</button></div>';
+  var tabs = '<div class="ch-tabs" role="tablist"><button role="tab" aria-selected="'+(CH.tab === 'ai')+'" class="'+(CH.tab === 'ai' ? 'on' : '')+'" data-chtab="ai">Assistant</button><button role="tab" aria-selected="'+(CH.tab === 'team')+'" class="'+(CH.tab === 'team' ? 'on' : '')+'" data-chtab="team">Collègues'+(CH.chats.filter(chatUnread).length ? ' <b class="chn">'+CH.chats.filter(chatUnread).length+'</b>' : '')+'</button><button role="tab" aria-selected="'+(CH.tab === 'idea')+'" class="'+(CH.tab === 'idea' ? 'on' : '')+'" data-chtab="idea">Améliorations</button></div>';
+  if (CH.tab === 'idea' && !full && $('ideatitle')) return;
+  if (CH.tab === 'idea'){
+    var it0 = $('ideatitle'), ix0 = $('ideatext'), im0 = $('ideamod'), keep = it0 ? { t:it0.value, x:ix0 ? ix0.value : '', m:im0 ? im0.value : '' } : null;
+    box.innerHTML = '<div class="ch-h"><strong>Assistant &amp; discussion</strong><button class="btn sm" data-a="chat" aria-label="Fermer">Fermer</button></div>'+tabs+renderIdeas();
+    if (keep && $('ideatitle')){ $('ideatitle').value = keep.t; $('ideatext').value = keep.x; if (keep.m !== undefined) $('ideamod').value = keep.m; }
+    return;
+  }
   if (CH.tab === 'ai'){
     box.innerHTML = '<div class="ch-h"><strong>Assistant &amp; discussion</strong><button class="btn sm" data-a="chat" aria-label="Fermer">Fermer</button></div>'+tabs+renderAssistant();
     var am = $('aimsgs'); if (am) am.scrollTop = am.scrollHeight; var ai = $('aiinput'); if (ai && !KB.busy) ai.focus(); return;
@@ -6670,6 +6765,131 @@ function chatSend(){
 document.addEventListener('keydown', function(e){ if (e.target && e.target.id === 'chinput' && e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); chatSend(); } });
 function savDeepLink(){ var m = /#sav=([^&]+)/.exec(location.hash || ''); if (!m || !isExpert()) return; var id = decodeURIComponent(m[1]); ST.module = 'sav'; SAV.tab = id.charAt(0) === 'A' ? 'adv' : 'q'; SAV.mode = 'list'; SAV.hl = id;
   (SAV.list ? Promise.resolve() : savLoad()).then(function(){ var f = savById(id); if (f && f.set && SAV.tab === 'q') SAV.set = f.set; render(); setTimeout(function(){ var el = document.getElementById('sv-'+id); if (el){ el.scrollIntoView({ block:'center' }); el.classList.add('hl'); } }, 50); }); }
+
+/* ============ v6.0 · NAVIGATION PAR USAGE ============
+   Barre latérale : Accueil · Info OTIS · Transport · Facturer · Piloter · Savoir des experts · (Paramétrage) · Mon compte.
+   Les modules existants sont conservés ; railKey() les regroupe par usage. */
+var RAIL_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
+  return {
+    home: sv('<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/>'),
+    info: sv('<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11M3 14.5h18"/>'),
+    trp: sv('<path d="M2 16V6h12v10M14 9h4l3 4v3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>'),
+    fac: sv('<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/>'),
+    pil: sv('<path d="M4 20v-8M10 20V5M16 20v-6M22 20V9"/>'),
+    sav: sv('<path d="M3 5.5c2.6-1 5.4-1 9 .8v13c-3.6-1.8-6.4-1.8-9-.8zM21 5.5c-2.6-1-5.4-1-9 .8v13c3.6-1.8 6.4-1.8 9-.8z"/>'),
+    cfg: sv('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
+    acc: sv('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/>')
+  }; })();
+function railKey(){ var m = ST.module; return m === 'trp' || m === 'mod' ? 'trp' : m === 'log' || m === 'entchoice' ? 'fac' : m === 'pil' || m === 'dq' ? 'pil' : m; }
+function pilTab(){ var t = ST.piltab; if (t === 'sui' && !isAdmin()) t = 'syn'; return t === 'sui' ? 'sui' : 'syn'; }
+function logEnts(){ return myEnts().filter(function(a){ return entScreens(a).log; }); }
+function trpEnts(){ return myEnts().filter(function(a){ return entScreens(a).trp; }); }
+function facEntsMine(){ var M = myAssigned().filter(function(a){ return entScreens(a).log; }); return M.length ? M : logEnts(); }
+function monthStatus(code, m){ var x = (ST.monthsIndex || []).filter(function(d){ return d.ag === code && d.month === m; })[0]; return x ? (x.status || 'ouvert') : 'vide'; }
+function facBlk(){ if (!ST.R) return 0; return ST.R.anomalies.filter(function(a){ return a.sev === 'bloquant'; }).reduce(function(s, a){ return s + openCount(a); }, 0); }
+function renderRail(){
+  var el = $('rail'); if (!el) return; if (!ST.user){ el.innerHTML = ''; return; }
+  var k = railKey(), blk = ST.module === 'log' && ST.ltab === 'fac' ? facBlk() : 0;
+  function it(key, label, extra){ return '<button class="ri" data-rail="'+key+'"'+(k === key ? ' aria-current="page"' : '')+'>'+RAIL_SVG[key]+'<span>'+label+'</span>'+(extra || '')+'</button>'; }
+  var qz = SAV.list ? qzRemaining() : 0;
+  el.innerHTML = '<button class="rb" data-rail="home" title="Accueil"><b>Pilotage Logistique</b><span>LEGAA · OTIS'+(STORE.mode === 'demo' ? ' · démo' : '')+'</span></button>'+
+    it('home', 'Accueil')+it('info', 'Info OTIS')+it('trp', 'Transport')+
+    it('fac', 'Facturer', blk ? '<span class="rn crit" title="Lignes bloquantes de l\'entité en cours">'+blk+'</span>' : '')+
+    it('pil', 'Piloter')+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
+    '<div class="rsep">'+(isAdmin() ? it('cfg', 'Paramétrage') : '')+
+    '<button class="ri who" data-rail="acc"'+(k === 'acc' ? ' aria-current="page"' : '')+'>'+RAIL_SVG.acc+'<span>'+esc(ST.user.name)+' · '+esc(({admin:'admin',adv:'ADV',lecture:'lecture'})[ST.user.role] || '')+'</span></button></div>';
+}
+function railGo(key){
+  ST.gearOpen = false; ST.modal = null; ST.agMenu = false;
+  if (key === 'home'){ ST.ent = null; ST.module = 'home'; if (!ST.transports) loadTransports(); if (!INFO.list) infoLoad(); render(); }
+  else if (key === 'info'){ ST.ent = null; ST.module = 'info'; render(); }
+  else if (key === 'trp'){ var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
+  else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
+  else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; } ST.ent = null; ST.module = 'pil'; if (!ST.piltab) ST.piltab = 'syn'; render(); }
+  else if (key === 'sav'){ ST.ent = null; ST.module = 'sav'; if (!SAV.list) savLoad(); render(); }
+  else if (key === 'cfg'){ if (!isAdmin()) return; ST.ent = null; ST.module = 'cfg'; ST.cfgTab = ST.cfgTab || 'adm'; ST.newAg = false; render(); if (ST.cfgTab === 'adm') loadAdmin(); }
+  else if (key === 'acc'){ ST.module = 'acc'; render(); }
+  window.scrollTo(0, 0);
+}
+/* Accueil : recherche Info OTIS + 6 usages */
+function vLanding(){
+  var first = ST.user ? ST.user.name.split(' ')[0] : '', m = ST.month || defaultMonth();
+  var L = logEnts(), clos = L.filter(function(a){ return monthStatus(a.code, m) === 'clos'; }).length, enc = L.filter(function(a){ return monthStatus(a.code, m) === 'ouvert'; }).length;
+  var trV = (ST.transports || []).filter(function(t){ return t.status === 'valide'; }).length;
+  var qz = SAV.list ? qzRemaining() : 0;
+  function tile(key, ic, name, sub, line, cls){ return '<button class="tile6'+(cls ? ' '+cls : '')+'" data-rail="'+key+'"><span class="ti">'+ic+'</span><span><span class="tn">'+name+'</span><br><span class="ts">'+sub+'</span></span><span class="tl">'+line+'</span></button>'; }
+  var h = '<section class="home6"><h2 class="hello">'+esc(first ? 'Bonjour '+first : 'Bonjour')+'</h2>';
+  h += '<form class="hsearch" id="homeform" role="search"><label class="lbl" for="homeq">Info OTIS</label><input id="homeq" type="search" autocomplete="off" placeholder="N° d\'affaire, n° d\'appareil / contrat, contremaître…"><button class="btn pri" type="submit">Chercher</button></form><p class="hsearch-n">Recherche dans les correspondances affaires ↔ appareils ↔ contremaîtres'+(INFO.list ? ' ('+INFO.list.length+')' : '')+'.</p>';
+  h += '<div class="tiles6">'+
+    tile('info', RAIL_SVG.info, 'Rechercher une information OTIS', 'Affaires ↔ appareils / contrats ↔ contremaîtres, par agence.', INFO.list ? '<span>'+INFO.list.length+' correspondances</span>' : '<span>Référentiel Info OTIS</span>')+
+    tile('trp', RAIL_SVG.trp, 'Modéliser un transport', 'Devis de vente, prix d\'achat transporteur, marge, historique.', '<span>'+(ST.transports ? trV+' transport'+(trV > 1 ? 's' : '')+' validé'+(trV > 1 ? 's' : '')+' à facturer' : 'Devis · Historique · Modélisation')+'</span>')+
+    tile('fac', RAIL_SVG.fac, 'Contrôler et facturer', 'Import Odoo, anomalies, factures, contrôle et clôture, entité par entité.', '<span>'+esc(monthLabel(m))+'</span><span>'+clos+' / '+L.length+' clôturée'+(clos > 1 ? 's' : '')+'</span>'+(enc ? '<span>'+enc+' en cours</span>' : ''))+
+    tile('pil', RAIL_SVG.pil, 'Piloter', 'KPI de volumes et qualité des données Odoo, toutes entités.', '<span>Volumes</span>'+(role() !== 'lecture' ? '<span>Qualité des données</span>' : '')+(isAdmin() ? '<span>Suivi des anomalies</span>' : ''))+
+    tile('sav', RAIL_SVG.sav, 'Savoir des experts', 'Questions / réponses des experts, questionnaires et quiz ; l\'assistant s\'appuie dessus.', qz ? '<span>'+qz+' question'+(qz > 1 ? 's' : '')+' à traiter</span>' : '<span>'+(SAV.list ? SAV.list.length+' fiches' : 'Fiches, questionnaires, quiz')+'</span>')+
+    (isAdmin() ? tile('cfg', RAIL_SVG.cfg, 'Paramétrer l\'application', 'Utilisateurs, affectation des entités, paramètres et grilles.', '<span class="lbl">Administrateurs</span>', 'adm') : '')+
+    '</div>';
+  return h + '</section>';
+}
+function homeSearch(){ var q = ($('homeq') || {}).value || ''; INFO.q = q.trim(); railGo('info'); setTimeout(function(){ var qi = $('infoq'); if (qi){ qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); } }, 0); }
+/* Facturer : entités du mois (parcours) */
+function facEntList(){
+  var m = ST.month || defaultMonth(), mine = facEntsMine(), all = logEnts(), others = all.filter(function(a){ return !mine.some(function(b){ return b.code === a.code; }); });
+  var SL = { vide:'vide', ouvert:'en cours', clos:'clôturé' };
+  function row(a){ var st = monthStatus(a.code, m); return '<button class="el" data-entfac="'+esc(a.code)+'" aria-current="'+(a.code === ST.ent)+'"><i class="ed '+st+'"></i><span>'+esc(a.label || a.code)+'</span><span class="es">'+SL[st]+'</span></button>'; }
+  var h = '<aside class="entlist" aria-label="Entités"><span class="lbl">'+(myAssigned().length ? 'Mes entités' : 'Entités')+' · '+esc(monthLabel(m))+'</span>'+mine.map(row).join('');
+  if (others.length) h += ST.facAll ? '<span class="lbl" style="padding-top:12px">Autres entités</span>'+others.map(row).join('')+'<button class="lnk2" data-facall>Masquer les autres entités</button>' : '<button class="lnk2" data-facall>Toutes les entités ('+all.length+')</button>';
+  return h + '</aside>';
+}
+var FAC_STEPS = [['imp','Import'],['ano','Anomalies'],['fac','Factures'],['ctl','Contrôle factures'],['cdf','Contrôle détaillé factures']];
+function facDone(k){
+  if (ST.doc && ST.doc.status === 'clos') return true;
+  var gen = ST.doc && ST.doc.gen;
+  if (k === 'imp') return ST.files.length > 0;
+  if (k === 'ano') return !!ST.R && facBlk() === 0;
+  if (k === 'fac') return !!gen && gen.sig === filesSig();
+  if (k === 'ctl') return ST.pdfs.length > 0 && !ST.pdfs.some(function(p){ return p.result && p.result.status !== 'conforme'; });
+  return false;
+}
+function facNext(){
+  var i = FAC_STEPS.map(function(x){ return x[0]; }).indexOf(ST.sub), nx = FAC_STEPS[i + 1];
+  if (!nx) return '<div class="nextbar"><span class="why">Dernière étape : la clôture du mois se fait dans D · Contrôle factures, une fois les écarts traités.</span>'+(ST.doc && ST.doc.status === 'clos' ? '' : '<button class="btn" data-sub="ctl">Aller à la clôture</button>')+'</div>';
+  var why = '', block = false, b = facBlk();
+  if (ST.sub === 'imp' && !ST.files.length){ why = 'Déposer au moins un export Odoo pour continuer.'; block = true; }
+  else if (ST.sub === 'ano' && b){ why = b+' ligne'+(b > 1 ? 's' : '')+' bloquante'+(b > 1 ? 's' : '')+' : elles ne seront pas facturées tant qu\'elles ne sont pas traitées.'; block = true; }
+  else if (ST.sub === 'fac' && !(ST.doc && ST.doc.gen)){ why = 'Générer les factures avant de les contrôler.'; block = true; }
+  return '<div class="nextbar"><span class="why'+(block && ST.sub === 'ano' ? ' crit' : '')+'">'+esc(why || 'Étape terminée ? Passe à la suivante.')+'</span><button class="btn pri" data-sub="'+nx[0]+'"'+(block ? ' disabled' : '')+'>Étape suivante : '+String.fromCharCode(65 + i + 1)+' · '+nx[1]+' →</button></div>';
+}
+/* ============ v6.0 · PROPOSITIONS D'AMÉLIORATION (panneau de discussion) ============ */
+var IDEA = { list:null, f:'ouvertes', err:'', busy:false };
+var IDEA_ST = { proposee:['p-info','Proposée'], retenue:['p-verifier','Retenue'], realisee:['p-ok','Réalisée'], ecartee:['p-info','Écartée'] };
+var IDEA_MOD = [['', 'Général'], ['info', 'Info OTIS'], ['trp', 'Transport'], ['fac', 'Facturer'], ['pil', 'Piloter'], ['sav', 'Savoir des experts'], ['cfg', 'Paramétrage']];
+function ideaLoad(){ if (!STORE.listIdeas){ IDEA.list = []; IDEA.err = 'indisponible'; return Promise.resolve(); } IDEA.err = '';
+  return STORE.listIdeas().then(function(L){ IDEA.list = L; renderChat(true); }, function(e){ IDEA.list = []; IDEA.err = e.message; renderChat(true); }); }
+function renderIdeas(){
+  if (!IDEA.list){ ideaLoad(); return '<div class="ch-sec"><span class="muted">Chargement…</span></div>'; }
+  var me = myUid(), adm = isAdmin(), cur = railKey();
+  var h = '<div class="ch-sec"><span class="lbl">Proposer une amélioration</span><div class="idf">'+
+    '<input id="ideatitle" maxlength="120" placeholder="En une phrase : ce qui serait mieux">'+
+    '<select id="ideamod" aria-label="Module concerné">'+IDEA_MOD.map(function(o){ return '<option value="'+o[0]+'"'+(o[0] === cur ? ' selected' : '')+'>'+o[1]+'</option>'; }).join('')+'</select>'+
+    '<textarea id="ideatext" maxlength="2000" rows="3" placeholder="Le besoin, l\'exemple concret, le gain attendu"></textarea>'+
+    '<button class="btn pri" data-ideasend'+(IDEA.busy ? ' disabled' : '')+'>Envoyer la proposition</button></div></div>';
+  if (IDEA.err) h += '<div class="ch-sec"><p class="muted small">Propositions inaccessibles : '+esc(IDEA.err)+(adm ? '<br>Les règles Firestore doivent inclure le bloc « idees » (v6.0) : Console Firebase › Firestore › Règles.' : '')+'</p></div>';
+  var F = IDEA.f, L = IDEA.list.filter(function(x){ return F === 'toutes' ? true : F === 'ouvertes' ? (x.status === 'proposee' || x.status === 'retenue') : x.status === F; })
+    .sort(function(a, b){ return ((b.votes || []).length - (a.votes || []).length) || (b.at - a.at); });
+  h += '<div class="ch-sec"><div class="ch-row"><span class="lbl">Propositions ('+IDEA.list.length+')</span></div><div class="idfl">'+[['ouvertes','En cours'],['realisee','Réalisées'],['ecartee','Écartées'],['toutes','Toutes']].map(function(o){ return '<button class="chip'+(F === o[0] ? ' on' : '')+'" data-ideaf="'+o[0]+'" aria-pressed="'+(F === o[0])+'">'+o[1]+'</button>'; }).join('')+'</div><div class="idl">';
+  h += L.length ? L.map(function(x){ var V = x.votes || [], on = V.indexOf(me) >= 0, st = IDEA_ST[x.status] || IDEA_ST.proposee, md = IDEA_MOD.filter(function(o){ return o[0] === (x.module || ''); })[0];
+    return '<div class="idc"><div class="idt"><b>'+esc(x.title)+'</b><span class="pill '+st[0]+'">'+st[1]+'</span></div>'+(x.text ? '<div class="idx">'+esc(x.text)+'</div>' : '')+
+      '<div class="idm"><button class="idv'+(on ? ' on' : '')+'" data-ideavote="'+esc(x.id)+'" aria-pressed="'+on+'" title="'+(on ? 'Retirer mon soutien' : 'Soutenir cette proposition')+'">▲ '+V.length+'</button><span>'+esc(md ? md[1] : 'Général')+'</span><span>'+esc(x.by || '')+'</span><span>'+(x.at ? ago(x.at) : '')+'</span></div>'+
+      (adm || x.byUid === me ? '<div class="ida">'+(adm ? ['retenue','realisee','ecartee','proposee'].filter(function(k){ return k !== x.status; }).map(function(k){ return '<button class="btn sm" data-ideastatus="'+esc(x.id)+'|'+k+'">'+({retenue:'Retenir',realisee:'Marquer réalisée',ecartee:'Écarter',proposee:'Remettre en proposée'})[k]+'</button>'; }).join('') : '')+'<button class="btn sm g" data-ideadel="'+esc(x.id)+'">Supprimer</button></div>' : '')+'</div>'; }).join('')
+    : '<span class="muted">Aucune proposition dans cette liste.</span>';
+  return h + '</div></div>';
+}
+function ideaSend(){
+  var t = ($('ideatitle') || {}).value || '', x = ($('ideatext') || {}).value || '', m = ($('ideamod') || {}).value || '';
+  t = t.trim(); x = x.trim(); if (!t){ toast('Donne un titre à la proposition'); var ti = $('ideatitle'); if (ti) ti.focus(); return; }
+  IDEA.busy = true; renderChat(true);
+  STORE.addIdea({ title:t, text:x, module:m }).then(function(){ IDEA.busy = false; IDEA.f = 'ouvertes'; toast('Proposition envoyée, merci'); return ideaLoad(); }, function(e){ IDEA.busy = false; renderChat(true); toast('Envoi impossible : '+e.message); var a = $('ideatitle'), b = $('ideatext'); if (a) a.value = t; if (b) b.value = x; });
+}
 function start(profile){
   ST.user = profile; $('login').hidden = true; $('app').hidden = false; armIdle(); chatStart();
   STORE.getConfig().then(function(c){ ST.cfg = c ? deepMerge(E.DEFAULT_CONFIG, c) : clone(E.DEFAULT_CONFIG); if (c && c.agencies) Object.keys(E.DEFAULT_CONFIG.agencies).forEach(function(k){ if (!c.agencies[k]) delete ST.cfg.agencies[k]; });

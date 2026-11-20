@@ -70,3 +70,13 @@ Sauvegarde recommandée (nécessite l'offre Blaze) : Firestore → Reprise aprè
 
 ## Mises à jour
 Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `firestore.rules` change, le recoller dans la console.
+
+## v6.0 — navigation par usage et propositions d'amélioration
+- Barre latérale : Accueil · Info OTIS · Transport · Facturer · Piloter · Savoir des experts · Paramétrage (admin) · Mon compte.
+- Facturer : liste des entités du mois à gauche, parcours A → E avec étapes terminées cochées et bouton « Étape suivante » (bloqué tant qu'il reste des lignes bloquantes).
+- Piloter : Volumes (tous les comptes), Qualité des données (ADV et admin), Suivi des anomalies (admin).
+- Panneau Assistant & discussion : onglet « Améliorations » (proposer, soutenir ; l'admin retient, marque réalisée ou écarte).
+
+**Règles Firestore** : ajouter le bloc `match /idees/{id}` de `firestore.rules` aux règles publiées
+(Console Firebase → Firestore → Règles), sans remplacer le reste, puis Publier. Sans ce bloc, l'onglet
+« Améliorations » affiche « Propositions inaccessibles ».
