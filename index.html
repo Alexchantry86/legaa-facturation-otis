@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.4 · 20/11/2026 (Gestion transporteurs : accueil en 4 blocs, transporteurs en cartes, fil d'Ariane) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.4 · 20/11/2026 (Gestion transporteurs : accueil en 4 blocs, cartes, fil d'Ariane ; flux A→A / A→B dans les grilles, la demande et les analyses ; 3 solutions d'achat) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1458,6 +1458,49 @@ body{margin:0}
 .gdrop.mini2{display:block;text-align:center;padding:12px;border:1.5px dashed var(--line);border-radius:6px;color:var(--muted);cursor:pointer}
 @media (max-width:900px){ .car-bc .car-sw{margin-left:0;width:100%} .car-bc .car-sw select{flex:1;font-size:16px} }
 @media (max-width:600px){ .tiles6.car4{grid-template-columns:minmax(0,1fr)} .carcards{grid-template-columns:minmax(0,1fr)} .carcard{min-height:0} }
+
+/* ---- v6.4 : flux A→A / A→B, 3 solutions d'achat, période en clair ---- */
+.perstrip #persel{color:var(--ink)!important;background-color:#fff!important;border:1.5px solid var(--ink)!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23141618' stroke-width='2.2'/%3E%3C/svg%3E")!important}
+.tf-flux{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:2px 0 12px}
+.tf-flux .lbl{flex:0 0 100%}
+.fx-o{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer;background:var(--surface);min-height:44px}
+.fx-o input{width:18px;height:18px;accent-color:var(--ink)}
+.fx-o span{display:flex;flex-direction:column;line-height:1.2}
+.fx-o b{font-family:var(--f-num);font-size:14px}
+.fx-o small{font-size:12px;color:var(--muted)}
+.fx-o:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.tr-opts3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tr-o3{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.tr-o3.first{border-color:var(--ok);box-shadow:inset 0 3px 0 var(--ok)}
+.tr-o3.pick{background:var(--ok-bg)}
+.tr-o3 .o3-h{display:flex;align-items:center;gap:8px}
+.tr-o3 .o3-h strong{flex:1;font-family:var(--f-label);font-size:16px;letter-spacing:.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o3-r,.rk{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;font-family:var(--f-num);font-size:12px;font-weight:600;border:1.5px solid var(--line);color:var(--ink-2)}
+.tr-o3 .o3-r{background:var(--ink);border-color:var(--ink);color:#fff}
+.rk.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.o3-i{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--muted);background:transparent;color:var(--ink-2);font:italic 700 13px/1 Georgia,serif;cursor:pointer}
+.o3-i:hover{border-color:var(--ink);color:var(--ink)}
+.tr-o3 .o3-p{font-family:var(--f-num);font-size:20px;font-weight:600;white-space:nowrap}
+.tr-o3 .o3-w{color:var(--warn)}
+.tr-o3 .o3-m{font-size:13px}
+.tr-o3 .o3-v{font-size:12.5px;color:var(--muted);line-height:1.35}
+.tr-o3 .btn{margin-top:auto;align-self:flex-start}
+.buy-t tr.top3 td{font-weight:500}
+.bi-t{width:100%;border-collapse:collapse}
+.bi-t th{text-align:left;font-family:var(--f-label);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500;padding:8px 12px 8px 0;vertical-align:top;width:150px;border-bottom:1px solid var(--line-2)}
+.bi-t td{padding:8px 0;border-bottom:1px solid var(--line-2)}
+.bi .formula{font-family:var(--f-num);font-size:12.5px;white-space:pre-wrap}
+.gflux{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-bottom:12px}
+.gflux .seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:6px;overflow:hidden}
+.gflux .seg-b{display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--surface);border:0;padding:8px 16px;cursor:pointer;font:inherit;color:var(--ink);min-height:44px}
+.gflux .seg-b+.seg-b{border-left:1.5px solid var(--ink)}
+.gflux .seg-b b{font-family:var(--f-num);font-size:14px}
+.gflux .seg-b span{font-size:11.5px;color:var(--muted)}
+.gflux .seg-b.on{background:var(--ink);color:#fff}
+.gflux .seg-b.on span{color:#cfd3d7}
+.gflux .gf-set{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.norm-t td.unk{color:var(--warn)}
+@media (max-width:900px){.tr-opts3{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -4768,7 +4811,7 @@ function zoneOf(cp, half78, G){
 /* Formulaire commun aux onglets Achat et Vente : la saisie est conservée d'un onglet à l'autre */
 var TR_DEF = { ag:'', cm:'', cmd:'', date:new Date().toISOString().slice(0,10), cp:'92400', ville:'Courbevoie', z78:'', pal:'3', kg:'850', vol:'2.5', len:'2500', h:'3.5', km:'60', hayon:true, grue:false, man:false, obs:'' };
 function trIn(){ if (!ST.trIn){ ST.trIn = JSON.parse(JSON.stringify(TR_DEF)); } if (!ST.trIn.ag){ var A = agencies(); ST.trIn.ag = ST.ent || (A[0] ? A[0].code : ''); } if (ST.ent) ST.trIn.ag = ST.ent; return ST.trIn; }
-function trSave(){ var I = trIn(); ['ag','cm','cmd','date','cp','ville','z78','pal','kg','vol','len','h','km','obs'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.value; }); ['hayon','grue','man'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.checked; }); return I; }
+function trSave(){ var I = trIn(); ['ag','cm','cmd','date','cp','ville','z78','pal','kg','vol','len','h','km','obs'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.value; }); ['hayon','grue','man'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.checked; }); var fx = $('t_fluxab'); if (fx) I.flux = fx.checked ? 'ab' : 'aa'; return I; }
 function trForm(mode){
   var I = trIn(), ags = agencies(), cmL = ((ST.cfg.agencies[I.ag]||{}).cmList||[]);
   var MD = mode === 'model', N = 0;
@@ -4788,7 +4831,9 @@ function trForm(mode){
     '<div class="tf-geo" id="t_geo"></div>'+
     '<div class="grid-f">'+fld('Durée estimée (h)','t_h','number',I.h)+fld('Km estimés (aller-retour)','t_km','number',I.km)+'</div><p class="hint t-est" id="t_est"></p></div>';
   h += sec(3, 'Quelle marchandise ?', IC.mar)+'<div class="grid-f">'+fld('Palettes Europe','t_pal','number',I.pal)+fld('Poids total (kg)','t_kg','number',I.kg)+fld('Volume total (m³)','t_vol','number',I.vol)+fld('Plus grande longueur (mm)','t_len','number',I.len)+'</div></div>';
-  h += sec(4, 'Contraintes de livraison', IC.con)+'<div class="tf-chk"><label class="chk"><input type="checkbox" id="t_hayon"'+(I.hayon?' checked':'')+'>Livraison sans quai (hayon requis)</label><label class="chk"><input type="checkbox" id="t_grue"'+(I.grue?' checked':'')+'>Levage par grue</label><label class="chk"><input type="checkbox" id="t_man"'+(I.man?' checked':'')+'>Manutentionnaire en plus</label></div></div>';
+  h += sec(4, 'Contraintes de livraison', IC.con)+'<div class="tf-flux" role="radiogroup" aria-label="Type de flux demandé par le client"><span class="lbl">Type de flux</span>'+
+    '<label class="fx-o"><input type="radio" name="t_flux" id="t_fluxaa" value="aa"'+(I.flux !== 'ab' ? ' checked' : '')+'><span><b>A → A</b><small>Livraison directe</small></span></label>'+
+    '<label class="fx-o"><input type="radio" name="t_flux" id="t_fluxab" value="ab"'+(I.flux === 'ab' ? ' checked' : '')+'><span><b>A → B</b><small>Livraison 1ère heure (débord)</small></span></label></div><div class="tf-chk"><label class="chk"><input type="checkbox" id="t_hayon"'+(I.hayon?' checked':'')+'>Livraison sans quai (hayon requis)</label><label class="chk"><input type="checkbox" id="t_grue"'+(I.grue?' checked':'')+'>Levage par grue</label><label class="chk"><input type="checkbox" id="t_man"'+(I.man?' checked':'')+'>Manutentionnaire en plus</label></div></div>';
   h += sec(5, 'Observation', IC.obs)+'<div class="fld"><textarea id="t_obs" rows="2" placeholder="Accès chantier, horaires, contact sur place…">'+esc(I.obs || '')+'</textarea></div></div>';
   return h + '</form></div>';
 }
@@ -5572,22 +5617,45 @@ function buyQuote(G, I){
   return best || { ok:false, zone:z.code, why:rej.length ? rej : ['aucun véhicule dans la grille'] };
 }
 function buyAll(I){ var out = []; carriers().forEach(function(c){ if (c.active === false) return; (c.grids || []).forEach(function(G){ if (G.active === false) return; var q = buyQuote(G, I); q.carrier = c.name; q.c = c; q.G = G;
+  if (q.ok && I.flux === 'ab'){ var ab = abInfo(G);
+    if (ab.no){ q = { ok:false, zone:q.zone, why:['livraison A → B non proposée par cette grille'], carrier:c.name, c:c, G:G }; }
+    else if (ab.sup){ q.price = E.r2(q.price + ab.sup); q.detail += ' + débord A → B (1ère heure) '+n2(ab.sup)+' = '+n2(q.price); q.what += ' · A → B'; }
+    else { q.unk = true; q.what += ' · A → B'; q.detail += ' · débord A → B non renseigné dans la grille : à confirmer avec le transporteur'; } }
   if (q.ok && G.validTo && G.validTo < new Date().toISOString().slice(0, 10)){ q.expired = true; q.detail += ' · grille échue le '+G.validTo.split('-').reverse().join('/'); } out.push(q); }); }); return out; }
+/* Achat : détail d'une solution (fenêtre ouverte par le picto i) */
+var BUY = { ok:[], sell:null, mod:false, flux:'aa' };
+function buyInfoOpen(i){
+  var q = BUY.ok[+i], box = $('modal'); if (!q || !box) return; var sell = BUY.sell, mg = sell !== null ? E.r2(sell - q.price) : null, c = q.c, G = q.G, pick = ST.trBuyPick && ST.trBuyPick.key === c.id+'|'+G.id;
+  var row = function(l, v){ return v ? '<tr><th>'+l+'</th><td>'+v+'</td></tr>' : ''; };
+  box.innerHTML = '<div class="mbox mbox-s bi" role="dialog" aria-modal="true" aria-labelledby="bi-t"><div class="mhead"><div><span class="lbl">Solution '+(+i + 1)+' · flux '+FLUX[BUY.flux]+'</span><h2 id="bi-t">'+esc(q.carrier)+' · '+eur(q.price)+' HT</h2></div><div class="row"><button class="btn" data-buyinfoclose>Fermer</button></div></div><div class="mbody">'+
+    '<table class="bi-t"><tbody>'+row('Grille', esc(G.label || '')+(G.kind ? ' <span class="pill p-info">'+esc(GKIND[G.kind] || G.kind)+'</span>' : ''))+row('Véhicule / solution', esc(q.what))+row('Zone', q.zone ? esc(q.zone) : '')+
+    row('Calcul', '<span class="formula">'+esc(q.detail)+'</span>')+row('Prix d\'achat', '<b>'+eur(q.price)+' HT</b>')+
+    (mg !== null ? row('Prix de vente', eur(sell)+' HT')+row('Marge', '<b class="'+mgClass(mg / sell * 100)+'">'+(mg >= 0 ? '+' : '')+n2(mg)+' € · '+fr(mg / sell * 100, 1)+' %</b>') : '')+
+    row('Validité', G.validFrom || G.validTo ? (G.validFrom ? 'du '+G.validFrom.split('-').reverse().join('/') : '')+(G.validTo ? ' au '+G.validTo.split('-').reverse().join('/') : '') : '')+
+    row('Contact', esc([c.contact, c.phone, c.email].filter(Boolean).join(' · ')))+'</tbody></table>'+
+    (q.unk ? '<p class="note">Débord A → B non renseigné dans la grille : prix A → A affiché, à confirmer avec le transporteur.</p>' : '')+
+    (BUY.mod ? '' : '<div class="row" style="margin-top:12px"><button class="btn'+(pick ? '' : ' pri')+'" data-trbuy="'+esc(c.id+'|'+G.id)+'" data-buyinfoclose>'+(pick ? 'Retenu ✓' : 'Retenir ce transporteur')+'</button></div>')+'</div></div>';
+  box.hidden = false; document.body.classList.add('noscroll'); var b = box.querySelector('[data-buyinfoclose]'); if (b) b.focus();
+}
+function buyInfoClose(){ var box = $('modal'); if (!box) return; box.hidden = true; box.innerHTML = ''; document.body.classList.remove('noscroll'); }
 function calcBuy(){
   var box = $('tbuy'); if (!box) return; var MOD = ST.module === 'mod', I = trSave(), A = buyAll(I), ok = A.filter(function(q){ return q.ok; }).sort(function(a, b){ return a.price - b.price; }), S = MOD ? {} : sellCalc(I), sell = S.best ? S.best.q.total : null;
-  var h = '<div class="panel"><div class="ph"><h2>'+(MOD ? '' : '<span class="bn">2</span>')+'Achat · les 2 options les plus économiques</h2><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
+  BUY.ok = ok; BUY.sell = sell; BUY.mod = MOD; BUY.flux = I.flux === 'ab' ? 'ab' : 'aa';
+  var h = '<div class="panel"><div class="ph"><h2>'+(MOD ? '' : '<span class="bn">2</span>')+'Achat · les 3 solutions les plus économiques</h2><span class="pill p-info">Flux '+FLUX[BUY.flux]+'</span><span class="muted small">'+carriers().length+' transporteur(s) paramétré(s)</span></div><div class="pb" style="display:grid;gap:12px">';
   if (!carriers().length) h += '<p class="note">Aucun transporteur paramétré. '+(isAdmin() ? '<button class="lnk" data-rail="car">Créer les transporteurs et leurs grilles</button> (Gestion transporteurs).' : 'Un administrateur doit créer les transporteurs dans Gestion transporteurs.')+'</p>';
   else if (!ok.length){ var dep0 = String(I.cp || '').slice(0, 2), zoneKO = A.every(function(q){ return (q.why || []).some(function(w){ return /desservi|absente|zone/.test(w); }); });
     h += '<div class="tr-none"><b>'+(zoneKO ? 'Destination non couverte par les grilles tarifaires'+(I.cp ? ' ('+esc(I.cp+(I.ville ? ' '+I.ville : ''))+')' : '') : 'Aucune grille tarifaire ne permet cette livraison')+'</b>'+
       '<p>Veuillez consulter les transporteurs pour obtenir un devis spécifique.</p>'+
       '<ul>'+carriers().filter(function(c){ return c.active !== false; }).map(function(c){ return '<li><b>'+esc(c.name)+'</b>'+(c.contact || c.phone || c.email ? ' · '+[c.contact, c.phone ? '<a href="tel:'+esc(String(c.phone).replace(/\s/g, ''))+'">'+esc(c.phone)+'</a>' : '', c.email ? '<a href="mailto:'+esc(c.email)+'?subject='+encodeURIComponent('Demande de devis transport · '+(I.cp || '')+' '+(I.ville || ''))+'">'+esc(c.email)+'</a>' : ''].filter(Boolean).join(' · ') : ' · <span class="muted">coordonnées à compléter dans la fiche</span>')+'</li>'; }).join('')+'</ul></div>'; }
-  else h += '<div class="tr-opts">'+ok.slice(0, 2).map(function(q, i){ var mg = sell !== null ? E.r2(sell - q.price) : null, pick = ST.trBuyPick && ST.trBuyPick.key === q.c.id+'|'+q.G.id;
-    return '<div class="tr-opt'+(i === 0 ? ' first' : '')+(pick ? ' pick' : '')+'"><span class="lbl">Option '+(i + 1)+(i === 0 ? ' · la plus économique' : '')+'</span><strong>'+esc(q.carrier)+'</strong><span class="muted small">'+esc(q.G.label || '')+' · '+esc(q.what)+'</span><span class="price">'+eur(q.price)+' HT</span><span class="formula">'+esc(q.detail)+'</span>'+
-      (mg !== null ? '<span class="small">Marge <b class="'+mgClass(mg / sell * 100)+'">'+(mg >= 0 ? '+' : '')+n2(mg)+' € · '+fr(mg / sell * 100, 1)+' %</b></span>' : '')+
-      (q.c.contact || q.c.phone || q.c.email ? '<span class="small muted">'+esc([q.c.contact, q.c.phone, q.c.email].filter(Boolean).join(' · '))+'</span>' : '')+
-      (MOD ? '' : '<button class="btn sm'+(pick ? '' : ' pri')+'" data-trbuy="'+esc(q.c.id+'|'+q.G.id)+'">'+(pick ? 'Retenu ✓' : 'Retenir ce transporteur')+'</button>')+'</div>'; }).join('')+'</div>';
-  if (A.length) h += '<div class="tw"><table><thead><tr><th>Transporteur</th><th>Grille</th><th>Solution</th><th class="n">Achat HT</th></tr></thead><tbody>'+
-    A.sort(function(a, b){ return (b.ok - a.ok) || ((a.price || 0) - (b.price || 0)); }).map(function(q){ return '<tr'+(q.ok ? '' : ' class="excl"')+'><td>'+esc(q.carrier)+'</td><td class="small">'+esc(q.G.label || '')+(q.zone ? ' · zone '+esc(q.zone) : '')+'</td><td class="small">'+(q.ok ? esc(q.what) : '<span class="muted">'+esc(q.why.join(' · '))+'</span>')+'</td><td class="n">'+(q.ok ? n2(q.price) : '—')+'</td></tr>'; }).join('')+'</tbody></table></div>';
+  else h += '<div class="tr-opts3">'+ok.slice(0, 3).map(function(q, i){ var mg = sell !== null ? E.r2(sell - q.price) : null, pick = ST.trBuyPick && ST.trBuyPick.key === q.c.id+'|'+q.G.id;
+    return '<div class="tr-o3'+(i === 0 ? ' first' : '')+(pick ? ' pick' : '')+'"><div class="o3-h"><span class="o3-r">'+(i + 1)+'</span><strong>'+esc(q.carrier)+'</strong><button class="o3-i" data-buyinfo="'+i+'" aria-label="Détail de la solution '+(i + 1)+' : '+esc(q.carrier)+'" title="Détail du calcul">i</button></div>'+
+      '<span class="o3-p">'+eur(q.price)+' HT'+(q.unk ? ' <span class="o3-w" title="Débord A → B non renseigné dans la grille">*</span>' : '')+'</span>'+
+      (mg !== null ? '<span class="o3-m">Marge <b class="'+mgClass(mg / sell * 100)+'">'+(mg >= 0 ? '+' : '')+n2(mg)+' € · '+fr(mg / sell * 100, 1)+' %</b></span>' : '')+
+      '<span class="o3-v">'+esc(q.what)+'</span>'+
+      (MOD ? '' : '<button class="btn sm'+(pick ? '' : ' pri')+'" data-trbuy="'+esc(q.c.id+'|'+q.G.id)+'">'+(pick ? 'Retenu ✓' : 'Retenir')+'</button>')+'</div>'; }).join('')+'</div>'+
+    (ok.slice(0, 3).some(function(q){ return q.unk; }) ? '<p class="small muted" style="margin:0">* débord A → B non renseigné dans la grille du transporteur : prix A → A affiché, à confirmer.</p>' : '');
+  if (A.length) h += '<div class="tw"><table class="buy-t"><thead><tr><th class="c">Rang</th><th>Transporteur</th><th>Grille</th><th>Solution</th><th class="n">Achat HT</th></tr></thead><tbody>'+
+    A.sort(function(a, b){ return (b.ok - a.ok) || ((a.price || 0) - (b.price || 0)); }).map(function(q, r){ return '<tr'+(q.ok ? (r < 3 ? ' class="top3"' : '') : ' class="excl"')+'><td class="c">'+(q.ok ? '<span class="rk'+(r < 3 ? ' on' : '')+'">'+(r + 1)+'</span>' : '')+'</td><td>'+esc(q.carrier)+'</td><td class="small">'+esc(q.G.label || '')+(q.zone ? ' · zone '+esc(q.zone) : '')+'</td><td class="small">'+(q.ok ? esc(q.what) : '<span class="muted">'+esc(q.why.join(' · '))+'</span>')+'</td><td class="n">'+(q.ok ? n2(q.price) : '—')+'</td></tr>'; }).join('')+'</tbody></table></div>';
   h += '<p class="muted small" style="margin:0">Messagerie : poids taxable = max(poids réel ; volume × ratio de la grille). Affrètement : véhicule le moins cher compatible, forfait de la zone + km au-delà du forfait + suppléments. '+(MOD ? 'Modélisation : prix d\'achat des grilles transporteurs, sans prix de vente ni marge.' : 'Prix de vente : grille de vente de l\'entité (section 1).')+'</p></div></div>';
   setHtml(box, h);
 }
@@ -5670,21 +5738,31 @@ function typePrice(G, t, d){
   var best = null; gUnits(G).forEach(function(u){ if (vType(u) !== t.code) return; var p = unitPrice(G, u, d); if (p && (!best || p < best.price)) best = { price:p, what:u.label || u.code, G:G }; });
   if (best){ var inc = gridIncl(G); if (inc) best.what += ' · '+inc; } return best;
 }
-function carTypePrice(c, t, d){ var b = null; (c.grids || []).forEach(function(G){ if (G.active === false) return; var q = typePrice(G, t, d); if (q && (!b || q.price < b.price)) b = q; }); return b; }
+/* Flux : A → A (livraison directe) ou A → B (livraison 1ère heure, « débord » du transporteur) = prix A → A + supplément de la grille */
+var FLUX = { aa:'A → A', ab:'A → B' };
+function abInfo(G){ if (G.abNo) return { no:true }; var sp = +G.abSup; return sp > 0 ? { sup:sp } : { unk:true }; }
+function typePriceF(G, t, d, flux){ var q = typePrice(G, t, d); if (!q || flux !== 'ab') return q; var a = abInfo(G); if (a.no) return null;
+  return { price:a.sup ? E.r2(q.price + a.sup) : q.price, what:q.what+(a.sup ? ' + débord A→B '+n2(a.sup) : ' · débord A→B non renseigné'), G:q.G, unk:!!a.unk }; }
+function carTypePrice(c, t, d, flux){ var b = null; (c.grids || []).forEach(function(G){ if (G.active === false) return; var q = typePriceF(G, t, d, flux); if (q && (!b || q.price < b.price)) b = q; }); return b; }
 function destLabel(d){ return esc(d.cp+' '+(d.ville || '')); }
 /* Tableau normé d'une grille : destinations en ligne × types de véhicule (ou colonnes tonnage / ml, tranches de poids) */
-function gridNorm(G){
-  var D = dests(), cols, cell;
+function gridNorm(G, p){
+  var D = dests(), cols, cell, FX = ST.gflux === 'ab' ? 'ab' : 'aa', ab = abInfo(G);
   if (G.kind === 'lots'){ cols = (G.cols || []).map(function(c, k){ return { h:c.t+' t', s:c.ml+' ml', k:k }; }); cell = function(d, c){ var r = lotRow(G, d); return r && +r.prices[c.k] > 0 ? { price:+r.prices[c.k] } : null; }; }
   else if (G.kind === 'messagerie'){ cols = (G.bands || []).map(function(b){ return { h:'≤ '+b.max+' kg', s:G.mode === 'cent' ? '€ / 100 kg' : 'forfait', b:b }; }); cell = function(d, c){ var z = bZone(G, d.cp); return z && +(c.b.prices || {})[z.code] > 0 ? { price:+c.b.prices[z.code] } : null; }; }
   else { var U = gUnits(G); cols = vehTypes().filter(function(t){ return U.some(function(u){ return vType(u) === t.code; }); }).map(function(t){ return { h:esc(t.label), s:vtShort(t), t:t, n:U.filter(function(u){ return vType(u) === t.code; }).map(function(u){ return u.label || u.code; }).join(' / ') }; });
     U.filter(function(u){ return !vType(u); }).forEach(function(u){ cols.push({ h:esc(u.label || u.code), s:'<span class="neg">type non rattaché</span>', u:u }); });
     cell = function(d, c){ if (c.u){ var p = unitPrice(G, c.u, d); return p ? { price:p } : null; } return typePrice(G, c.t, d); }; }
   if (!cols.length) return '<div class="pb"><p class="small muted">Aucune colonne : compléter la grille d\'origine.</p></div>';
+  if (FX === 'ab'){ var cell0 = cell; cell = function(d, c){ var q = cell0(d, c); if (!q || ab.no) return null; return { price:ab.sup ? E.r2(q.price + ab.sup) : q.price, unk:!!ab.unk }; }; }
   var R = D.map(function(d){ return { d:d, v:cols.map(function(c){ return cell(d, c); }) }; }), served = R.filter(function(r){ return r.v.some(Boolean); }).length;
-  return '<div class="pb gnorm"><div class="row"><b class="small">Grille normée</b><span class="small muted">€ HT de base · '+served+' / '+D.length+' destinations du référentiel desservies'+(gridIncl(G) ? ' · '+esc(gridIncl(G)) : '')+'</span><span class="sp"></span><button class="lnk small" data-carsel="dest">Modifier les destinations</button><button class="lnk small" data-carsel="veh">Types de véhicules</button></div>'+
+  var fxBar = '<div class="gflux"><div class="seg" role="tablist" aria-label="Type de flux">'+['aa','ab'].map(function(k){ return '<button class="seg-b'+(FX === k ? ' on' : '')+'" role="tab" aria-selected="'+(FX === k)+'" data-gflux="'+k+'"><b>'+FLUX[k]+'</b><span>'+(k === 'aa' ? 'livraison directe' : 'livraison 1ère heure (débord)')+'</span></button>'; }).join('')+'</div>'+
+    (FX === 'ab' && p ? '<div class="gf-set"><label class="gp"><span>Débord A → B (€ HT par livraison)</span>'+cIn(p+'abSup', G.abSup, 'number', '90px')+'</label><label class="gp"><span>A → B proposé</span><select data-cf="'+p+'abNo"'+ADM()+'><option value="false"'+(!G.abNo ? ' selected' : '')+'>Oui</option><option value="true"'+(G.abNo ? ' selected' : '')+'>Non</option></select></label>'+
+      '<span class="small muted">'+(ab.no ? 'Ce transporteur ne propose pas la livraison A → B avec cette grille.' : ab.sup ? 'Prix A → B = prix A → A + '+n2(ab.sup)+' € HT.' : 'Supplément non renseigné : les prix A → A sont affichés et signalés « à confirmer » dans les devis.')+'</span></div>' : '')+'</div>';
+  if (FX === 'ab' && ab.no) return '<div class="pb gnorm">'+fxBar+'<p class="small muted">Livraison A → B non proposée par cette grille.</p></div>';
+  return '<div class="pb gnorm">'+fxBar+'<div class="row"><b class="small">Grille normée · '+FLUX[FX]+'</b><span class="small muted">€ HT de base · '+served+' / '+D.length+' destinations du référentiel desservies'+(gridIncl(G) ? ' · '+esc(gridIncl(G)) : '')+'</span><span class="sp"></span><button class="lnk small" data-carsel="dest">Modifier les destinations</button><button class="lnk small" data-carsel="veh">Types de véhicules</button></div>'+
     '<div class="tw"><table class="norm-t"><thead><tr><th>Destination</th>'+cols.map(function(c){ return '<th'+(c.n ? ' title="'+esc(c.n)+'"' : '')+'>'+c.h+'<span>'+c.s+'</span></th>'; }).join('')+'</tr></thead><tbody>'+
-    R.map(function(r){ return '<tr><th>'+destLabel(r.d)+'</th>'+r.v.map(function(q){ return q ? '<td>'+n2(q.price)+'</td>' : '<td class="na">—</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div></div>';
+    R.map(function(r){ return '<tr><th>'+destLabel(r.d)+'</th>'+r.v.map(function(q){ return q ? '<td'+(q.unk ? ' class="unk" title="Débord A → B non renseigné : prix A → A"' : '')+'>'+n2(q.price)+(q.unk ? '*' : '')+'</td>' : '<td class="na">—</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div></div>';
 }
 function typeSel(path, u){ var a = autoType(u), cur = u.type || ''; return '<select data-cf="'+esc(path)+'"'+ADM()+'><option value=""'+(!cur ? ' selected' : '')+'>auto'+(a ? ' : '+esc((vtByCode(a) || {}).label || a) : ' : aucun')+'</option>'+vehTypes().map(function(t){ return '<option value="'+esc(t.code)+'"'+(cur === t.code ? ' selected' : '')+'>'+esc(t.label)+'</option>'; }).join('')+'<option value="_"'+(cur === '_' ? ' selected' : '')+'>non comparé</option></select>'; }
 /* Particularités de la grille + commentaires du transporteur, sous le tableau */
@@ -5725,27 +5803,29 @@ function anHeat(rows, C, first){
     var cells = r.vals.map(function(q, k){ if (!q) return '<td class="na">—</td>';
       var best = q.price === mn && P.length > 1, gap = (q.price / mn - 1) * 100; if (q.price === mn && wi < 0) wi = k;
       var cl = P.length < 2 ? 'h-solo' : best ? 'h-best' : gap <= 5 ? 'h-g1' : gap <= 15 ? 'h-g2' : gap <= 30 ? 'h-g3' : 'h-g4';
-      return '<td class="'+cl+'" title="'+esc(q.G.label+' · '+q.what)+'"><b>'+n2(q.price)+'</b><span>'+(P.length < 2 ? 'seule offre' : best ? '★ moins cher' : '+'+Math.round(gap)+' %')+'</span></td>'; }).join('');
+      return '<td class="'+cl+'" title="'+esc(q.G.label+' · '+q.what)+'"><b>'+n2(q.price)+(q.unk ? '*' : '')+'</b><span>'+(P.length < 2 ? 'seule offre' : best ? '★ moins cher' : '+'+Math.round(gap)+' %')+'</span></td>'; }).join('');
     return '<tr'+(P.length ? '' : ' class="an-none"')+'><th>'+r.label+'</th>'+cells+'<td class="an-w">'+(wi >= 0 ? '<b>'+esc(C[wi].name)+'</b><span>'+(P.length > 1 ? 'écart max '+n2(mx - mn)+' €' : 'seule offre')+'</span>' : '<span>aucune offre</span>')+'</td></tr>'; }).join('')+'</tbody></table></div>';
 }
 function vAnalyses(){
   var T = vehTypes(), D = dests(), A = ST.an = ST.an || {}, C = carriers().filter(function(c){ return c.active !== false; });
   if (!C.length || !T.length || !D.length) return '<div class="panel empty">Il faut des transporteurs actifs, des types de véhicules et des destinations.</div>';
   if (!vtByCode(A.type)) A.type = (vtByCode('P12') || T[0]).code; if (A.dest === undefined || !D[+A.dest]) A.dest = 0; A.tab = A.tab === 'dest' ? 'dest' : 'veh';
-  var h = '<div class="panel an"><div class="an-tabs"><button class="'+(A.tab === 'veh' ? 'on' : '')+'" data-antab="veh">Par type de véhicule</button><button class="'+(A.tab === 'dest' ? 'on' : '')+'" data-antab="dest">Par destination</button></div>';
+  var FX = A.flux === 'ab' ? 'ab' : 'aa';
+  var h = '<div class="panel an"><div class="an-tabs"><button class="'+(A.tab === 'veh' ? 'on' : '')+'" data-antab="veh">Par type de véhicule</button><button class="'+(A.tab === 'dest' ? 'on' : '')+'" data-antab="dest">Par destination</button></div>'+
+    '<div class="an-sel an-fx"><div class="an-row"><span class="an-cat">Flux</span><div class="an-chips">'+['aa','ab'].map(function(k){ return '<button class="an-chip'+(FX === k ? ' on' : '')+'" data-anflux="'+k+'" aria-pressed="'+(FX === k)+'">'+FLUX[k]+'<span>'+(k === 'aa' ? 'directe' : '1ère heure')+'</span></button>'; }).join('')+'</div></div></div>';
   if (A.tab === 'veh'){
     var t = vtByCode(A.type);
     var nOff = function(x){ return C.filter(function(c){ return (c.grids || []).some(function(G){ return G.active !== false && (gUnits(G).some(function(u){ return vType(u) === x.code; }) || (G.kind === 'lots' && !x.grue)); }); }).length; };
     h += '<div class="an-sel">'+['VL', 'PL'].map(function(cat){ var L = T.filter(function(x){ return x.cat === cat; }); return L.length ? '<div class="an-row"><span class="an-cat">'+cat+'</span><div class="an-chips">'+L.map(function(x){ var n = nOff(x); return '<button class="an-chip'+(x.code === A.type ? ' on' : '')+(n ? '' : ' none')+'" data-anset="type|'+esc(x.code)+'">'+esc(x.label)+'<span>'+n+'</span></button>'; }).join('')+'</div></div>' : ''; }).join('')+
       '<p class="an-t small">'+vtShort(t)+(vtVol(t) !== '' ? ' · '+String(vtVol(t)).replace('.', ',')+' m³' : '')+(+t.L ? ' · int. '+t.L+(t.W ? ' × '+t.W : '')+(t.H ? ' × '+t.H : '')+' mm' : '')+(t.grue ? ' · grue' : '')+(t.hayon ? ' · hayon' : '')+' · <span class="muted">chiffre = nombre de transporteurs proposant le type</span></p></div>';
-    h += '<div class="an-1">'+anHeat(D.map(function(d){ return { label:destLabel(d), vals:C.map(function(c){ return carTypePrice(c, t, d); }) }; }), C, 'Destination')+'</div>';
+    h += '<div class="an-1">'+anHeat(D.map(function(d){ return { label:destLabel(d), vals:C.map(function(c){ return carTypePrice(c, t, d, FX); }) }; }), C, 'Destination')+'</div>';
   } else {
     var dest = A.cp && A.ville ? { cp:A.cp, ville:A.ville } : D[+A.dest];
     h += '<div class="an-sel"><div class="an-row"><span class="an-cat">Destination</span><div class="an-chips">'+D.map(function(d, k){ return '<button class="an-chip'+(+A.dest === k && !(A.cp && A.ville) ? ' on' : '')+'" data-anset="dest|'+k+'">'+esc(d.ville || d.cp)+'<span>'+esc(String(d.cp).slice(0, 5))+'</span></button>'; }).join('')+'</div></div>'+
       '<div class="an-row"><span class="an-cat">Autre</span><span class="an-ad"><input data-an="cp" value="'+esc(A.cp || '')+'" placeholder="CP" style="width:70px"><input data-an="ville" value="'+esc(A.ville || '')+'" placeholder="Commune" style="width:160px"></span></label>'+(A.cp && A.ville ? '<span class="an-chip on">'+esc(A.cp+' '+A.ville)+'</span><button class="lnk small" data-anclr>Revenir au référentiel</button>' : '<span class="small muted">code postal puis commune</span>')+'</div></div>';
-    h += '<div class="an-1">'+anHeat(T.map(function(x){ return { label:esc(x.label)+'<span class="small muted"> · '+vtShort(x)+'</span>', vals:C.map(function(c){ return carTypePrice(c, x, dest); }) }; }), C, 'Type de véhicule')+'</div>';
+    h += '<div class="an-1">'+anHeat(T.map(function(x){ return { label:esc(x.label)+'<span class="small muted"> · '+vtShort(x)+'</span>', vals:C.map(function(c){ return carTypePrice(c, x, dest, FX); }) }; }), C, 'Type de véhicule')+'</div>';
   }
-  return h + '<p class="small muted an-l">Prix de base des grilles (€ HT), hors suppléments, heures et km au-delà des forfaits ; détail au survol d\'une case. Lot : colonne couvrant la charge utile et les mètres linéaires du type. Couleurs : vert = le moins cher de la ligne, puis écart croissant (jaune ≤ 5 %, orange ≤ 15 %, rose ≤ 30 %, rouge au-delà).</p></div>';
+  return h + '<p class="small muted an-l">Prix de base des grilles (€ HT), hors suppléments, heures et km au-delà des forfaits ; flux A → B = A → A + débord de la grille (* : débord non renseigné, prix A → A) ; détail au survol d\'une case. Lot : colonne couvrant la charge utile et les mètres linéaires du type. Couleurs : vert = le moins cher de la ligne, puis écart croissant (jaune ≤ 5 %, orange ≤ 15 %, rose ≤ 30 %, rouge au-delà).</p></div>';
 }
 /* ---- Fenêtre de visualisation d'un document ---- */
 function docName(k){ if (k.indexOf('sale:') === 0){ var sg = saleGrid(k.slice(5)); return (sg === SALE_DEF ? (sg.label || 'Grille transport OTIS 2023') : 'Grille de vente spécifique · '+agLabel(k.slice(5)))+' (grille appliquée)'; }
@@ -5864,7 +5944,7 @@ function gridEditor(c, i, G, j){
   else if (G.kind === 'course') h += F('Hayon €', 'surHayon')+F('Débâchable €', 'surDebache');
   else if (G.kind === 'lots') h += F('Tonnage min.', 'minT')+F('Ml min.', 'minML')+F('Palettes / ml', 'mlPerPal');
   else h += '<label class="gp"><span>Tarif</span><select data-cf="'+p+'mode"'+ADM()+'><option value="forfait"'+(G.mode !== 'cent' ? ' selected' : '')+'>forfait</option><option value="cent"'+(G.mode === 'cent' ? ' selected' : '')+'>€ / 100 kg</option></select></label>'+F('Kg / m³', 'ratio')+F('Minimum €', 'min')+'<label class="gp"><span>Hayon</span>'+cYN(p+'hayon', G.hayon)+'</label>'+F('Hayon €', 'surHayon')+F('Long. max', 'maxLen')+F('Pal. max', 'maxPal');
-  var gp = h + '</div>'; h = h0 + gridNorm(G) + '<details class="gorig" data-det="o:'+esc(G.id)+'"'+((ST.openDet || {})['o:'+G.id] ? ' open' : '')+'><summary>Grille d\'origine · conditions, saisie, corrections et rattachement des véhicules aux types</summary>' + gp;
+  var gp = h + '</div>'; h = h0 + gridNorm(G, p) + '<details class="gorig" data-det="o:'+esc(G.id)+'"'+((ST.openDet || {})['o:'+G.id] ? ' open' : '')+'><summary>Grille d\'origine · conditions, saisie, corrections et rattachement des véhicules aux types</summary>' + gp;
   if (tab) return h + (G.kind === 'course' ? courseEditor(G, p) : lotsEditor(G, p)) + '</details>' + gridParticul(c, i, G, p);
   if (veh) h += '<div class="pb"><div class="tw"><table class="grd-t"><thead><tr><th>Véhicule</th><th>Type normé</th><th class="n">Kg</th><th class="n">Pal.</th><th class="n">Long.</th><th class="n">m³</th><th>Hayon</th><th>Grue</th>'+(G.unit ? '<th class="n">€/km</th><th class="n">€/h</th>' : '')+Z.map(function(z){ return '<th class="n">'+esc(z.code)+' €</th>'; }).join('')+'<th></th></tr></thead><tbody>'+
     (G.vehicles || []).map(function(v, k){ var q = p+'vehicles.'+k+'.'; return '<tr><td>'+cIn(q+'label', v.label)+(v.dims ? '<span class="vdims">'+esc(v.dims)+'</span>' : '')+'</td><td>'+typeSel(q+'type', v)+'</td><td>'+cIn(q+'kg', v.kg, 'number', '70px')+'</td><td>'+cIn(q+'pal', v.pal, 'number', '50px')+'</td><td>'+cIn(q+'len', v.len, 'number', '70px')+'</td><td>'+cIn(q+'vol', v.vol, 'number', '50px')+'</td><td>'+cYN(q+'hayon', v.hayon)+'</td><td>'+cYN(q+'grue', v.grue)+'</td>'+(G.unit ? '<td>'+cIn(q+'kmRate', v.kmRate, 'number', '70px')+'</td><td>'+cIn(q+'hourRate', v.hourRate, 'number', '76px')+'</td>' : '')+
@@ -6134,7 +6214,9 @@ document.addEventListener('click', function(e){
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
-  if (d.trbuy){ var kq = d.trbuy.split('|'), cq = carriers().filter(function(x){ return x.id === kq[0]; })[0], gq = cq && (cq.grids || []).filter(function(x){ return x.id === kq[1]; })[0]; if (gq){ var qq = buyQuote(gq, trSave()); if (qq.ok){ ST.trBuyPick = { key:d.trbuy, carrier:cq.name, grid:gq.label, what:qq.what, price:qq.price }; toast('Achat retenu : '+cq.name+' · '+eur(qq.price)+' HT'); trCalc(); } } return; }
+  if (d.buyinfo !== undefined){ buyInfoOpen(d.buyinfo); return; }
+  if (d.buyinfoclose !== undefined && !d.trbuy){ buyInfoClose(); return; }
+  if (d.trbuy){ if (d.buyinfoclose !== undefined) buyInfoClose(); var kq = d.trbuy.split('|'), cq = carriers().filter(function(x){ return x.id === kq[0]; })[0], gq = cq && (cq.grids || []).filter(function(x){ return x.id === kq[1]; })[0]; if (gq){ var qq = buyQuote(gq, trSave()); if (qq.ok){ ST.trBuyPick = { key:d.trbuy, carrier:cq.name, grid:gq.label, what:qq.what, price:qq.price }; toast('Achat retenu : '+cq.name+' · '+eur(qq.price)+' HT'); trCalc(); } } return; }
   if (d.affview){ ST.affView = d.affview; render(); return; }
   if (d.asgt && isAdmin()){ var at = d.asgt.split('|'), cur3 = (ST.cfg.assign || {})[at[0]] || []; affSet(at[0], at[1], cur3.indexOf(at[1]) < 0); return; }
   if (d.asgall && isAdmin()){ ST.cfg.assign = ST.cfg.assign || {}; ST.cfg.assign[d.asgall] = allAgencies().map(function(a){ return a.code; }); affNames(); saveCfg('Affectation '+d.asgall+' : toutes les entités'); render(); return; }
@@ -6153,6 +6235,8 @@ document.addEventListener('click', function(e){
   if (d.gridchk){ var gk = d.gridchk.split('|'), gc = carriers()[+gk[0]].grids[+gk[1]]; gc.checks = []; saveCfg('Grille transporteur vérifiée : '+gc.label); render(); return; }
   var dmb = docMetaFromBtn(d); if (dmb !== undefined){ if (dmb) openDoc(dmb); else toast('Document introuvable'); return; }
   if (d.griddocdl){ var gd = d.griddocdl.split('|'), gg = carriers()[+gd[0]].grids[+gd[1]]; if (gg.doc) STORE.getFileBytes(gg.doc).then(function(b){ saveBlob(gg.doc.name, new Blob([b]), ''); }); return; }
+  if (d.gflux){ ST.gflux = d.gflux; render(); return; }
+  if (d.anflux){ ST.an = ST.an || {}; ST.an.flux = d.anflux; render(); return; }
   if (d.carsel !== undefined){ ST.carSel = /^(an|veh|dest|home|list)$/.test(d.carsel) ? d.carsel : +d.carsel; ST.carSub = null; ST.carDel = null; ST.gridDel = null; if (ST.carSel !== 'list') ST.carNew = false; render(); window.scrollTo(0, 0); return; }
   if (d.carsub !== undefined){ ST.carSub = d.carsub; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (d.anset){ var as = d.anset.split('|'); ST.an = ST.an || {}; ST.an[as[0]] = as[1]; if (as[0] === 'dest'){ ST.an.cp = ''; ST.an.ville = ''; } render(); return; }

@@ -103,3 +103,6 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Accueil de la section en 4 blocs : Analyses, Types de véhicules, Destinations, Transporteurs (+ dépôt de grilles).
 - Transporteurs : une carte par transporteur (statut, grilles, points à vérifier) et une carte « + Ajouter un transporteur ».
 - Fil d'Ariane avec retour (Gestion transporteurs › Transporteurs › CCE) et sélecteur de transporteur sur la fiche ; les rangées d'onglets du haut disparaissent.
+- Flux A → A (livraison directe) / A → B (livraison 1ère heure, « débord ») : par grille, supplément A → B en € HT ou « A → B non proposé » ; grille normée affichable en A → A ou A → B ; type de flux choisi dans les contraintes de la demande de transport ; filtre de flux dans les deux onglets d'Analyses. Débord non renseigné : prix A → A signalé « * à confirmer ».
+- Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
+- Facturer : sélecteur de période sur fond blanc.
