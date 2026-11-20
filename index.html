@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.3 · 20/11/2026 (mobile : menu hamburger, accueil compact) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.3 · 20/11/2026 (mobile : menu hamburger, accueil compact, menus déroulants dans Gestion transporteurs) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1411,6 +1411,18 @@ body{margin:0}
   .tile6 .tn{font-size:16.5px}
   .tile6 .ts{font-size:12.5px}
   .tile6 .tl{grid-column:2;padding-top:6px;margin-top:0}
+}
+
+/* ---- v6.3 : Gestion transporteurs sur mobile — menus déroulants à la place des onglets ---- */
+.car-msel{display:none}
+@media (max-width:900px){
+  .car-msel{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+  .car-msel select{flex:1;min-width:0;font:inherit;font-size:16px;font-weight:600;color:var(--ink);background:var(--surface);border:1.5px solid var(--ink);border-radius:4px;padding:10px 12px;min-height:46px}
+  .car-msel2{margin:0;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .car-msel2 select{border-width:1px;font-weight:500}
+  .car-tabs .car-tab{display:none}
+  .car-tabs{border-bottom:0;gap:8px}
+  .car-nav,.car-sub{display:none}
 }
 </style>
 </head>
@@ -5717,6 +5729,10 @@ function vCarriers(){
   if (!C.length && typeof sel === 'number') sel = -1;
   var h = '<section class="view car2">';
   if (D.length) h += '<div class="panel gi-box"><div class="ph"><h3>Grilles lues à valider · '+D.length+'</h3></div>'+D.map(gridDraftHtml).join('')+'</div>';
+  h += '<div class="car-msel"><label class="lbl" for="carmsel">Vue</label><select id="carmsel">'+
+    [['an','Analyses'],['veh','Types de véhicules'],['dest','Destinations']].map(function(o){ return '<option value="'+o[0]+'"'+(sel === o[0] ? ' selected' : '')+'>'+o[1]+'</option>'; }).join('')+
+    (C.length ? '<optgroup label="Transporteurs">'+C.map(function(x, k){ return '<option value="'+k+'"'+(k === sel ? ' selected' : '')+'>'+esc(x.name || 'Sans nom')+' · '+(x.grids || []).length+' grille'+((x.grids || []).length > 1 ? 's' : '')+(x.active === false ? ' (inactif)' : '')+'</option>'; }).join('')+'</optgroup>' : '')+
+    '<option value="new">+ Nouveau transporteur…</option></select></div>';
   h += '<div class="car-tabs"><button class="car-tab an'+(sel === 'an' ? ' on' : '')+'" data-carsel="an"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 14V8h3v6zM6.5 14V3h3v11zM11 14V6h3v8z" fill="currentColor"/></svg>Analyses</button><button class="car-tab ref'+(sel === 'veh' ? ' on' : '')+'" data-carsel="veh">Types de véhicules</button><button class="car-tab ref last'+(sel === 'dest' ? ' on' : '')+'" data-carsel="dest">Destinations</button>'+C.map(function(x, k){ return '<button class="car-tab'+(k === sel ? ' on' : '')+(x.active === false ? ' off' : '')+'" data-carsel="'+k+'">'+esc(x.name || 'Sans nom')+'<span>'+(x.grids || []).length+'</span></button>'; }).join('')+
     (ST.carNew ? '<span class="car-new"><input id="carnewname" placeholder="Nom du transporteur" autofocus><button class="btn sm pri" data-carnewok>Créer</button><button class="btn sm g" data-carnewno>×</button></span>' : '<button class="car-tab add" data-carnew>+ Transporteur</button>')+
     '<label class="gdrop mini"><input type="file" hidden multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.csv">Déposer des grilles (PDF, Word, Excel)</label></div>';
@@ -5728,7 +5744,9 @@ function vCarriers(){
   if (sub !== 'fiche' && sub !== 'com' && sub !== 'add' && !G.some(function(g){ return g.id === sub; })) sub = G.length ? G[0].id : 'add';
   var lv = sub === 'fiche' || sub === 'com' ? sub : 'grids', ICF = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><rect x="2.5" y="2" width="11" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 5.5h6M5 8h6M5 10.5h4" stroke="currentColor" stroke-width="1.4"/></svg>',
     ICG = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12v10H2zM2 6.5h12M2 10h12M6 3v10M10 3v10" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>', ICC = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12v8H7l-3 3v-3H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
-  h += '<div class="panel car-p"><div class="car-nav"><button class="'+(lv === 'fiche' ? 'on' : '')+'" data-carsub="fiche">'+ICF+'Fiche</button><button class="'+(lv === 'grids' ? 'on' : '')+'" data-carsub="'+esc(G.length ? (G.some(function(g){ return g.id === ST.carSub; }) ? ST.carSub : G[0].id) : 'add')+'">'+ICG+'Grilles tarifaires<span>'+G.length+'</span></button><button class="'+(lv === 'com' ? 'on' : '')+'" data-carsub="com">'+ICC+'Commentaires<span>'+(c.comments || []).length+'</span></button></div>';
+  h += '<div class="panel car-p"><div class="car-msel car-msel2"><label class="lbl" for="carsubsel">Section</label><select id="carsubsel"><option value="fiche"'+(lv === 'fiche' ? ' selected' : '')+'>Fiche</option><optgroup label="Grilles tarifaires ('+G.length+')">'+
+    G.map(function(g){ return '<option value="'+esc(g.id)+'"'+(lv === 'grids' && sub === g.id ? ' selected' : '')+'>'+esc(g.label || 'Grille')+((g.checks || []).length ? ' · '+g.checks.length+' à vérifier' : '')+(g.active === false ? ' (inactive)' : '')+'</option>'; }).join('')+
+    '<option value="add"'+(lv === 'grids' && sub === 'add' ? ' selected' : '')+'>+ Ajouter une grille</option></optgroup><option value="com"'+(lv === 'com' ? ' selected' : '')+'>Commentaires ('+(c.comments || []).length+')</option></select></div><div class="car-nav"><button class="'+(lv === 'fiche' ? 'on' : '')+'" data-carsub="fiche">'+ICF+'Fiche</button><button class="'+(lv === 'grids' ? 'on' : '')+'" data-carsub="'+esc(G.length ? (G.some(function(g){ return g.id === ST.carSub; }) ? ST.carSub : G[0].id) : 'add')+'">'+ICG+'Grilles tarifaires<span>'+G.length+'</span></button><button class="'+(lv === 'com' ? 'on' : '')+'" data-carsub="com">'+ICC+'Commentaires<span>'+(c.comments || []).length+'</span></button></div>';
   if (lv === 'grids') h += '<div class="car-sub">'+G.map(function(g){ return '<button class="'+(sub === g.id ? 'on' : '')+(g.active === false ? ' off' : '')+'" data-carsub="'+esc(g.id)+'">'+esc(g.label || 'Grille')+((g.checks || []).length ? ' <i class="dot" title="points à vérifier"></i>' : '')+'</button>'; }).join('')+'<button class="'+(sub === 'add' ? 'on' : '')+' add" data-carsub="add">+ Ajouter une grille</button></div>';
   if (sub === 'fiche') h += carFiche(c, i);
   else if (sub === 'com') h += carComments(c, i);
@@ -6261,6 +6279,8 @@ document.addEventListener('click', function(e){
   else if (a === 'mypw') changeMyPassword();
 });
 document.addEventListener('change', function(e){
+  if (e.target && e.target.id === 'carmsel'){ var cv = e.target.value; if (cv === 'new'){ if (!isAdmin()) return; ST.carNew = true; render(); var cn0 = $('carnewname'); if (cn0) cn0.focus(); return; } ST.carSel = /^(an|veh|dest)$/.test(cv) ? cv : +cv; ST.carSub = null; ST.carDel = null; ST.gridDel = null; ST.carNew = false; render(); return; }
+  if (e.target && e.target.id === 'carsubsel'){ ST.carSub = e.target.value; ST.carDel = null; ST.gridDel = null; render(); return; }
   if (e.target && e.target.id === 'railent'){ var rc = e.target.value; if (rc){ if (ST.module === 'mod'){ ST.ent = rc; render(); } else enterEnt(rc, 'trp'); } return; }
   var t = e.target, d = t.dataset;
   if (d.asgadd && isAdmin() && t.value){ affSet(t.value, d.asgadd, true); return; }
