@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.8 · 21/11/2026 (menu : Info OTIS dans la section Logistique) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.9 · 21/11/2026 (rubrique Transport : Devis transport + Chargement ; import du bon de préparation Odoo) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1294,6 +1294,8 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .rsep{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding-top:8px;display:flex;flex-direction:column;gap:2px}
 .rail .ri.who{font-size:12.5px;opacity:.7}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
+.rail .rgrp.nb{border-top:0;margin-top:0}
+.chopt{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}.chopt .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.chopt .fld input{min-width:220px}.chopt .ck{display:flex;align-items:center;gap:6px;font-size:14px;min-height:36px}
 .rail .rgh{font-family:var(--f-label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:4px 12px 4px}
 .top .brand,.top #who,.top .gearwrap,.top #qzbtn,.top #pilbtn,.top #infobtn,.top #dqbtn,.top #entgear,.top #entbook{display:none!important}
 .top .modname{font-family:var(--f-label);font-size:16px;font-weight:600;letter-spacing:.02em;opacity:1}
@@ -2729,7 +2731,7 @@ function renderTop(){
   var pb2 = $('pilbtn'); if (pb2){ pb2.hidden = !isAdmin(); pb2.classList.toggle('on', mod === 'pil'); }
   var gb = $('gearbtn'); if (gb){ gb.hidden = !isAdmin(); gb.classList.toggle('on', mod === 'cfg' || !!ST.gearOpen); }
   var gp = $('gearpop'); if (gp) gp.innerHTML = gearMenu();
-  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Transport', fac:'Facturer', pil:'Piloter', qual:'Qualité des données', sav:'Savoir des experts', car:'Gestion transporteurs', cfg:'Paramétrage', acc:'Mon compte' };
+  var rk = railKey(), RN = { home:'Accueil', info:'Info OTIS', trp:'Devis transport', chg:'Chargement', fac:'Facturer', pil:'Piloter', qual:'Qualité des données', sav:'Savoir des experts', car:'Gestion transporteurs', cfg:'Paramétrage', acc:'Mon compte' };
   $('modname').innerHTML = esc(RN[rk] || '') + (rk === 'fac' && ST.ent && ST.cfg.agencies[ST.ent] ? ' <span class="bc">› '+esc(ST.cfg.agencies[ST.ent].label || ST.ent)+(ST.month ? ' › '+esc(monthLabel(ST.month)) : '')+'</span>' : '');
   [ 'qzbtn', 'pilbtn', 'infobtn', 'dqbtn', 'gearbtn', 'entgear', 'entbook' ].forEach(function(id){ var b = $(id); if (b) b.hidden = true; });
   renderRail();
@@ -2748,6 +2750,7 @@ function render(){
   else if (ST.module === 'car') h = vCarriers();
   else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : vAdmin();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vTrWiz();
+  else if (ST.module === 'chgm') h = vChg();
   else if (ST.module === 'mod') h = vModel();
   else if (ST.module === 'info') h = vInfo();
   else if (ST.ltab === 'con') h = vKnow();
@@ -2763,7 +2766,7 @@ function render(){
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && pilTab() === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if ((ST.module === 'trp' && ST.ttab !== 'hist') || ST.module === 'mod'){ trGeo(false); trCalc(); }
-  if (ST.module === 'trp' && ST.ttab !== 'hist' && trStep() === 'chg') tr3Show();
+  if ((ST.module === 'trp' && ST.ttab !== 'hist' && trStep() === 'chg') || (ST.module === 'chgm' && chStep() === 'chg')) tr3Show();
   if (ST.module === 'car') bindGridDrop();
   if (ST.docView) docvFill();
 }
@@ -4852,7 +4855,7 @@ function zoneOf(cp, half78, G){
 }
 /* Formulaire commun aux onglets Achat et Vente : la saisie est conservée d'un onglet à l'autre */
 var TR_DEF = { ag:'', cm:'', cmd:'', date:new Date().toISOString().slice(0,10), cp:'92400', ville:'Courbevoie', z78:'', pal:'3', kg:'850', vol:'2.5', len:'2500', h:'3.5', km:'60', hayon:true, grue:false, man:false, obs:'' };
-function trIn(){ if (!ST.trIn){ ST.trIn = JSON.parse(JSON.stringify(TR_DEF)); } if (!ST.trIn.ag){ var A = agencies(); ST.trIn.ag = ST.ent || (A[0] ? A[0].code : ''); } if (ST.ent) ST.trIn.ag = ST.ent; return ST.trIn; }
+function trIn(){ if (ST.module === 'chgm'){ if (!ST.chIn) ST.chIn = { ref:'', hayon:false, grue:false, items:[], vt:'' }; return ST.chIn; } if (!ST.trIn){ ST.trIn = JSON.parse(JSON.stringify(TR_DEF)); } if (!ST.trIn.ag){ var A = agencies(); ST.trIn.ag = ST.ent || (A[0] ? A[0].code : ''); } if (ST.ent) ST.trIn.ag = ST.ent; return ST.trIn; }
 function trSave(){ var I = trIn(); ['ag','cm','cmd','date','cp','ville','z78','pal','kg','vol','len','h','km','obs'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.value; }); ['hayon','grue','man'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.checked; }); var fx = $('t_fluxab'); if (fx) I.flux = fx.checked ? 'ab' : 'aa'; return I; }
 function trForm(mode){
   var I = trIn(), ags = agencies(), cmL = ((ST.cfg.agencies[I.ag]||{}).cmList||[]);
@@ -5108,7 +5111,7 @@ function trCands(){
 function trCandCost(cd){ var B = trBuy(cd); return B && B.ok.length ? B.ok[0].price : null; }
 function trRanked(){ var C = trCands(); C.L.forEach(function(x){ x.cost = trCandCost(x); });
   return C.L.slice().sort(function(a, b){ return ((a.cost === null) - (b.cost === null)) || ((a.cost || 0) - (b.cost || 0)) || a.n - b.n || a.size - b.size; }); }
-function trCand(){ var C = trCands(), I = trIn(), x = C.L.filter(function(c){ return c.t.code === I.vt; })[0]; if (x) return x; if (!C.L.length) return null;
+function trCand(){ var C = trCands(), I = trIn(), x = C.L.filter(function(c){ return c.t.code === I.vt; })[0]; if (x) return x; if (!C.L.length) return null; if (ST.module === 'chgm') return C.L[0];
   var key = JSON.stringify([I.cp, I.z78, I.flux, I.h, I.km, I.man]); if (!C.best || C.best.k !== key) C.best = { k:key, cd:trRanked()[0] }; return C.best.cd; }
 /* entrée du moteur de prix pour un camion : charge réelle du camion */
 function trTruckIn(cd, k){ var I = clone(trIn()), s = cd.S[k]; I.pal = String(s.pal); I.kg = String(Math.round(s.kg)); I.vol = String(Math.round(s.m3 * 100) / 100); I.len = String(Math.round(s.len)); I.items = null; return I; }
@@ -5145,18 +5148,18 @@ function vTrWiz(){ var V = ST.trDone, s = trStep();
   h += s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn();
   return h + trNav() + '</section>'; }
 function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<td><input class="tri" data-tri="'+i+'|'+k+'" value="'+esc(v === undefined || v === null ? '' : v)+'"'+(t === 'n' ? ' inputmode="decimal"' : '')+' style="width:'+w+'" aria-label="'+k+'"></td>'; };
-  var h = '<div class="panel"><div class="ph"><h2>Colis à charger</h2><span class="muted small">Dimensions en mm, poids en kg par colis</span><div class="sp"><button class="btn sm" data-trpal>+ Palette Europe</button><button class="btn sm" data-tradd>+ Ligne</button><label class="btn sm">Importer (.xlsx)<input type="file" id="trimp" hidden accept=".xlsx,.xls,.csv"></label><button class="btn sm g" data-trtpl>Modèle d\'import</button></div></div>';
-  h += '<div class="tw"><table class="trc"><thead><tr><th>Colis</th><th class="n">Long.</th><th class="n">Larg.</th><th class="n">Haut.</th><th class="n">Poids</th><th class="n">Qté</th><th class="c">Gerbable</th><th class="c">Rotation</th><th></th></tr></thead><tbody>'+
+  var h = '<div class="panel"><div class="ph"><h2>Colis à charger</h2><span class="muted small">Dimensions en mm, poids en kg par colis</span><div class="sp"><button class="btn sm" data-trpal>+ Palette Europe</button><button class="btn sm" data-tradd>+ Ligne</button><label class="btn sm">Bon de préparation (.pdf)<input type="file" id="trbp" hidden accept=".pdf,application/pdf"></label><label class="btn sm">Importer (.xlsx)<input type="file" id="trimp" hidden accept=".xlsx,.xls,.csv"></label><button class="btn sm g" data-trtpl>Modèle d\'import</button>'+(IT.length ? '<button class="btn sm g" data-trclear>Vider</button>' : '')+'</div></div>'+(TRW.busy ? '<div class="pb note">Lecture du bon de préparation…</div>' : '');
+  h += '<div class="tw"><table class="trc"><thead><tr><th>Colis</th><th class="n">Long.</th><th class="n">Larg.</th><th class="n">Haut.</th><th class="n">Poids</th><th class="n">Qté</th><th class="c">'+(IT.length ? '<button class="lnk" data-trall="stack" title="Tout cocher / tout décocher">Gerbable</button>' : 'Gerbable')+'</th><th class="c">'+(IT.length ? '<button class="lnk" data-trall="rot" title="Tout cocher / tout décocher">Rotation</button>' : 'Rotation')+'</th><th></th></tr></thead><tbody>'+
     (IT.length ? IT.map(function(it, i){ return '<tr>'+cell(i, 'name', it.name, '100%;min-width:130px')+cell(i, 'L', it.L, '72px', 'n')+cell(i, 'W', it.W, '72px', 'n')+cell(i, 'H', it.H, '72px', 'n')+cell(i, 'kg', it.kg, '72px', 'n')+cell(i, 'qty', it.qty, '52px', 'n')+
       '<td class="c"><input type="checkbox" data-tri="'+i+'|stack"'+(it.stack ? ' checked' : '')+' aria-label="Gerbable"></td><td class="c"><input type="checkbox" data-tri="'+i+'|rot"'+(it.rot !== false ? ' checked' : '')+' aria-label="Rotation autorisée"></td><td><button class="btn sm g" data-trcdel="'+i+'" aria-label="Supprimer la ligne">✕</button></td></tr>'; }).join('')
-      : '<tr><td colspan="9" class="empty">Aucun colis : ajouter une palette, une ligne, ou importer le fichier Excel (modèle ToolBox : colis, longueur, largeur, hauteur, poids, quantité, gerbable, rotation).</td></tr>')+'</tbody></table></div>';
+      : '<tr><td colspan="9" class="empty">Aucun colis : importer le bon de préparation Odoo (PDF), ajouter une palette, une ligne, ou importer le fichier Excel (modèle ToolBox : colis, longueur, largeur, hauteur, poids, quantité, gerbable, rotation).</td></tr>')+'</tbody></table></div>';
   return h + '<div class="pb" id="trtot">'+trTotHtml()+'</div></div>'; }
 function trTotHtml(){ var T = trTot(); return '<div class="trk"><span><b>'+T.n+'</b> colis</span><span><b>'+fr(T.kg, 0)+'</b> kg</span><span><b>'+fr(T.m3, 2)+'</b> m³</span><span>plus grande longueur <b>'+fr(T.len, 0)+'</b> mm</span>'+(T.bad.length ? '<span class="neg">Sans dimensions : '+esc(T.bad.join(', '))+'</span>' : '')+'</div>'; }
-function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand();
+function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand(), ch = ST.module === 'chgm';
   if (!cd) return '<div class="panel pb note"><b>Aucun camion du référentiel ne prend ces colis</b>'+(I.hayon ? ' avec hayon' : '')+(I.grue ? ' avec grue' : '')+'. Vérifier les dimensions et les poids, ou compléter les types de véhicules (Gestion transporteurs › Types de véhicules).</div>';
-  var h = '<div class="trw-2"><div class="panel"><div class="ph"><h2>Camions possibles</h2><span class="muted small">'+C.n+' colis · '+(I.hayon ? 'hayon · ' : '')+(I.grue ? 'grue · ' : 'hors porteurs grue · ')+'classés par coût d\'achat estimé</span></div><div class="tw"><table class="trv"><thead><tr><th></th><th>Véhicule</th><th class="n">Nb</th><th class="n">Volume</th><th class="n">Charge</th><th class="n">Achat estimé</th></tr></thead><tbody>'+
-    trRanked().map(function(x){ var on = x === cd, kp = Math.max.apply(null, x.S.map(function(s){ return s.kp; })), ld = Math.max.apply(null, x.S.map(function(s){ return s.ldm; }));
-      return '<tr class="'+(on ? 'open' : '')+'"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td><td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
+  var h = '<div class="trw-2"><div class="panel"><div class="ph"><h2>Camions possibles</h2><span class="muted small">'+C.n+' colis · '+(I.hayon ? 'hayon · ' : '')+(I.grue ? 'grue · ' : 'hors porteurs grue · ')+(ch ? 'classés par nombre de camions puis taille' : 'classés par coût d\'achat estimé')+'</span></div><div class="tw"><table class="trv"><thead><tr><th></th><th>Véhicule</th><th class="n">Nb</th><th class="n">Volume</th><th class="n">Charge</th>'+(ch ? '' : '<th class="n">Achat estimé</th>')+'</tr></thead><tbody>'+
+    (ch ? C.L : trRanked()).map(function(x){ var on = x === cd, kp = Math.max.apply(null, x.S.map(function(s){ return s.kp; })), ld = Math.max.apply(null, x.S.map(function(s){ return s.ldm; }));
+      return '<tr class="'+(on ? 'open' : '')+'"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td>'+(ch ? '' : '<td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td>')+'</tr>'; }).join('')+'</tbody></table></div></div>';
   var k = Math.min(TRW.k, cd.n - 1), s = cd.S[k];
   h += '<div class="panel"><div class="ph"><h2>Plan de chargement · '+esc(trWhat(cd))+'</h2>'+(cd.n > 1 ? '<span class="seg2">'+cd.S.map(function(_, i){ return '<button class="'+(i === k ? 'on' : '')+'" data-trk="'+i+'">Camion '+(i + 1)+'</button>'; }).join('')+'</span>' : '')+'</div>'+
     '<div class="pb"><div class="trk"><span><b>'+s.n+'</b> colis</span><span><b>'+fr(s.kg, 0)+'</b> kg ('+Math.round(s.kp * 100)+' % de la CU)</span><span><b>'+fr(s.m3, 2)+'</b> m³ ('+Math.round(s.vp * 100)+' %)</span><span>longueur utilisée <b>'+fr(s.ldm / 1000, 2)+'</b> m</span><span>≈ <b>'+s.pal+'</b> pal. au sol</span></div>'+
@@ -5264,16 +5267,97 @@ function trTemplate(){ var wb = XLSX.utils.book_new(), C = XLSX.utils.aoa_to_she
   C['!cols'] = [{ wch:28 }, { wch:14 }, { wch:14 }, { wch:14 }, { wch:12 }, { wch:10 }, { wch:10 }, { wch:10 }]; XLSX.utils.book_append_sheet(wb, C, 'Colis');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['MODÈLE D\'IMPORT — COLIS (même modèle que ToolBox · Chargement)'], [], ['Une ligne par type de colis. Dimensions en mm, poids en kg par colis.'], ['Gerbable : oui si on peut poser un colis dessus. Rotation : oui si le colis peut être tourné à plat.']]), 'Mode d\'emploi');
   saveXlsx(wb, 'Modele colis transport.xlsx'); }
+/* ---- Bon de préparation Odoo (PDF) → colis + en-tête ---- */
+var PDFJS_V = '4.10.38', PDFJS = null;
+function pdfjsLib(){ if (PDFJS) return Promise.resolve(PDFJS); var u = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@'+PDFJS_V+'/build/';
+  return import(u+'pdf.min.mjs').then(function(m){ m.GlobalWorkerOptions.workerSrc = u+'pdf.worker.min.mjs'; PDFJS = m; return m; }); }
+function bpItems(buf){ return pdfjsLib().then(function(P){ return P.getDocument({ data:new Uint8Array(buf) }).promise; }).then(function(doc){ var ps = [];
+    for (var p = 1; p <= doc.numPages; p++) ps.push(doc.getPage(p).then(function(pg){ return pg.getTextContent().then(function(tc){ return tc.items.filter(function(i){ return i.str && i.str.trim(); }).map(function(i){ return { s:i.str.replace(/[  ]/g, ' ').trim(), x:i.transform[4], y:i.transform[5] }; }); }); }));
+    return Promise.all(ps); }); }
+function bpNum(s){ var x = parseFloat(String(s).replace(/\s/g, '').replace(',', '.')); return isNaN(x) ? null : x; }
+/* lecture par colonnes : une ligne par colis (n° à 8 chiffres), dimensions = les 3 valeurs avant le volume, poids = valeur après */
+function bpParse(pages){ var H = {}, rows = [], all = pages[0] || [];
+  var near = function(lab){ var a = all.filter(function(i){ return i.s.indexOf(lab) === 0; })[0]; if (!a) return null;
+    var tail = a.s.slice(lab.length).trim(); if (tail) return tail;
+    var b = all.filter(function(i){ return Math.abs(i.y - a.y) < 3 && i.x > a.x; }).sort(function(p, q){ return p.x - q.x; })[0]; return b ? b.s : null; };
+  H.bp = near('BON DE PREPARATION:'); H.cmd = near('N° de commande:') || H.bp; H.date = near('Date:'); H.owner = near('Propriétaire du stock:'); H.code = near('Code contremaitre:'); H.nb = bpNum(near('Nombre de colis du BL:'));
+  var c0 = all.filter(function(i){ return i.s.indexOf('N° de commande:') === 0; })[0];
+  if (c0){ var r2 = all.filter(function(i){ return i.x < c0.x + 5 && c0.y - i.y > 5 && c0.y - i.y < 20; })[0]; if (r2 && /\w/.test(r2.s) && !/:/.test(r2.s)) H.refs = r2.s; }
+  var t0 = all.filter(function(i){ return i.s.indexOf('BON DE PREPARATION') === 0; })[0], o0 = all.filter(function(i){ return i.s.indexOf('Propriétaire du stock') === 0; })[0];
+  if (t0 && o0){ var A = all.filter(function(i){ return i.y < t0.y - 15 && i.y > o0.y + 10 && i.x > t0.x - 80; }).sort(function(p, q){ return q.y - p.y || p.x - q.x; }).map(function(i){ return i.s; });
+    H.contact = (A.filter(function(s){ return /^contact/i.test(s); })[0] || '').replace(/^contact\s*:\s*/i, ''); H.addr = A.filter(function(s){ return !/^contact/i.test(s); }); }
+  pages.forEach(function(I){ var an = I.filter(function(i){ return /^\d{8}$/.test(i.s) && i.x < 80; }).sort(function(p, q){ return q.y - p.y; });
+    an.forEach(function(a, j){ var yN = j + 1 < an.length ? an[j + 1].y : -1e9, R = I.filter(function(i){ return Math.abs(i.y - a.y) < 3; }).sort(function(p, q){ return p.x - q.x; });
+      var vi = -1; R.forEach(function(i, k){ if (/^\d+,\d+$/.test(i.s)) vi = k; }); if (vi < 3) return;
+      var D = R.slice(vi - 3, vi), L = bpNum(D[0].s), W = bpNum(D[1].s), Hh = bpNum(D[2].s), kg = vi + 1 < R.length ? bpNum(R[vi + 1].s) : null;
+      if (!(L > 0 && W > 0 && Hh > 0)) return;
+      var nx0 = (R[2] || {}).x, nx1 = D[0].x - 2, N = I.filter(function(i){ return nx0 !== undefined && i.x >= nx0 - 2 && i.x < nx1 && i.y <= a.y + 3 && i.y > yN + 3 && i.y > a.y - 40; }).sort(function(p, q){ return q.y - p.y || p.x - q.x; });
+      var name = N.map(function(i){ return i.s; }).join(' ').replace(/\(\s*\d[\d\s*×x.,]*\)?/g, '').replace(/\s+/g, ' ').trim();
+      rows.push({ no:a.s, name:name, L:Math.round(L), W:Math.round(W), H:Math.round(Hh), kg:kg === null ? '' : kg }); }); });
+  return { H:H, rows:rows }; }
+/* lignes identiques regroupées en quantité */
+function bpMerge(rows, src){ var by = {}, out = [];
+  rows.forEach(function(r){ var k = [r.name, r.L, r.W, r.H, r.kg].join('|'); if (by[k]){ by[k].qty++; return; } by[k] = { name:r.name, L:r.L, W:r.W, H:r.H, kg:r.kg, qty:1, stack:false, rot:true, src:src }; out.push(by[k]); });
+  return out; }
+function bpCity(H){ var last = (H.addr || []).slice(-1)[0] || '', m5 = last.match(/\b(\d{5})\b/), m2 = last.match(/\b(\d{2}|2A|2B)\s*$/i), ville = last.replace(/\b\d{5}\b/, '').replace(/\b(\d{2}|2A|2B)\s*$/i, '').replace(/[,;]/g, ' ').trim();
+  var tc = ville.toLowerCase().replace(/(^|[\s-])([a-zà-ÿ])/g, function(_, a, b){ return a + b.toUpperCase(); });
+  if (m5) return { cp:m5[1], ville:tc };
+  var dep = m2 ? m2[1].toUpperCase() : '', cp = '';
+  if (dep && ville) Object.keys(CPGEO).some(function(k){ if (k.indexOf(dep) !== 0) return false; var L = CPGEO[k]; if (Array.isArray(L) && L.some(function(c){ return GRP.norm(c[0]) === GRP.norm(ville); })){ cp = k; return true; } return false; });
+  return { cp:cp, ville:tc, dep:dep }; }
+function bpCpOnline(G){ if (G.cp || !G.dep || !G.ville || typeof fetch !== 'function') return Promise.resolve(G);
+  return fetch('https://geo.api.gouv.fr/communes?nom='+encodeURIComponent(G.ville)+'&codeDepartement='+G.dep+'&fields=nom,codesPostaux&limit=5').then(function(r){ return r.json(); }).then(function(L){
+    var c = (L || []).filter(function(x){ return GRP.norm(x.nom) === GRP.norm(G.ville); })[0] || (L || [])[0]; if (c && c.codesPostaux && c.codesPostaux.length){ G.cp = c.codesPostaux[0]; G.ville = c.nom; } return G; }, function(){ return G; }); }
+function trBpImport(buf, fname){ TRW.busy = true; render();
+  bpItems(buf).then(function(pages){ var R = bpParse(pages), H = R.H, ref = H.bp || H.cmd || fname;
+    if (!R.rows.length) throw new Error('aucune ligne de colis reconnue (format attendu : bon de préparation Odoo LEGAA)');
+    var IT = trItems(); if (IT.some(function(it){ return it.src === ref; })){ TRW.busy = false; render(); toast('Bon '+ref+' déjà importé'); return; }
+    bpMerge(R.rows, ref).forEach(function(x){ IT.push(x); }); TRW.cache = null;
+    var I = trIn(), msg = R.rows.length+' colis importés du bon '+ref+(H.nb && H.nb !== R.rows.length ? ' (le bon en annonce '+H.nb+' : à vérifier)' : '');
+    if (ST.module === 'chgm'){ if (!I.ref) I.ref = ref; I.bps = (I.bps || []).concat([{ H:H, ref:ref }]); TRW.busy = false; render(); toast(msg); return; }
+    return trBpApply(I, H, ref).then(function(m2){ TRW.busy = false; render(); toast(msg + m2); }); })
+  .catch(function(e){ TRW.busy = false; render(); toast('Lecture du bon impossible : '+e.message); }); }
+/* en-tête du bon → demande de transport (sans écraser ce qui est déjà saisi) */
+function trBpApply(I, H, ref){ var msg = '', name = H.owner ? H.owner.split(',').slice(1).join(',').trim() : '';
+    if (!I.cm && (name || H.code)) I.cm = name + (H.code ? (name ? ' · ' : '')+H.code : '');
+    if (!I.cmd) I.cmd = ref;
+    var ow = GRP.norm(H.owner || ''), ag = trpEnts().filter(function(a){ var l = GRP.norm(a.label || ''); return (l && ow.indexOf(l) >= 0) || ow.indexOf(GRP.norm('ag '+a.code)) >= 0; })[0];
+    if (ag && ag.code !== ST.ent){ ST.ent = ag.code; I.ag = ag.code; msg += ' · entité '+(ag.label || ag.code); }
+    var obs = ['Bon de préparation '+ref+(H.refs ? ' ('+H.refs+')' : ''), (H.addr || []).slice(0, -1).join(', '), H.contact ? 'contact '+H.contact : ''].filter(Boolean).join(' · ');
+    if (obs && (I.obs || '').indexOf(ref) < 0) I.obs = (I.obs ? I.obs+'\n' : '') + obs;
+    return bpCpOnline(bpCity(H)).then(function(G){ if (G.cp){ I.cp = G.cp; I.ville = G.ville; I.kmMan = false; I.hMan = false; msg += ' · livraison '+G.cp+' '+G.ville; } else if (G.ville) msg += ' · commune '+G.ville+' : code postal à saisir';
+      return msg; }); }
+/* ---- Chargement seul (sans devis) ---- */
+var CH_STEPS = [['col','Colis'],['chg','Plan de chargement']];
+function chStep(){ return ST.chStep === 'chg' && trTot().n ? 'chg' : 'col'; }
+function vChg(){ var I = trIn(), s = chStep(), i0 = s === 'chg' ? 1 : 0;
+  var h = '<section class="view trw">'+(TRW.busy ? '<div class="note">Traitement en cours…</div>' : '')+
+    '<div class="panel"><div class="pb chopt"><label class="fld"><span>Référence</span><input id="c_ref" value="'+esc(I.ref || '')+'" placeholder="bon de préparation, chantier…"></label>'+
+    '<label class="ck"><input type="checkbox" id="c_hayon"'+(I.hayon ? ' checked' : '')+'> Avec hayon</label><label class="ck"><input type="checkbox" id="c_grue"'+(I.grue ? ' checked' : '')+'> Avec grue</label>'+
+    '<span class="sp"></span><button class="btn sm g" data-chnew>Nouveau chargement</button></div></div>'+
+    '<nav class="trw-st" aria-label="Étapes du chargement">'+CH_STEPS.map(function(x, i){ var dis = x[0] === 'chg' && !trTot().n;
+      return (i ? '<i class="stc'+(i <= i0 ? ' done' : '')+'" aria-hidden="true"></i>' : '')+'<button class="trw-b'+(i < i0 ? ' done' : '')+'" data-chstep="'+x[0]+'" aria-current="'+(s === x[0] ? 'step' : 'false')+'"'+(dis ? ' disabled' : '')+'><span class="stl">'+(i < i0 ? '✓' : i + 1)+'</span><span class="stx">'+x[1]+'</span></button>'; }).join('')+'</nav>';
+  h += s === 'col' ? vTrCol() : vTrChg();
+  var why = s === 'col' && !trTot().n ? 'Ajouter au moins un colis avec ses trois dimensions.' : '';
+  h += '<div class="nextbar">'+(s === 'chg' ? '<button class="btn" data-chstep="col">← Colis</button>' : '')+'<span class="why">'+esc(why)+'</span>'+
+    (s === 'col' ? '<button class="btn pri" data-chstep="chg"'+(why ? ' disabled' : '')+'>Étape suivante : Plan de chargement →</button>'
+      : (trCand() ? '<button class="btn" data-trpdf>PDF du plan de chargement</button>' : '')+(trpEnts().length && role() !== 'lecture' ? '<button class="btn pri" data-ch2dev>Faire un devis avec ces colis →</button>' : ''))+'</div>';
+  return h + '</section>'; }
+function chToDevis(){ var C = clone(ST.chIn || {}); railGo('trp'); if (ST.module !== 'trp') return; ST.ttab = 'devis'; ST.trIn = null;
+  var I = trIn(); I.items = (C.items || []).map(clone); I.hayon = !!C.hayon; I.grue = !!C.grue; I.vt = C.vt || ''; if (C.ref && !I.cmd) I.cmd = C.ref;
+  ST.trDone = null; ST.trPick = null; TRW.cache = null; ST.trStep = 'dem';
+  var p = Promise.resolve(''); (C.bps || []).forEach(function(b){ p = p.then(function(m){ return trBpApply(I, b.H, b.ref).then(function(m2){ return m + m2; }); }); });
+  p.then(function(m){ render(); window.scrollTo(0, 0); toast('Colis repris dans le devis'+m+' : compléter la demande'); }); }
 /* ---- PDF de synthèse (à joindre au PO Odoo) ---- */
-function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); return; } var D = trSynData(), I = D.I, cd = D.cd; if (!cd){ toast('Plan de chargement incomplet'); return; }
+function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); return; } var CH = ST.module === 'chgm', D = CH ? { I:trIn(), cd:trCand(), P:null } : trSynData(), I = D.I, cd = D.cd; if (!cd){ toast('Plan de chargement incomplet'); return; }
   TRW.busy = true; render(); var shots = [], p = Promise.resolve();
   cd.R.C.forEach(function(_, k){ p = p.then(function(){ return tr3Snap(cd, k, 'iso'); }).then(function(u){ shots[k] = u; }); });
   p.then(function(){ var doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' }), M = 14, y = 16, T = trTot(), ink = [20, 22, 24], mut = [100, 107, 114];
     var _tx = doc.text.bind(doc), _at = doc.autoTable.bind(doc), _cl = function(r){ return r.map(function(c){ return pdfTxt(c); }); };
     doc.text = function(t){ var A = [].slice.call(arguments); A[0] = Array.isArray(t) ? t.map(pdfTxt) : pdfTxt(t); return _tx.apply(null, A); };
     doc.autoTable = function(o){ if (o.head) o.head = o.head.map(_cl); if (o.body) o.body = o.body.map(_cl); return _at(o); };
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor.apply(doc, ink); doc.text('Transport · synthèse', M, y); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text('LEGAA · Pilotage Logistique · édité le '+new Date().toLocaleDateString('fr-FR')+' par '+((ST.user || {}).name || ''), M, y + 5); y += 12;
-    var rows = [['Client', agLabel(I.ag)+(I.cm ? ' · '+I.cm : '')+(I.cmd ? ' · '+I.cmd : '')], ['Livraison', (I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : '', I.man ? 'manutentionnaire' : ''].filter(Boolean).join(', ') || '—'],
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor.apply(doc, ink); doc.text(CH ? 'Plan de chargement'+(I.ref ? ' · '+I.ref : '') : 'Transport · synthèse', M, y); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text('LEGAA · Pilotage Logistique · édité le '+new Date().toLocaleDateString('fr-FR')+' par '+((ST.user || {}).name || ''), M, y + 5); y += 12;
+    var rows = CH ? [['Référence', I.ref || '—'], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—'], ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)]] : [['Client', agLabel(I.ag)+(I.cm ? ' · '+I.cm : '')+(I.cmd ? ' · '+I.cmd : '')], ['Livraison', (I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : '', I.man ? 'manutentionnaire' : ''].filter(Boolean).join(', ') || '—'],
       ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)], ['Transporteur', D.P ? D.P.x.carrier+(D.P.picked ? ' (retenu)' : '') : '—'], ['Achat HT', D.buy !== null ? eur(D.buy) : '—'], ['Vente HT', D.sell !== null ? eur(D.sell) : 'sur devis'], ['Marge', D.mg !== null ? n2(D.mg)+' € · '+fr(D.pc, 1)+' %' : '—']].concat(I.obs ? [['Observation', I.obs]] : []);
     doc.autoTable({ startY:y, body:rows, theme:'plain', styles:{ fontSize:9.5, cellPadding:1.6, textColor:ink }, columnStyles:{ 0:{ fontStyle:'bold', cellWidth:34, textColor:mut } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6;
     if (D.P) { doc.autoTable({ startY:y, head:[['Camion', 'Grille', 'Solution', 'Achat HT']], body:D.P.x.per.map(function(q, k){ return [String(k + 1), q.G.label, q.what, n2(q.price)]; }), theme:'grid', styles:{ fontSize:8.5, cellPadding:1.6 }, headStyles:{ fillColor:[29, 32, 36] }, columnStyles:{ 3:{ halign:'right' } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6; }
@@ -5282,7 +5366,7 @@ function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); r
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text(s.n+' colis · '+fr(s.kg, 0)+' kg ('+Math.round(s.kp * 100)+' % CU) · '+fr(s.m3, 2)+' m³ ('+Math.round(s.vp * 100)+' %) · longueur utilisée '+fr(s.ldm / 1000, 2)+' m · avant à gauche, porte à droite', M, 21);
       if (shots[k]) doc.addImage(shots[k], 'JPEG', M, 26, 182, 83);
       doc.autoTable({ startY:shots[k] ? 114 : 28, head:[['N°', 'Colis', 'Position x / y / z (mm)', 'Dimensions posées (mm)']], body:K.b.map(function(b, i){ return [String(i + 1), b.u.name, [b.x, b.y, b.z].map(Math.round).join(' / '), [b.l, b.w, b.h].map(Math.round).join(' × ')+(b.rot ? ' (tourné)' : '')+(b.z > 0 ? ' · gerbé' : '')]; }), theme:'grid', styles:{ fontSize:8, cellPadding:1.3 }, headStyles:{ fillColor:[29, 32, 36] }, margin:{ left:M, right:M } }); });
-    doc.save('Transport '+(I.date || '')+' '+String(agLabel(I.ag)).replace(/[^\w -]/g, '')+' '+(I.ville || '')+'.pdf'); TRW.busy = false; render();
+    doc.save(CH ? 'Plan de chargement '+String(I.ref || new Date().toISOString().slice(0, 10)).replace(/[^\w -]/g, '-')+'.pdf' : 'Transport '+(I.date || '')+' '+String(agLabel(I.ag)).replace(/[^\w -]/g, '')+' '+(I.ville || '')+'.pdf'); TRW.busy = false; render();
   }).catch(function(e){ TRW.busy = false; render(); toast('PDF impossible : '+e.message); }); }
 /* ---- validation ---- */
 function validateTransport(){ if (role() === 'lecture') return; var D = trSynData(), I = D.I; if (!D.cd || D.sell === null){ toast('Prix de vente à établir avant validation'); return; } if (!I.date){ toast('Renseigner la date de livraison'); ST.trStep = 'dem'; render(); return; }
@@ -6516,6 +6600,11 @@ document.addEventListener('click', function(e){
   if (d.trpick){ if (d.buyinfoclose !== undefined) buyInfoClose(); ST.trPick = ST.trPick === d.trpick && d.buyinfoclose === undefined ? null : d.trpick; render(); return; }
   if (d.trinfo){ trInfoOpen(d.trinfo); return; }
   if (d.trpdf !== undefined){ trPdf(); return; }
+  if (d.chstep){ if (t.disabled) return; ST.chStep = d.chstep; render(); window.scrollTo(0, 0); return; }
+  if (d.chnew !== undefined){ ST.chIn = null; ST.chStep = 'col'; TRW.cache = null; TRW.k = 0; render(); return; }
+  if (d.ch2dev !== undefined){ chToDevis(); return; }
+  if (d.trclear !== undefined){ trItems().length = 0; TRW.cache = null; render(); return; }
+  if (d.trall){ var TA = trItems(), on = !TA.every(function(it){ return d.trall === 'rot' ? it.rot !== false : !!it.stack; }); TA.forEach(function(it){ it[d.trall] = on; }); render(); return; }
   if (d.buyinfo !== undefined){ buyInfoOpen(d.buyinfo); return; }
   if (d.buyinfoclose !== undefined && !d.trbuy){ buyInfoClose(); return; }
   if (d.trbuy){ if (d.buyinfoclose !== undefined) buyInfoClose(); var kq = d.trbuy.split('|'), cq = carriers().filter(function(x){ return x.id === kq[0]; })[0], gq = cq && (cq.grids || []).filter(function(x){ return x.id === kq[1]; })[0]; if (gq){ var qq = buyQuote(gq, trSave()); if (qq.ok){ ST.trBuyPick = { key:d.trbuy, carrier:cq.name, grid:gq.label, what:qq.what, price:qq.price }; toast('Achat retenu : '+cq.name+' · '+eur(qq.price)+' HT'); trCalc(); } } return; }
@@ -6728,6 +6817,8 @@ document.addEventListener('click', function(e){
   else if (a === 'mypw') changeMyPassword();
 });
 document.addEventListener('change', function(e){
+  if (e.target && e.target.id === 'trbp'){ var bf = e.target.files && e.target.files[0]; e.target.value = ''; if (bf){ var bn = bf.name; bf.arrayBuffer().then(function(b){ trBpImport(b, bn); }, function(er){ toast('Lecture impossible : '+er.message); }); } return; }
+  if (e.target && (e.target.id === 'c_hayon' || e.target.id === 'c_grue')){ trIn()[e.target.id.slice(2)] = e.target.checked; TRW.k = 0; render(); return; }
   if (e.target && e.target.id === 'trimp'){ var tf = e.target.files && e.target.files[0]; e.target.value = ''; if (tf) trImport(tf); return; }
   if (e.target && e.target.id === 'carmsel'){ var cv = e.target.value; ST.carSel = /^(an|veh|dest|home|list)$/.test(cv) ? cv : +cv; ST.carSub = null; ST.carDel = null; ST.gridDel = null; ST.carNew = false; render(); return; }
   if (e.target && e.target.id === 'carsubsel'){ ST.carSub = e.target.value; ST.carDel = null; ST.gridDel = null; render(); return; }
@@ -6789,6 +6880,7 @@ document.addEventListener('change', function(e){
 });
 document.addEventListener('input', function(e){
   if (e.target.id === 'infoq'){ INFO.q = e.target.value; var pq = e.target.selectionStart; render(); var q2 = $('infoq'); if (q2){ q2.focus(); q2.setSelectionRange(pq, pq); } return; }
+  if (e.target && e.target.id === 'c_ref'){ trIn().ref = e.target.value; return; }
   var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
   if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
@@ -7328,6 +7420,7 @@ var RAIL_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 24 24" wid
   return {
     home: sv('<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/>'),
     info: sv('<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11M3 14.5h18"/>'),
+    chg: sv('<path d="M3 8l9-4 9 4v9l-9 4-9-4z"/><path d="M3 8l9 4 9-4M12 12v9"/>'),
     trp: sv('<path d="M2 16V6h12v10M14 9h4l3 4v3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>'),
     fac: sv('<path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/>'),
     pil: sv('<path d="M4 20v-8M10 20V5M16 20v-6M22 20V9"/>'),
@@ -7337,7 +7430,7 @@ var RAIL_SVG = (function(){ function sv(d){ return '<svg viewBox="0 0 24 24" wid
     car: sv('<path d="M3 6h11v9H3zM14 9h4l3 3v3h-7"/><path d="M6 19h0M17 19h0"/><circle cx="6.5" cy="17" r="1.6"/><circle cx="17.5" cy="17" r="1.6"/><path d="M6 9h5M6 12h3"/>'),
     acc: sv('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/>')
   }; })();
-function railKey(){ var m = ST.module; return m === 'trp' || m === 'mod' ? 'trp' : m === 'log' || m === 'entchoice' ? 'fac' : m === 'dq' || (m === 'pil' && pilTab() === 'sui') ? 'qual' : m === 'pil' ? 'pil' : m; }
+function railKey(){ var m = ST.module; return m === 'chgm' ? 'chg' : m === 'trp' || m === 'mod' ? 'trp' : m === 'log' || m === 'entchoice' ? 'fac' : m === 'dq' || (m === 'pil' && pilTab() === 'sui') ? 'qual' : m === 'pil' ? 'pil' : m; }
 function pilTab(){ var t = ST.piltab; if (t === 'sui' && role() === 'lecture') t = 'syn'; return t === 'sui' ? 'sui' : 'syn'; }
 function logEnts(){ return myEnts().filter(function(a){ return entScreens(a).log; }); }
 function trpEnts(){ return myEnts().filter(function(a){ return entScreens(a).trp; }); }
@@ -7350,8 +7443,9 @@ function renderRail(){
   function it(key, label, extra){ return '<button class="ri" data-rail="'+key+'"'+(k === key ? ' aria-current="page"' : '')+'>'+RAIL_SVG[key]+'<span>'+label+'</span>'+(extra || '')+'</button>'; }
   var qz = SAV.list ? qzRemaining() : 0;
   el.innerHTML = '<button class="rb" data-rail="home" title="Accueil"><b>Pilotage Logistique</b><span>LEGAA · OTIS'+(STORE.mode === 'demo' ? ' · démo' : '')+'</span></button>'+
-    it('home', 'Accueil')+it('trp', 'Transport')+
-    '<div class="rgrp" role="group" aria-labelledby="rg-log"><div class="rgh" id="rg-log">Logistique</div>'+it('info', 'Info OTIS')+
+    it('home', 'Accueil')+
+    '<div class="rgrp" role="group" aria-labelledby="rg-trp"><div class="rgh" id="rg-trp">Transport</div>'+it('trp', 'Devis transport')+it('chg', 'Chargement')+'</div>'+
+    '<div class="rgrp nb" role="group" aria-labelledby="rg-log"><div class="rgh" id="rg-log">Logistique</div>'+it('info', 'Info OTIS')+
     it('fac', 'Facturer', blk ? '<span class="rn crit" title="Lignes bloquantes de l\'entité en cours">'+blk+'</span>' : '')+
     it('pil', 'Piloter')+(role() !== 'lecture' ? it('qual', 'Qualité des données') : '')+'</div>'+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
     '<div class="rsep">'+(isAdmin() ? it('car', 'Gestion transporteurs')+it('cfg', 'Paramétrage') : '')+
@@ -7362,6 +7456,7 @@ function railGo(key){
   ST.gearOpen = false; ST.modal = null; ST.agMenu = false;
   if (key === 'home'){ ST.ent = null; ST.module = 'home'; if (!ST.transports) loadTransports(); if (!INFO.list) infoLoad(); render(); }
   else if (key === 'info'){ ST.ent = null; ST.module = 'info'; render(); }
+  else if (key === 'chg'){ ST.ent = null; ST.module = 'chgm'; render(); }
   else if (key === 'trp'){ var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
   else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
   else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; ST.piltab = 'syn'; render(); }
