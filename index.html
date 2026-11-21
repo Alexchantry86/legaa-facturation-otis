@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.7 · 21/11/2026 (menu : section Logistique regroupant Facturer, Piloter, Qualité des données) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.8 · 21/11/2026 (menu : Info OTIS dans la section Logistique) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -7350,8 +7350,8 @@ function renderRail(){
   function it(key, label, extra){ return '<button class="ri" data-rail="'+key+'"'+(k === key ? ' aria-current="page"' : '')+'>'+RAIL_SVG[key]+'<span>'+label+'</span>'+(extra || '')+'</button>'; }
   var qz = SAV.list ? qzRemaining() : 0;
   el.innerHTML = '<button class="rb" data-rail="home" title="Accueil"><b>Pilotage Logistique</b><span>LEGAA · OTIS'+(STORE.mode === 'demo' ? ' · démo' : '')+'</span></button>'+
-    it('home', 'Accueil')+it('info', 'Info OTIS')+it('trp', 'Transport')+
-    '<div class="rgrp" role="group" aria-labelledby="rg-log"><div class="rgh" id="rg-log">Logistique</div>'+
+    it('home', 'Accueil')+it('trp', 'Transport')+
+    '<div class="rgrp" role="group" aria-labelledby="rg-log"><div class="rgh" id="rg-log">Logistique</div>'+it('info', 'Info OTIS')+
     it('fac', 'Facturer', blk ? '<span class="rn crit" title="Lignes bloquantes de l\'entité en cours">'+blk+'</span>' : '')+
     it('pil', 'Piloter')+(role() !== 'lecture' ? it('qual', 'Qualité des données') : '')+'</div>'+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
     '<div class="rsep">'+(isAdmin() ? it('car', 'Gestion transporteurs')+it('cfg', 'Paramétrage') : '')+
