@@ -91,6 +91,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Plans de chargement enregistrés (v7.0) : chacun crée, lit, modifie et supprime les siens ; l'administrateur lit et supprime tout
+    match /chargements/{id} {
+      allow read: if active() && (resource.data.byUid == request.auth.uid || isAdmin());
+      allow create: if active() && request.resource.data.byUid == request.auth.uid;
+      allow update: if active() && resource.data.byUid == request.auth.uid && request.resource.data.byUid == request.auth.uid;
+      allow delete: if active() && (resource.data.byUid == request.auth.uid || isAdmin());
+    }
+
     // Propositions d'amélioration (v6.0) : tout compte actif propose (à son nom, horodatage serveur) et soutient ;
     // l'administrateur change le statut ; l'auteur ou l'administrateur supprime.
     match /idees/{id} {

@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.9 · 21/11/2026 (rubrique Transport : Devis transport + Chargement ; import du bon de préparation Odoo) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.0 · 21/11/2026 (Chargement : choix du camion corrigé, Mes chargements, dépôt PDF/Excel) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1295,6 +1295,7 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .ri.who{font-size:12.5px;opacity:.7}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
 .rail .rgrp.nb{border-top:0;margin-top:0}
+.trdz{display:flex;gap:10px;align-items:stretch}.trdz .drop{flex:1;padding:16px;cursor:pointer}.trtpl{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;color:var(--ink-2);font-size:11px}.trtpl:hover{color:var(--ink);border-color:var(--ink-2)}
 .chopt{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}.chopt .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.chopt .fld input{min-width:220px}.chopt .ck{display:flex;align-items:center;gap:6px;font-size:14px;min-height:36px}
 .rail .rgh{font-family:var(--f-label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:4px 12px 4px}
 .top .brand,.top #who,.top .gearwrap,.top #qzbtn,.top #pilbtn,.top #infobtn,.top #dqbtn,.top #entgear,.top #entbook{display:none!important}
@@ -1956,6 +1957,11 @@ var STORE = (function () {
     voteIdea: function (id, on) { var u = auth.currentUser; return db.doc('idees/' + id).update({ votes: on ? FV.arrayUnion(u.uid) : FV.arrayRemove(u.uid) }); },
     updateIdea: function (id, d) { return db.doc('idees/' + id).update({ status: d.status, statusBy: (profile && profile.name) || '', statusAt: TS() }); },
     deleteIdea: function (id) { return db.doc('idees/' + id).delete(); },
+    // Plans de chargement enregistrés (v7.0) : chacun voit et modifie les siens
+    listLoads: function () { var u = auth.currentUser; if (!u) return Promise.resolve([]); return db.collection('chargements').where('byUid', '==', u.uid).get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.at = x.at && x.at.toMillis ? x.at.toMillis() : (x.at || 0); x.upd = x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : x.at; delete x.updatedAt; return x; }); }); },
+    addLoad: function (d) { var u = auth.currentUser; if (!u) return Promise.reject(new Error('non connecté')); var x = clean(d); x.by = (profile && profile.name) || u.email; x.byUid = u.uid; x.at = TS(); x.updatedAt = TS(); return db.collection('chargements').add(x).then(function (r) { return r.id; }); },
+    updateLoad: function (id, d) { var u = auth.currentUser; var x = clean(d); x.byUid = u.uid; x.updatedAt = TS(); delete x.at; delete x.by; return db.doc('chargements/' + id).update(x); },
+    deleteLoad: function (id) { return db.doc('chargements/' + id).delete(); },
     presenceStart: presenceStart, presenceStop: presenceStop, onPresence: onPresence, onChats: onChats, openChat: openChat, onMessages: onMessages, sendMessage: sendMessage, markRead: markRead,
     onAuth: onAuth, signIn: signIn, signOut: signOut, resetPasswordEmail: resetPasswordEmail, changeOwnPassword: changeOwnPassword,
     getConfig: getConfig, saveConfig: saveConfig,
@@ -2715,6 +2721,7 @@ function renderTop(){
   var ent = (mod === 'log' || mod === 'trp' || mod === 'entchoice') && ST.ent ? ST.cfg.agencies[ST.ent] : null;
   if (mod === 'log'){ tabs = [['fac','Parcours de facturation'],['con','Documents de l\'entité']].concat(isAdmin() ? [['par','Paramètres de l\'entité']] : []); cur = ST.ltab; att = 'ltab'; }
   else if (mod === 'trp' || mod === 'mod'){ tabs = [['devis','Devis transport'],['hist','Transports validés'],['mod','Modélisation']]; cur = mod === 'mod' ? 'mod' : ST.ttab === 'hist' ? 'hist' : 'devis'; att = 'trtab'; }
+  else if (mod === 'chgm'){ tabs = [['plan','Plan de chargement'],['list','Mes chargements']]; cur = ST.chTab === 'list' ? 'list' : 'plan'; att = 'chtab'; }
   else if (railKey() === 'qual'){ tabs = [['dq','Contrôle des données Odoo'],['sui','Suivi des anomalies']]; cur = mod === 'dq' ? 'dq' : 'sui'; att = 'piltab'; }
   else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
   var h = '';
@@ -2750,7 +2757,7 @@ function render(){
   else if (ST.module === 'car') h = vCarriers();
   else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : vAdmin();
   else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vTrWiz();
-  else if (ST.module === 'chgm') h = vChg();
+  else if (ST.module === 'chgm') h = ST.chTab === 'list' ? vChgList() : vChg();
   else if (ST.module === 'mod') h = vModel();
   else if (ST.module === 'info') h = vInfo();
   else if (ST.ltab === 'con') h = vKnow();
@@ -2766,7 +2773,8 @@ function render(){
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && pilTab() === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if ((ST.module === 'trp' && ST.ttab !== 'hist') || ST.module === 'mod'){ trGeo(false); trCalc(); }
-  if ((ST.module === 'trp' && ST.ttab !== 'hist' && trStep() === 'chg') || (ST.module === 'chgm' && chStep() === 'chg')) tr3Show();
+  if ((ST.module === 'trp' && ST.ttab !== 'hist' && trStep() === 'chg') || (ST.module === 'chgm' && ST.chTab !== 'list' && chStep() === 'chg')) tr3Show();
+  bindTrDrop();
   if (ST.module === 'car') bindGridDrop();
   if (ST.docView) docvFill();
 }
@@ -5148,18 +5156,20 @@ function vTrWiz(){ var V = ST.trDone, s = trStep();
   h += s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn();
   return h + trNav() + '</section>'; }
 function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<td><input class="tri" data-tri="'+i+'|'+k+'" value="'+esc(v === undefined || v === null ? '' : v)+'"'+(t === 'n' ? ' inputmode="decimal"' : '')+' style="width:'+w+'" aria-label="'+k+'"></td>'; };
-  var h = '<div class="panel"><div class="ph"><h2>Colis à charger</h2><span class="muted small">Dimensions en mm, poids en kg par colis</span><div class="sp"><button class="btn sm" data-trpal>+ Palette Europe</button><button class="btn sm" data-tradd>+ Ligne</button><label class="btn sm">Bon de préparation (.pdf)<input type="file" id="trbp" hidden accept=".pdf,application/pdf"></label><label class="btn sm">Importer (.xlsx)<input type="file" id="trimp" hidden accept=".xlsx,.xls,.csv"></label><button class="btn sm g" data-trtpl>Modèle d\'import</button>'+(IT.length ? '<button class="btn sm g" data-trclear>Vider</button>' : '')+'</div></div>'+(TRW.busy ? '<div class="pb note">Lecture du bon de préparation…</div>' : '');
+  var h = '<div class="panel"><div class="ph"><h2>Colis à charger</h2><span class="muted small">Dimensions en mm, poids en kg par colis</span><div class="sp"><button class="btn sm" data-trpal>+ Palette Europe</button><button class="btn sm" data-tradd>+ Ligne</button>'+(IT.length ? '<button class="btn sm g" data-trclear>Vider</button>' : '')+'</div></div>'+
+    '<div class="pb trdz"><label class="drop" id="trdrop"><input type="file" id="trfiles" multiple accept=".pdf,.xlsx,.xls,.csv,application/pdf"><strong>'+(TRW.busy ? 'Lecture en cours…' : 'Déposer ici les bons de préparation (PDF) ou un fichier Excel')+'</strong><span class="muted small">plusieurs fichiers à la fois possibles · ou cliquer pour les choisir</span></label>'+
+    '<button class="trtpl" data-trtpl title="Télécharger le modèle Excel" aria-label="Télécharger le modèle Excel"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M12 10v7M9 14l3 3 3-3"/></svg><span>Modèle</span></button></div>';
   h += '<div class="tw"><table class="trc"><thead><tr><th>Colis</th><th class="n">Long.</th><th class="n">Larg.</th><th class="n">Haut.</th><th class="n">Poids</th><th class="n">Qté</th><th class="c">'+(IT.length ? '<button class="lnk" data-trall="stack" title="Tout cocher / tout décocher">Gerbable</button>' : 'Gerbable')+'</th><th class="c">'+(IT.length ? '<button class="lnk" data-trall="rot" title="Tout cocher / tout décocher">Rotation</button>' : 'Rotation')+'</th><th></th></tr></thead><tbody>'+
     (IT.length ? IT.map(function(it, i){ return '<tr>'+cell(i, 'name', it.name, '100%;min-width:130px')+cell(i, 'L', it.L, '72px', 'n')+cell(i, 'W', it.W, '72px', 'n')+cell(i, 'H', it.H, '72px', 'n')+cell(i, 'kg', it.kg, '72px', 'n')+cell(i, 'qty', it.qty, '52px', 'n')+
       '<td class="c"><input type="checkbox" data-tri="'+i+'|stack"'+(it.stack ? ' checked' : '')+' aria-label="Gerbable"></td><td class="c"><input type="checkbox" data-tri="'+i+'|rot"'+(it.rot !== false ? ' checked' : '')+' aria-label="Rotation autorisée"></td><td><button class="btn sm g" data-trcdel="'+i+'" aria-label="Supprimer la ligne">✕</button></td></tr>'; }).join('')
-      : '<tr><td colspan="9" class="empty">Aucun colis : importer le bon de préparation Odoo (PDF), ajouter une palette, une ligne, ou importer le fichier Excel (modèle ToolBox : colis, longueur, largeur, hauteur, poids, quantité, gerbable, rotation).</td></tr>')+'</tbody></table></div>';
+      : '<tr><td colspan="9" class="empty">Aucun colis : déposer un bon de préparation Odoo (PDF) ou le fichier Excel ci-dessus, ou ajouter une palette, une ligne (modèle ToolBox : colis, longueur, largeur, hauteur, poids, quantité, gerbable, rotation).</td></tr>')+'</tbody></table></div>';
   return h + '<div class="pb" id="trtot">'+trTotHtml()+'</div></div>'; }
 function trTotHtml(){ var T = trTot(); return '<div class="trk"><span><b>'+T.n+'</b> colis</span><span><b>'+fr(T.kg, 0)+'</b> kg</span><span><b>'+fr(T.m3, 2)+'</b> m³</span><span>plus grande longueur <b>'+fr(T.len, 0)+'</b> mm</span>'+(T.bad.length ? '<span class="neg">Sans dimensions : '+esc(T.bad.join(', '))+'</span>' : '')+'</div>'; }
 function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand(), ch = ST.module === 'chgm';
   if (!cd) return '<div class="panel pb note"><b>Aucun camion du référentiel ne prend ces colis</b>'+(I.hayon ? ' avec hayon' : '')+(I.grue ? ' avec grue' : '')+'. Vérifier les dimensions et les poids, ou compléter les types de véhicules (Gestion transporteurs › Types de véhicules).</div>';
   var h = '<div class="trw-2"><div class="panel"><div class="ph"><h2>Camions possibles</h2><span class="muted small">'+C.n+' colis · '+(I.hayon ? 'hayon · ' : '')+(I.grue ? 'grue · ' : 'hors porteurs grue · ')+(ch ? 'classés par nombre de camions puis taille' : 'classés par coût d\'achat estimé')+'</span></div><div class="tw"><table class="trv"><thead><tr><th></th><th>Véhicule</th><th class="n">Nb</th><th class="n">Volume</th><th class="n">Charge</th>'+(ch ? '' : '<th class="n">Achat estimé</th>')+'</tr></thead><tbody>'+
     (ch ? C.L : trRanked()).map(function(x){ var on = x === cd, kp = Math.max.apply(null, x.S.map(function(s){ return s.kp; })), ld = Math.max.apply(null, x.S.map(function(s){ return s.ldm; }));
-      return '<tr class="'+(on ? 'open' : '')+'"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td>'+(ch ? '' : '<td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td>')+'</tr>'; }).join('')+'</tbody></table></div></div>';
+      return '<tr class="'+(on ? 'open' : '')+'" data-trveh="'+esc(x.t.code)+'" style="cursor:pointer"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td>'+(ch ? '' : '<td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td>')+'</tr>'; }).join('')+'</tbody></table></div></div>';
   var k = Math.min(TRW.k, cd.n - 1), s = cd.S[k];
   h += '<div class="panel"><div class="ph"><h2>Plan de chargement · '+esc(trWhat(cd))+'</h2>'+(cd.n > 1 ? '<span class="seg2">'+cd.S.map(function(_, i){ return '<button class="'+(i === k ? 'on' : '')+'" data-trk="'+i+'">Camion '+(i + 1)+'</button>'; }).join('')+'</span>' : '')+'</div>'+
     '<div class="pb"><div class="trk"><span><b>'+s.n+'</b> colis</span><span><b>'+fr(s.kg, 0)+'</b> kg ('+Math.round(s.kp * 100)+' % de la CU)</span><span><b>'+fr(s.m3, 2)+'</b> m³ ('+Math.round(s.vp * 100)+' %)</span><span>longueur utilisée <b>'+fr(s.ldm / 1000, 2)+'</b> m</span><span>≈ <b>'+s.pal+'</b> pal. au sol</span></div>'+
@@ -5260,13 +5270,20 @@ function trParseXls(A){ var low = function(s){ return String(s === undefined || 
     if (L === null || W === null || H === null) continue; var name = String(g('name')).trim(); if (/^(total|sous-total)/i.test(name)) continue;
     out.push({ name:name, L:Math.round(L), W:Math.round(W), H:Math.round(H), kg:trNum(g('kg')) === null ? '' : trNum(g('kg')), qty:Math.max(1, Math.round(trNum(g('qty')) || 1)), stack:map.stack !== undefined ? yes(g('stack')) : false, rot:map.rot !== undefined ? yes(g('rot')) : true }); }
   return out; }
-function trImport(f){ f.arrayBuffer().then(function(buf){ var wb = XLSX.read(buf, { type:'array' }), sh = wb.Sheets[wb.SheetNames.filter(function(n){ return /colis/i.test(n); })[0] || wb.SheetNames[0]], A = XLSX.utils.sheet_to_json(sh, { header:1, raw:true, defval:'' }), L = trParseXls(A);
+function trImport(f){ f.arrayBuffer().then(trImportBuf); }
+function trImportBuf(buf){ return Promise.resolve().then(function(){ var wb = XLSX.read(buf, { type:'array' }), sh = wb.Sheets[wb.SheetNames.filter(function(n){ return /colis/i.test(n); })[0] || wb.SheetNames[0]], A = XLSX.utils.sheet_to_json(sh, { header:1, raw:true, defval:'' }), L = trParseXls(A);
     if (!L.length){ toast('Aucun colis lu : colonnes attendues Colis, Longueur, Largeur, Hauteur (mm), Poids (kg), Quantité, Gerbable, Rotation'); return; }
     var IT = trItems(); L.forEach(function(x){ IT.push(x); }); TRW.cache = null; render(); toast(L.length+' ligne(s) de colis importée(s)'); }).catch(function(e){ toast('Import impossible : '+e.message); }); }
 function trTemplate(){ var wb = XLSX.utils.book_new(), C = XLSX.utils.aoa_to_sheet([['Colis','Longueur (mm)','Largeur (mm)','Hauteur (mm)','Poids (kg)','Quantité','Gerbable','Rotation'], ['Palette Europe', 1200, 800, 1200, 300, 2, 'non', 'oui']]);
   C['!cols'] = [{ wch:28 }, { wch:14 }, { wch:14 }, { wch:14 }, { wch:12 }, { wch:10 }, { wch:10 }, { wch:10 }]; XLSX.utils.book_append_sheet(wb, C, 'Colis');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['MODÈLE D\'IMPORT — COLIS (même modèle que ToolBox · Chargement)'], [], ['Une ligne par type de colis. Dimensions en mm, poids en kg par colis.'], ['Gerbable : oui si on peut poser un colis dessus. Rotation : oui si le colis peut être tourné à plat.']]), 'Mode d\'emploi');
   saveXlsx(wb, 'Modele colis transport.xlsx'); }
+/* fichiers déposés : copiés en mémoire tout de suite, puis lus un par un (PDF = bon de préparation, sinon Excel) */
+function trFiles(fl){ if (!fl.length) return; Promise.all(fl.map(function(f){ return f.arrayBuffer().then(function(b){ return { n:f.name, b:b }; }); })).then(function(A){ var p = Promise.resolve();
+    A.forEach(function(x){ p = p.then(function(){ return /\.pdf$/i.test(x.n) ? trBpImport(x.b, x.n) : /\.(xlsx|xls|xlsm|csv)$/i.test(x.n) ? trImportBuf(x.b) : toast(x.n+' : format non pris en charge (PDF ou Excel)'); }); }); return p; }, function(e){ toast('Lecture impossible : '+e.message); }); }
+function bindTrDrop(){ var d = $('trdrop'); if (!d) return;
+  d.ondragover = function(e){ e.preventDefault(); d.classList.add('over'); }; d.ondragleave = function(){ d.classList.remove('over'); };
+  d.ondrop = function(e){ e.preventDefault(); d.classList.remove('over'); trFiles(Array.prototype.slice.call(e.dataTransfer.files || [])); }; }
 /* ---- Bon de préparation Odoo (PDF) → colis + en-tête ---- */
 var PDFJS_V = '4.10.38', PDFJS = null;
 function pdfjsLib(){ if (PDFJS) return Promise.resolve(PDFJS); var u = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@'+PDFJS_V+'/build/';
@@ -5309,7 +5326,7 @@ function bpCpOnline(G){ if (G.cp || !G.dep || !G.ville || typeof fetch !== 'func
   return fetch('https://geo.api.gouv.fr/communes?nom='+encodeURIComponent(G.ville)+'&codeDepartement='+G.dep+'&fields=nom,codesPostaux&limit=5').then(function(r){ return r.json(); }).then(function(L){
     var c = (L || []).filter(function(x){ return GRP.norm(x.nom) === GRP.norm(G.ville); })[0] || (L || [])[0]; if (c && c.codesPostaux && c.codesPostaux.length){ G.cp = c.codesPostaux[0]; G.ville = c.nom; } return G; }, function(){ return G; }); }
 function trBpImport(buf, fname){ TRW.busy = true; render();
-  bpItems(buf).then(function(pages){ var R = bpParse(pages), H = R.H, ref = H.bp || H.cmd || fname;
+  return bpItems(buf).then(function(pages){ var R = bpParse(pages), H = R.H, ref = H.bp || H.cmd || fname;
     if (!R.rows.length) throw new Error('aucune ligne de colis reconnue (format attendu : bon de préparation Odoo LEGAA)');
     var IT = trItems(); if (IT.some(function(it){ return it.src === ref; })){ TRW.busy = false; render(); toast('Bon '+ref+' déjà importé'); return; }
     bpMerge(R.rows, ref).forEach(function(x){ IT.push(x); }); TRW.cache = null;
@@ -5327,6 +5344,33 @@ function trBpApply(I, H, ref){ var msg = '', name = H.owner ? H.owner.split(',')
     if (obs && (I.obs || '').indexOf(ref) < 0) I.obs = (I.obs ? I.obs+'\n' : '') + obs;
     return bpCpOnline(bpCity(H)).then(function(G){ if (G.cp){ I.cp = G.cp; I.ville = G.ville; I.kmMan = false; I.hMan = false; msg += ' · livraison '+G.cp+' '+G.ville; } else if (G.ville) msg += ' · commune '+G.ville+' : code postal à saisir';
       return msg; }); }
+/* ---- Mes chargements (enregistrés dans Firestore « chargements », chacun les siens) ---- */
+var LOADS = { list:null, err:'' };
+function loadsLoad(){ if (!STORE.listLoads){ LOADS.list = []; LOADS.err = 'indisponible'; return; } LOADS.err = '';
+  STORE.listLoads().then(function(L){ LOADS.list = L.sort(function(a, b){ return (b.upd || 0) - (a.upd || 0); }); if (ST.module === 'chgm') render(); },
+    function(e){ LOADS.list = []; LOADS.err = e.message; if (ST.module === 'chgm') render(); }); }
+function chSnap(){ var I = trIn(), cd = trCand(), T = trTot();
+  return { ref:String(I.ref || '').trim(), hayon:!!I.hayon, grue:!!I.grue, vt:cd ? cd.t.code : '', veh:cd ? trWhat(cd) : '', camions:cd ? cd.n : 0, n:T.n, kg:Math.round(T.kg), m3:Math.round(T.m3 * 100) / 100,
+    items:trItems().map(function(it){ return { name:String(it.name || ''), L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty) || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }),
+    bps:(I.bps || []).map(function(b){ return { ref:b.ref || '', H:b.H || {} }; }) }; }
+function chSave(){ var I = trIn(); if (!trTot().n){ toast('Aucun colis à enregistrer'); return; }
+  if (!String(I.ref || '').trim()) I.ref = 'Chargement du '+new Date().toLocaleDateString('fr-FR')+' '+new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  var D = chSnap(), p = I.id ? STORE.updateLoad(I.id, D).then(function(){ return I.id; }) : STORE.addLoad(D);
+  p.then(function(id){ I.id = id; I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); LOADS.list = null; toast('Chargement « '+I.ref+' » enregistré'); render(); },
+    function(e){ toast('Enregistrement impossible : '+e.message+(/permission/i.test(e.message || '') ? ' (règle Firestore « chargements » à publier)' : '')); }); }
+function chOpen(id){ var x = (LOADS.list || []).filter(function(l){ return l.id === id; })[0]; if (!x) return; var v = function(n){ return n === null || n === undefined ? '' : n; };
+  ST.chIn = { id:x.id, ref:x.ref || '', hayon:!!x.hayon, grue:!!x.grue, vt:x.vt || '', bps:x.bps || [], items:(x.items || []).map(function(it){ return { name:it.name || '', L:v(it.L), W:v(it.W), H:v(it.H), kg:v(it.kg), qty:it.qty || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }) };
+  ST.chTab = 'plan'; ST.chStep = 'chg'; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); }
+function vChgList(){ if (!LOADS.list){ loadsLoad(); return '<section class="view"><div class="panel pb muted">Chargement de la liste…</div></section>'; }
+  var L = LOADS.list, d = function(ms){ return ms ? new Date(ms).toLocaleDateString('fr-FR')+' '+new Date(ms).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '—'; };
+  var h = '<section class="view"><div class="panel"><div class="ph"><h2>Mes chargements</h2><span class="muted small">'+L.length+' plan'+(L.length > 1 ? 's' : '')+' enregistré'+(L.length > 1 ? 's' : '')+'</span><div class="sp"><button class="btn sm pri" data-chnew>Nouveau chargement</button></div></div>';
+  if (LOADS.err) h += '<div class="pb note">Liste inaccessible : '+esc(LOADS.err)+(isAdmin() ? '<br>Les règles Firestore doivent inclure le bloc « chargements » (v7.0) : Console Firebase › Firestore › Règles.' : '')+'</div>';
+  h += '<div class="tw"><table class="tbl"><thead><tr><th>Référence</th><th class="n">Colis</th><th class="n">Poids</th><th class="n">Volume</th><th>Camion(s)</th><th>Contraintes</th><th>Modifié le</th><th></th></tr></thead><tbody>'+
+    (L.length ? L.map(function(x){ var ask = ST.chDelAsk === x.id;
+      return '<tr data-chopen="'+esc(x.id)+'" style="cursor:pointer"><td><b>'+esc(x.ref || '—')+'</b></td><td class="n">'+(x.n || 0)+'</td><td class="n">'+fr(x.kg || 0, 0)+' kg</td><td class="n">'+fr(x.m3 || 0, 2)+' m³</td><td>'+esc(x.veh || '—')+'</td><td>'+esc([x.hayon ? 'hayon' : '', x.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—')+'</td><td>'+d(x.upd)+'</td>'+
+        '<td style="white-space:nowrap"><button class="btn sm" data-chopen="'+esc(x.id)+'">Ouvrir</button> <button class="btn sm '+(ask ? 'pri' : 'g')+'" data-chdel="'+esc(x.id)+'">'+(ask ? 'Confirmer la suppression' : 'Supprimer')+'</button></td></tr>'; }).join('')
+      : '<tr><td colspan="8" class="empty">Aucun chargement enregistré. Modéliser un plan puis « Enregistrer ».</td></tr>')+'</tbody></table></div></div></section>';
+  return h; }
 /* ---- Chargement seul (sans devis) ---- */
 var CH_STEPS = [['col','Colis'],['chg','Plan de chargement']];
 function chStep(){ return ST.chStep === 'chg' && trTot().n ? 'chg' : 'col'; }
@@ -5339,9 +5383,10 @@ function vChg(){ var I = trIn(), s = chStep(), i0 = s === 'chg' ? 1 : 0;
       return (i ? '<i class="stc'+(i <= i0 ? ' done' : '')+'" aria-hidden="true"></i>' : '')+'<button class="trw-b'+(i < i0 ? ' done' : '')+'" data-chstep="'+x[0]+'" aria-current="'+(s === x[0] ? 'step' : 'false')+'"'+(dis ? ' disabled' : '')+'><span class="stl">'+(i < i0 ? '✓' : i + 1)+'</span><span class="stx">'+x[1]+'</span></button>'; }).join('')+'</nav>';
   h += s === 'col' ? vTrCol() : vTrChg();
   var why = s === 'col' && !trTot().n ? 'Ajouter au moins un colis avec ses trois dimensions.' : '';
-  h += '<div class="nextbar">'+(s === 'chg' ? '<button class="btn" data-chstep="col">← Colis</button>' : '')+'<span class="why">'+esc(why)+'</span>'+
-    (s === 'col' ? '<button class="btn pri" data-chstep="chg"'+(why ? ' disabled' : '')+'>Étape suivante : Plan de chargement →</button>'
-      : (trCand() ? '<button class="btn" data-trpdf>PDF du plan de chargement</button>' : '')+(trpEnts().length && role() !== 'lecture' ? '<button class="btn pri" data-ch2dev>Faire un devis avec ces colis →</button>' : ''))+'</div>';
+  var sv = trTot().n ? '<button class="btn" data-chsave>'+(I.id ? 'Enregistrer les modifications' : 'Enregistrer')+'</button>' : '';
+  h += '<div class="nextbar">'+(s === 'chg' ? '<button class="btn" data-chstep="col">← Colis</button>' : '')+'<span class="why">'+esc(why || (I.savedAt ? 'Enregistré à '+I.savedAt : I.id ? 'Plan enregistré dans Mes chargements' : ''))+'</span>'+
+    (s === 'col' ? sv+'<button class="btn pri" data-chstep="chg"'+(why ? ' disabled' : '')+'>Étape suivante : Plan de chargement →</button>'
+      : sv+(trCand() ? '<button class="btn" data-trpdf>PDF du plan de chargement</button>' : '')+(trpEnts().length && role() !== 'lecture' ? '<button class="btn pri" data-ch2dev>Faire un devis avec ces colis →</button>' : ''))+'</div>';
   return h + '</section>'; }
 function chToDevis(){ var C = clone(ST.chIn || {}); railGo('trp'); if (ST.module !== 'trp') return; ST.ttab = 'devis'; ST.trIn = null;
   var I = trIn(); I.items = (C.items || []).map(clone); I.hayon = !!C.hayon; I.grue = !!C.grue; I.vt = C.vt || ''; if (C.ref && !I.cmd) I.cmd = C.ref;
@@ -6566,7 +6611,7 @@ document.addEventListener('click', function(e){
     render(); var qi = document.querySelector('#fpop .fq'); if (qi && fd.fopen) qi.focus(); return; }
   if (e.target.id === 'modal'){ ST.modal = null; renderModal(); return; }
   if (e.target.classList && e.target.classList.contains('dv-ov')){ ST.docView = null; render(); return; }
-  var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem');
+  var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem,[data-trveh],[data-chopen]');
   if (!t || t.disabled) return;
   var d = t.dataset;
   if (d.menu !== undefined){ navOpen(!document.body.classList.contains('nav-open')); return; }
@@ -6600,8 +6645,12 @@ document.addEventListener('click', function(e){
   if (d.trpick){ if (d.buyinfoclose !== undefined) buyInfoClose(); ST.trPick = ST.trPick === d.trpick && d.buyinfoclose === undefined ? null : d.trpick; render(); return; }
   if (d.trinfo){ trInfoOpen(d.trinfo); return; }
   if (d.trpdf !== undefined){ trPdf(); return; }
+  if (d.chtab){ ST.chTab = d.chtab; ST.chDelAsk = null; if (d.chtab === 'list') LOADS.list = null; render(); window.scrollTo(0, 0); return; }
+  if (d.chsave !== undefined){ chSave(); return; }
+  if (d.chopen){ chOpen(d.chopen); return; }
+  if (d.chdel){ if (ST.chDelAsk !== d.chdel){ ST.chDelAsk = d.chdel; render(); return; } ST.chDelAsk = null; STORE.deleteLoad(d.chdel).then(function(){ if (ST.chIn && ST.chIn.id === d.chdel) ST.chIn.id = null; LOADS.list = null; toast('Chargement supprimé'); render(); }, function(e){ toast('Suppression impossible : '+e.message); }); return; }
   if (d.chstep){ if (t.disabled) return; ST.chStep = d.chstep; render(); window.scrollTo(0, 0); return; }
-  if (d.chnew !== undefined){ ST.chIn = null; ST.chStep = 'col'; TRW.cache = null; TRW.k = 0; render(); return; }
+  if (d.chnew !== undefined){ ST.chIn = null; ST.chStep = 'col'; ST.chTab = 'plan'; TRW.cache = null; TRW.k = 0; render(); return; }
   if (d.ch2dev !== undefined){ chToDevis(); return; }
   if (d.trclear !== undefined){ trItems().length = 0; TRW.cache = null; render(); return; }
   if (d.trall){ var TA = trItems(), on = !TA.every(function(it){ return d.trall === 'rot' ? it.rot !== false : !!it.stack; }); TA.forEach(function(it){ it[d.trall] = on; }); render(); return; }
@@ -6817,7 +6866,7 @@ document.addEventListener('click', function(e){
   else if (a === 'mypw') changeMyPassword();
 });
 document.addEventListener('change', function(e){
-  if (e.target && e.target.id === 'trbp'){ var bf = e.target.files && e.target.files[0]; e.target.value = ''; if (bf){ var bn = bf.name; bf.arrayBuffer().then(function(b){ trBpImport(b, bn); }, function(er){ toast('Lecture impossible : '+er.message); }); } return; }
+  if (e.target && e.target.id === 'trfiles'){ var fl = Array.prototype.slice.call(e.target.files || []); e.target.value = ''; trFiles(fl); return; }
   if (e.target && (e.target.id === 'c_hayon' || e.target.id === 'c_grue')){ trIn()[e.target.id.slice(2)] = e.target.checked; TRW.k = 0; render(); return; }
   if (e.target && e.target.id === 'trimp'){ var tf = e.target.files && e.target.files[0]; e.target.value = ''; if (tf) trImport(tf); return; }
   if (e.target && e.target.id === 'carmsel'){ var cv = e.target.value; ST.carSel = /^(an|veh|dest|home|list)$/.test(cv) ? cv : +cv; ST.carSub = null; ST.carDel = null; ST.gridDel = null; ST.carNew = false; render(); return; }
