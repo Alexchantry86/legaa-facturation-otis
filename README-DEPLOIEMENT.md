@@ -107,6 +107,11 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v6.9 — Rubrique Transport, Chargement, bon de préparation
+- Menu : rubrique « Transport » avec Devis transport (ex-Transport) et Chargement.
+- Chargement : plan de chargement sans devis (colis, camions possibles, 3D, PDF du plan), puis « Faire un devis avec ces colis ».
+- Import du bon de préparation Odoo (PDF) dans Devis et Chargement : colis (dimensions, poids, lignes identiques regroupées), et pour le devis contremaître, n° de bon, entité, commune et code postal, observation (adresse, contact). Lecture via pdf.js (CDN jsDelivr).
+
 ## v6.8 — Info OTIS dans Logistique
 - Menu de gauche : Info OTIS rejoint la section Logistique (en tête).
 
