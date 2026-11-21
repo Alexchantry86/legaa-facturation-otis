@@ -2,7 +2,7 @@
    - Page et config.js : réseau d'abord (une mise à jour publiée est prise au chargement suivant), cache si hors ligne.
    - Bibliothèques CDN versionnées et polices : cache d'abord (démarrage rapide, fonctionnement hors ligne).
    - Firebase (authentification, Firestore, Storage) et toute autre requête : jamais interceptées. */
-var VERSION = 'pl-v6.5';
+var VERSION = 'pl-v6.6';
 var SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 var CDN = [/^https:\/\/cdnjs\.cloudflare\.com\//, /^https:\/\/cdn\.jsdelivr\.net\//, /^https:\/\/www\.gstatic\.com\/firebasejs\//, /^https:\/\/fonts\.googleapis\.com\//, /^https:\/\/fonts\.gstatic\.com\//];
 
