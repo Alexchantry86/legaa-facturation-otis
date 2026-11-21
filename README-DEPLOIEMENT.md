@@ -107,6 +107,9 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v6.8 — Info OTIS dans Logistique
+- Menu de gauche : Info OTIS rejoint la section Logistique (en tête).
+
 ## v6.7 — Menu Logistique
 - Menu de gauche : nouvelle section « Logistique » regroupant Facturer, Piloter et Qualité des données.
 
