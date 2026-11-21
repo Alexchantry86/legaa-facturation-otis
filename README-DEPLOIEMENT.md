@@ -107,6 +107,11 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v6.6 — Transport en 6 étapes
+- Devis transport devient un parcours : 1 Demande (client, adresse, flux, hayon, grue, manutention) · 2 Colis (saisie, palette Europe, import Excel au modèle ToolBox) · 3 Chargement (plan 3D repris du module Chargement de ToolBox, camions possibles classés par coût d'achat estimé, plusieurs camions si besoin) · 4 Vente (grille de vente, additionnée par camion) · 5 Achat (3 meilleures solutions transporteurs) · 6 Synthèse (marge, PDF à joindre au PO Odoo, validation).
+- Onglet « Transports validés » : historique des transports validés.
+- Données ajoutées sur chaque transport : colis, camions, flux, hayon, grue, manutention (collection `transports` existante, pas de changement de règles).
+
 ## v6.5 — KPI et Qualité des données
 - Piloter : unité de mesure (Unité, m², m³) choisie dans chaque graphique Entrées, Sorties, Stockage ; tuiles et tableau suivent l'unité de chaque famille.
 - Nouvelle section « Qualité des données » (ADV et administrateurs) : Contrôle des données Odoo + Suivi des anomalies, sortis de Piloter. Piloter ne garde que les volumes et le chiffre d'affaires.
