@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v6.6 · 21/11/2026 (Transport en 6 étapes : demande, colis, plan de chargement 3D, vente, achat, synthèse + PDF ; transports validés) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v6.7 · 21/11/2026 (menu : section Logistique regroupant Facturer, Piloter, Qualité des données) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1293,6 +1293,8 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .ri .rn.crit{background:#a8261b;color:#fff}
 .rail .rsep{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding-top:8px;display:flex;flex-direction:column;gap:2px}
 .rail .ri.who{font-size:12.5px;opacity:.7}
+.rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
+.rail .rgh{font-family:var(--f-label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:4px 12px 4px}
 .top .brand,.top #who,.top .gearwrap,.top #qzbtn,.top #pilbtn,.top #infobtn,.top #dqbtn,.top #entgear,.top #entbook{display:none!important}
 .top .modname{font-family:var(--f-label);font-size:16px;font-weight:600;letter-spacing:.02em;opacity:1}
 .top .modname .bc{opacity:.65;font-weight:500}
@@ -7349,8 +7351,9 @@ function renderRail(){
   var qz = SAV.list ? qzRemaining() : 0;
   el.innerHTML = '<button class="rb" data-rail="home" title="Accueil"><b>Pilotage Logistique</b><span>LEGAA · OTIS'+(STORE.mode === 'demo' ? ' · démo' : '')+'</span></button>'+
     it('home', 'Accueil')+it('info', 'Info OTIS')+it('trp', 'Transport')+
+    '<div class="rgrp" role="group" aria-labelledby="rg-log"><div class="rgh" id="rg-log">Logistique</div>'+
     it('fac', 'Facturer', blk ? '<span class="rn crit" title="Lignes bloquantes de l\'entité en cours">'+blk+'</span>' : '')+
-    it('pil', 'Piloter')+(role() !== 'lecture' ? it('qual', 'Qualité des données') : '')+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
+    it('pil', 'Piloter')+(role() !== 'lecture' ? it('qual', 'Qualité des données') : '')+'</div>'+it('sav', 'Savoir des experts', qz ? '<span class="rn" title="Questions à traiter">'+qz+'</span>' : '')+
     '<div class="rsep">'+(isAdmin() ? it('car', 'Gestion transporteurs')+it('cfg', 'Paramétrage') : '')+
     (PWA.prompt ? '<button class="ri inst" data-pwainstall>'+RAIL_SVG.home.replace('M3 11 12 4l9 7', 'M12 3v12M7 10l5 5 5-5').replace('M5 10v10h14V10', 'M4 19h16')+'<span>Installer l\'application</span></button>' : '')+
     '<button class="ri who" data-rail="acc"'+(k === 'acc' ? ' aria-current="page"' : '')+'>'+RAIL_SVG.acc+'<span>'+esc(ST.user.name)+' · '+esc(({admin:'admin',adv:'ADV',lecture:'lecture'})[ST.user.role] || '')+'</span></button></div>';
