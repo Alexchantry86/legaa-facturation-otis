@@ -107,6 +107,9 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.2 — Menu
+- Gestion transporteurs rejoint la section Transport (administrateurs).
+
 ## v7.1 — Véhicules des plans de chargement
 - Les camions possibles (Devis et Chargement) suivent exactement Gestion des transporteurs › Types de véhicules : toute modification (libellé, dimensions, charge utile, hayon, grue) est prise en compte immédiatement, et relue à l'entrée du module si elle a été faite depuis un autre poste.
 - Longueur intérieure absente : déduite des mètres linéaires. Source affichée sous la liste, avec les types non retenus et leur raison (sans hayon, porteur grue, colis hors gabarit…). Lien « modifier » pour l'administrateur.
