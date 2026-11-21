@@ -107,6 +107,12 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.0 — Mes chargements, dépôt de fichiers
+- Chargement et Devis : le choix d'un autre camion met à jour le plan et la 3D (le clic sur la ligne suffit).
+- Chargement : bouton Enregistrer et onglet « Mes chargements » (liste, ouverture, suppression). Collection Firestore `chargements`.
+- Colis : zone de dépôt (glisser-déposer ou clic) acceptant indifféremment les bons de préparation PDF et les fichiers Excel, plusieurs à la fois ; modèle Excel via le picto à droite. + Palette Europe, + Ligne, Vider conservés.
+- **Règles Firestore** : ajouter le bloc `match /chargements/{id}` de `firestore.rules` aux règles publiées (Console Firebase › Firestore › Règles › Publier). Sans ce bloc, l'enregistrement échoue avec « permissions ».
+
 ## v6.9 — Rubrique Transport, Chargement, bon de préparation
 - Menu : rubrique « Transport » avec Devis transport (ex-Transport) et Chargement.
 - Chargement : plan de chargement sans devis (colis, camions possibles, 3D, PDF du plan), puis « Faire un devis avec ces colis ».
