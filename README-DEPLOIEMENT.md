@@ -107,6 +107,10 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.1 — Véhicules des plans de chargement
+- Les camions possibles (Devis et Chargement) suivent exactement Gestion des transporteurs › Types de véhicules : toute modification (libellé, dimensions, charge utile, hayon, grue) est prise en compte immédiatement, et relue à l'entrée du module si elle a été faite depuis un autre poste.
+- Longueur intérieure absente : déduite des mètres linéaires. Source affichée sous la liste, avec les types non retenus et leur raison (sans hayon, porteur grue, colis hors gabarit…). Lien « modifier » pour l'administrateur.
+
 ## v7.0 — Mes chargements, dépôt de fichiers
 - Chargement et Devis : le choix d'un autre camion met à jour le plan et la 3D (le clic sur la ligne suffit).
 - Chargement : bouton Enregistrer et onglet « Mes chargements » (liste, ouverture, suppression). Collection Firestore `chargements`.

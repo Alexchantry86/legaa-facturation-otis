@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.0 · 21/11/2026 (Chargement : choix du camion corrigé, Mes chargements, dépôt PDF/Excel) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.1 · 21/11/2026 (Chargement : véhicules = types paramétrés dans Gestion des transporteurs) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1295,6 +1295,7 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .ri.who{font-size:12.5px;opacity:.7}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
 .rail .rgrp.nb{border-top:0;margin-top:0}
+.trsrc{border-top:1px solid var(--line-2)}.trsrc details{margin-top:4px}.trsrc summary{cursor:pointer}.trsrc ul{margin:4px 0 0;padding-left:18px}
 .trdz{display:flex;gap:10px;align-items:stretch}.trdz .drop{flex:1;padding:16px;cursor:pointer}.trtpl{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;color:var(--ink-2);font-size:11px}.trtpl:hover{color:var(--ink);border-color:var(--ink-2)}
 .chopt{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}.chopt .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.chopt .fld input{min-width:220px}.chopt .ck{display:flex;align-items:center;gap:6px;font-size:14px;min-height:36px}
 .rail .rgh{font-family:var(--f-label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:4px 12px 4px}
@@ -5101,19 +5102,21 @@ function trKStats(c, K){ var v = K.b.reduce(function(s, b){ return s + b.l * b.w
   return { n:K.b.length, m3:v / 1e9, vp:v / (c.L * c.W * c.H), kg:kg, kp:c.P ? kg / c.P : 0, ldm:ldm, len:K.b.reduce(function(m, b){ return Math.max(m, b.u.L, b.u.W); }, 0), pal:Math.max(1, Math.ceil(floor / 960000 - 1e-9)) }; }
 /* ---- camions candidats : chaque type du référentiel compatible avec les contraintes, rempli par le moteur ---- */
 function trCands(){
-  var I = trIn(), r = trUnits(), sig = JSON.stringify([I.items, !!I.hayon, !!I.grue, vehTypes().map(function(t){ return [t.code, t.L, t.W, t.H, t.cu]; })]);
+  var I = trIn(), r = trUnits(), sig = JSON.stringify([I.items, !!I.hayon, !!I.grue, vehTypes()]);
   if (TRW.cache && TRW.cache.sig === sig) return TRW.cache;
-  var L = [];
-  if (r.U.length) vehTypes().forEach(function(t){
-    if (!(+t.L > 0 && +t.W > 0 && +t.cu > 0)) return;
-    if (I.grue ? !t.grue : t.grue) return; if (I.hayon && !t.hayon && !t.grue) return;
-    var c = { L:+t.L, W:+t.W, H:+t.H > 0 ? +t.H : 3000, P:+t.cu }, R = trPack(c, r.U);
-    if (R.out.length || !R.C.length) return;
+  /* véhicules = Gestion des transporteurs › Types de véhicules (dimensions intérieures, charge utile, hayon, grue) */
+  var L = [], X = [];
+  if (r.U.length) vehTypes().forEach(function(t){ var no = function(w){ X.push({ t:t, why:w }); };
+    var Lm = +t.L > 0 ? +t.L : +t.ml > 0 ? Math.round(+t.ml * 1000) : 0;
+    if (!(Lm > 0 && +t.W > 0 && +t.cu > 0)) return no('longueur, largeur ou charge utile non renseignée');
+    if (I.grue && !t.grue) return no('sans grue'); if (!I.grue && t.grue) return no('porteur grue (grue non demandée)'); if (I.hayon && !t.hayon && !t.grue) return no('sans hayon');
+    var c = { L:Lm, W:+t.W, H:+t.H > 0 ? +t.H : 3000, P:+t.cu }, R = trPack(c, r.U);
+    if (R.out.length || !R.C.length) return no(R.out.length+' colis hors gabarit ou trop lourd'+(R.out.length > 1 ? 's' : ''));
     var S = R.C.map(function(K){ return trKStats(c, K); });
     L.push({ t:t, c:c, R:R, n:R.C.length, S:S, fill:S.reduce(function(s, x){ return s + x.vp; }, 0) / S.length, size:c.L * c.W * c.H });
   });
   L.sort(function(a, b){ return a.n - b.n || a.size - b.size; });
-  TRW.cache = { sig:sig, L:L, bad:r.bad, n:r.U.length };
+  TRW.cache = { sig:sig, L:L, X:X, bad:r.bad, n:r.U.length };
   return TRW.cache; }
 /* coût d'achat le plus bas de chaque solution de camions (meilleur transporteur couvrant tous les camions) : sert à classer et à proposer */
 function trCandCost(cd){ var B = trBuy(cd); return B && B.ok.length ? B.ok[0].price : null; }
@@ -5165,11 +5168,15 @@ function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<
       : '<tr><td colspan="9" class="empty">Aucun colis : déposer un bon de préparation Odoo (PDF) ou le fichier Excel ci-dessus, ou ajouter une palette, une ligne (modèle ToolBox : colis, longueur, largeur, hauteur, poids, quantité, gerbable, rotation).</td></tr>')+'</tbody></table></div>';
   return h + '<div class="pb" id="trtot">'+trTotHtml()+'</div></div>'; }
 function trTotHtml(){ var T = trTot(); return '<div class="trk"><span><b>'+T.n+'</b> colis</span><span><b>'+fr(T.kg, 0)+'</b> kg</span><span><b>'+fr(T.m3, 2)+'</b> m³</span><span>plus grande longueur <b>'+fr(T.len, 0)+'</b> mm</span>'+(T.bad.length ? '<span class="neg">Sans dimensions : '+esc(T.bad.join(', '))+'</span>' : '')+'</div>'; }
+/* origine des véhicules + types écartés, avec leur raison */
+function trVtSrc(C){ var X = C.X || [];
+  return '<div class="pb small muted trsrc">Véhicules et dimensions : Gestion des transporteurs › Types de véhicules ('+vehTypes().length+' types)'+(isAdmin() ? ' · <button class="lnk small" data-govt>modifier</button>' : '')+
+    (X.length ? '<details><summary>'+X.length+' type'+(X.length > 1 ? 's' : '')+' non retenu'+(X.length > 1 ? 's' : '')+'</summary><ul>'+X.map(function(x){ return '<li>'+esc(x.t.label || x.t.code)+' : '+esc(x.why)+'</li>'; }).join('')+'</ul></details>' : '')+'</div>'; }
 function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand(), ch = ST.module === 'chgm';
-  if (!cd) return '<div class="panel pb note"><b>Aucun camion du référentiel ne prend ces colis</b>'+(I.hayon ? ' avec hayon' : '')+(I.grue ? ' avec grue' : '')+'. Vérifier les dimensions et les poids, ou compléter les types de véhicules (Gestion transporteurs › Types de véhicules).</div>';
+  if (!cd) return '<div class="panel pb note"><b>Aucun camion du référentiel ne prend ces colis</b>'+(I.hayon ? ' avec hayon' : '')+(I.grue ? ' avec grue' : '')+'. Vérifier les dimensions et les poids, ou compléter les types de véhicules (Gestion transporteurs › Types de véhicules).</div>'+'<div class="panel">'+trVtSrc(C)+'</div>';
   var h = '<div class="trw-2"><div class="panel"><div class="ph"><h2>Camions possibles</h2><span class="muted small">'+C.n+' colis · '+(I.hayon ? 'hayon · ' : '')+(I.grue ? 'grue · ' : 'hors porteurs grue · ')+(ch ? 'classés par nombre de camions puis taille' : 'classés par coût d\'achat estimé')+'</span></div><div class="tw"><table class="trv"><thead><tr><th></th><th>Véhicule</th><th class="n">Nb</th><th class="n">Volume</th><th class="n">Charge</th>'+(ch ? '' : '<th class="n">Achat estimé</th>')+'</tr></thead><tbody>'+
     (ch ? C.L : trRanked()).map(function(x){ var on = x === cd, kp = Math.max.apply(null, x.S.map(function(s){ return s.kp; })), ld = Math.max.apply(null, x.S.map(function(s){ return s.ldm; }));
-      return '<tr class="'+(on ? 'open' : '')+'" data-trveh="'+esc(x.t.code)+'" style="cursor:pointer"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td>'+(ch ? '' : '<td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td>')+'</tr>'; }).join('')+'</tbody></table></div></div>';
+      return '<tr class="'+(on ? 'open' : '')+'" data-trveh="'+esc(x.t.code)+'" style="cursor:pointer"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td>'+(ch ? '' : '<td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td>')+'</tr>'; }).join('')+'</tbody></table></div>'+trVtSrc(C)+'</div>';
   var k = Math.min(TRW.k, cd.n - 1), s = cd.S[k];
   h += '<div class="panel"><div class="ph"><h2>Plan de chargement · '+esc(trWhat(cd))+'</h2>'+(cd.n > 1 ? '<span class="seg2">'+cd.S.map(function(_, i){ return '<button class="'+(i === k ? 'on' : '')+'" data-trk="'+i+'">Camion '+(i + 1)+'</button>'; }).join('')+'</span>' : '')+'</div>'+
     '<div class="pb"><div class="trk"><span><b>'+s.n+'</b> colis</span><span><b>'+fr(s.kg, 0)+'</b> kg ('+Math.round(s.kp * 100)+' % de la CU)</span><span><b>'+fr(s.m3, 2)+'</b> m³ ('+Math.round(s.vp * 100)+' %)</span><span>longueur utilisée <b>'+fr(s.ldm / 1000, 2)+'</b> m</span><span>≈ <b>'+s.pal+'</b> pal. au sol</span></div>'+
@@ -6134,6 +6141,9 @@ var VT_DEF = [
 var DEST_DEF = [{ cp:'75008', ville:'Paris 8e' }, { cp:'75015', ville:'Paris 15e' }, { cp:'77000', ville:'Melun' }, { cp:'77100', ville:'Meaux' }, { cp:'78000', ville:'Versailles' }, { cp:'91000', ville:'Évry' },
   { cp:'92000', ville:'Nanterre' }, { cp:'92400', ville:'Courbevoie' }, { cp:'93100', ville:'Montreuil' }, { cp:'94000', ville:'Créteil' }, { cp:'95100', ville:'Argenteuil' }, { cp:'95310', ville:'Saint-Ouen-l\'Aumône' }];
 function vehTypes(){ return ST.cfg.vehTypes || VT_DEF; }
+/* relit les types de véhicules enregistrés (modifiés depuis un autre poste) à l'entrée de Devis transport et Chargement */
+function vtRefresh(){ if (!STORE.getConfig) return; STORE.getConfig().then(function(c){ if (!c || !Array.isArray(c.vehTypes)) return;
+  if (JSON.stringify(c.vehTypes) !== JSON.stringify(ST.cfg.vehTypes || null)){ ST.cfg.vehTypes = c.vehTypes; TRW.cache = null; if (ST.module === 'chgm' || ST.module === 'trp') render(); } }, function(){}); }
 function dests(){ return ST.cfg.destRef || DEST_DEF; }
 function vtByCode(c){ return vehTypes().filter(function(t){ return t.code === c; })[0] || null; }
 function vtPal(t){ return +t.ml ? Math.floor(+t.ml * 2.45 + 1e-9) : 0; }
@@ -6649,6 +6659,7 @@ document.addEventListener('click', function(e){
   if (d.chsave !== undefined){ chSave(); return; }
   if (d.chopen){ chOpen(d.chopen); return; }
   if (d.chdel){ if (ST.chDelAsk !== d.chdel){ ST.chDelAsk = d.chdel; render(); return; } ST.chDelAsk = null; STORE.deleteLoad(d.chdel).then(function(){ if (ST.chIn && ST.chIn.id === d.chdel) ST.chIn.id = null; LOADS.list = null; toast('Chargement supprimé'); render(); }, function(e){ toast('Suppression impossible : '+e.message); }); return; }
+  if (d.govt !== undefined){ railGo('car'); ST.carSel = 'veh'; render(); window.scrollTo(0, 0); return; }
   if (d.chstep){ if (t.disabled) return; ST.chStep = d.chstep; render(); window.scrollTo(0, 0); return; }
   if (d.chnew !== undefined){ ST.chIn = null; ST.chStep = 'col'; ST.chTab = 'plan'; TRW.cache = null; TRW.k = 0; render(); return; }
   if (d.ch2dev !== undefined){ chToDevis(); return; }
@@ -7505,8 +7516,8 @@ function railGo(key){
   ST.gearOpen = false; ST.modal = null; ST.agMenu = false;
   if (key === 'home'){ ST.ent = null; ST.module = 'home'; if (!ST.transports) loadTransports(); if (!INFO.list) infoLoad(); render(); }
   else if (key === 'info'){ ST.ent = null; ST.module = 'info'; render(); }
-  else if (key === 'chg'){ ST.ent = null; ST.module = 'chgm'; render(); }
-  else if (key === 'trp'){ var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
+  else if (key === 'chg'){ ST.ent = null; ST.module = 'chgm'; render(); vtRefresh(); }
+  else if (key === 'trp'){ vtRefresh(); var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
   else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
   else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; ST.piltab = 'syn'; render(); }
   else if (key === 'qual'){ if (role() === 'lecture') return; ST.ent = null; ST.module = 'dq'; render(); }
