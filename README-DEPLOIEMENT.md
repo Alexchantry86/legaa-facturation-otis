@@ -107,6 +107,10 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.4 — Chargements : identification et recherche
+- Chaque chargement porte : client (propriétaire du stock, repris du bon), N° PO, N° bon de préparation (repris du bon, cumulé si plusieurs), N° bon de livraison, référence (références OTIS du bon par défaut), un ID (CH-AAMMJJ-XXXX) et son auteur (créé par / modifié par).
+- Liste : tri par colonne, filtres client et utilisateur, recherche libre (ID, PO, BL, BP, client, utilisateur, référence). L'administrateur voit les chargements de tous les utilisateurs ; s'il enregistre le plan d'un autre, une copie à son nom est créée (règle inchangée).
+
 ## v7.3 — Correctif bon de préparation
 - Lecture du PDF : utilise le lecteur PDF déjà chargé par la page (pdf.js 3.11) au lieu d'en charger un second (conflit de versions « API 4.10.38 / Worker 3.11.174 »).
 
