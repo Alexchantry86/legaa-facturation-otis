@@ -107,6 +107,9 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.3 — Correctif bon de préparation
+- Lecture du PDF : utilise le lecteur PDF déjà chargé par la page (pdf.js 3.11) au lieu d'en charger un second (conflit de versions « API 4.10.38 / Worker 3.11.174 »).
+
 ## v7.2 — Menu
 - Gestion transporteurs rejoint la section Transport (administrateurs).
 

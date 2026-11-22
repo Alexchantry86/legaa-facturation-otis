@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.2 · 21/11/2026 (menu : Gestion transporteurs dans la section Transport) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.3 · 22/11/2026 (correctif : lecture du bon de préparation PDF) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5293,7 +5293,8 @@ function bindTrDrop(){ var d = $('trdrop'); if (!d) return;
   d.ondrop = function(e){ e.preventDefault(); d.classList.remove('over'); trFiles(Array.prototype.slice.call(e.dataTransfer.files || [])); }; }
 /* ---- Bon de préparation Odoo (PDF) → colis + en-tête ---- */
 var PDFJS_V = '4.10.38', PDFJS = null;
-function pdfjsLib(){ if (PDFJS) return Promise.resolve(PDFJS); var u = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@'+PDFJS_V+'/build/';
+/* le lecteur PDF déjà chargé par la page (3.11, avec son worker) est utilisé en priorité : deux versions ensemble entrent en conflit */
+function pdfjsLib(){ if (PDFJS) return Promise.resolve(PDFJS); var W = window.pdfjsLib || window['pdfjs-dist/build/pdf']; if (W && W.getDocument){ PDFJS = W; return Promise.resolve(W); } var u = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@'+PDFJS_V+'/build/';
   return import(u+'pdf.min.mjs').then(function(m){ m.GlobalWorkerOptions.workerSrc = u+'pdf.worker.min.mjs'; PDFJS = m; return m; }); }
 function bpItems(buf){ return pdfjsLib().then(function(P){ return P.getDocument({ data:new Uint8Array(buf) }).promise; }).then(function(doc){ var ps = [];
     for (var p = 1; p <= doc.numPages; p++) ps.push(doc.getPage(p).then(function(pg){ return pg.getTextContent().then(function(tc){ return tc.items.filter(function(i){ return i.str && i.str.trim(); }).map(function(i){ return { s:i.str.replace(/[  ]/g, ' ').trim(), x:i.transform[4], y:i.transform[5] }; }); }); }));
