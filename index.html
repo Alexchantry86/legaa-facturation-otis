@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.3 · 22/11/2026 (correctif : lecture du bon de préparation PDF) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.4 · 22/11/2026 (Chargements : client, PO, BP, BL, référence, ID, auteur, tri, filtres, recherche) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1295,6 +1295,7 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .ri.who{font-size:12.5px;opacity:.7}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
 .rail .rgrp.nb{border-top:0;margin-top:0}
+.chopt .chq{flex:1 1 280px}.chopt .chq input{width:100%;min-width:0}.chl .nowr{white-space:nowrap}.chl th .chs{font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;text-decoration:none;cursor:pointer;padding:0}.chl th .chs.on{color:var(--ink)}
 .trsrc{border-top:1px solid var(--line-2)}.trsrc details{margin-top:4px}.trsrc summary{cursor:pointer}.trsrc ul{margin:4px 0 0;padding-left:18px}
 .trdz{display:flex;gap:10px;align-items:stretch}.trdz .drop{flex:1;padding:16px;cursor:pointer}.trtpl{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;color:var(--ink-2);font-size:11px}.trtpl:hover{color:var(--ink);border-color:var(--ink-2)}
 .chopt{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}.chopt .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.chopt .fld input{min-width:220px}.chopt .ck{display:flex;align-items:center;gap:6px;font-size:14px;min-height:36px}
@@ -1959,9 +1960,9 @@ var STORE = (function () {
     updateIdea: function (id, d) { return db.doc('idees/' + id).update({ status: d.status, statusBy: (profile && profile.name) || '', statusAt: TS() }); },
     deleteIdea: function (id) { return db.doc('idees/' + id).delete(); },
     // Plans de chargement enregistrés (v7.0) : chacun voit et modifie les siens
-    listLoads: function () { var u = auth.currentUser; if (!u) return Promise.resolve([]); return db.collection('chargements').where('byUid', '==', u.uid).get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.at = x.at && x.at.toMillis ? x.at.toMillis() : (x.at || 0); x.upd = x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : x.at; delete x.updatedAt; return x; }); }); },
-    addLoad: function (d) { var u = auth.currentUser; if (!u) return Promise.reject(new Error('non connecté')); var x = clean(d); x.by = (profile && profile.name) || u.email; x.byUid = u.uid; x.at = TS(); x.updatedAt = TS(); return db.collection('chargements').add(x).then(function (r) { return r.id; }); },
-    updateLoad: function (id, d) { var u = auth.currentUser; var x = clean(d); x.byUid = u.uid; x.updatedAt = TS(); delete x.at; delete x.by; return db.doc('chargements/' + id).update(x); },
+    listLoads: function (all) { var u = auth.currentUser; if (!u) return Promise.resolve([]); return (all ? db.collection('chargements') : db.collection('chargements').where('byUid', '==', u.uid)).get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.at = x.at && x.at.toMillis ? x.at.toMillis() : (x.at || 0); x.upd = x.updatedAt && x.updatedAt.toMillis ? x.updatedAt.toMillis() : x.at; delete x.updatedAt; return x; }); }); },
+    addLoad: function (d) { var u = auth.currentUser; if (!u) return Promise.reject(new Error('non connecté')); var x = clean(d); x.by = (profile && profile.name) || u.email; x.byMail = u.email; x.byUid = u.uid; x.at = TS(); x.updatedAt = TS(); return db.collection('chargements').add(x).then(function (r) { return r.id; }); },
+    updateLoad: function (id, d) { var u = auth.currentUser; var x = clean(d); x.byUid = u.uid; x.updatedBy = (profile && profile.name) || u.email; x.updatedAt = TS(); delete x.at; delete x.by; delete x.num; return db.doc('chargements/' + id).update(x); },
     deleteLoad: function (id) { return db.doc('chargements/' + id).delete(); },
     presenceStart: presenceStart, presenceStop: presenceStop, onPresence: onPresence, onChats: onChats, openChat: openChat, onMessages: onMessages, sendMessage: sendMessage, markRead: markRead,
     onAuth: onAuth, signIn: signIn, signOut: signOut, resetPasswordEmail: resetPasswordEmail, changeOwnPassword: changeOwnPassword,
@@ -5339,7 +5340,8 @@ function trBpImport(buf, fname){ TRW.busy = true; render();
     var IT = trItems(); if (IT.some(function(it){ return it.src === ref; })){ TRW.busy = false; render(); toast('Bon '+ref+' déjà importé'); return; }
     bpMerge(R.rows, ref).forEach(function(x){ IT.push(x); }); TRW.cache = null;
     var I = trIn(), msg = R.rows.length+' colis importés du bon '+ref+(H.nb && H.nb !== R.rows.length ? ' (le bon en annonce '+H.nb+' : à vérifier)' : '');
-    if (ST.module === 'chgm'){ if (!I.ref) I.ref = ref; I.bps = (I.bps || []).concat([{ H:H, ref:ref }]); TRW.busy = false; render(); toast(msg); return; }
+    if (ST.module === 'chgm'){ var own = String(H.owner || '').split(',')[0].trim(), add = function(k, v){ if (!v) return; var L = String(I[k] || '').split(/\s*,\s*/).filter(Boolean); if (L.indexOf(v) < 0) L.push(v); I[k] = L.join(', '); };
+      if (own && !I.client) I.client = own; add('bp', H.bp || ref); if (!I.ref && H.refs) I.ref = H.refs; I.bps = (I.bps || []).concat([{ H:H, ref:ref }]); TRW.busy = false; render(); toast(msg); return; }
     return trBpApply(I, H, ref).then(function(m2){ TRW.busy = false; render(); toast(msg + m2); }); })
   .catch(function(e){ TRW.busy = false; render(); toast('Lecture du bon impossible : '+e.message); }); }
 /* en-tête du bon → demande de transport (sans écraser ce qui est déjà saisi) */
@@ -5352,39 +5354,57 @@ function trBpApply(I, H, ref){ var msg = '', name = H.owner ? H.owner.split(',')
     if (obs && (I.obs || '').indexOf(ref) < 0) I.obs = (I.obs ? I.obs+'\n' : '') + obs;
     return bpCpOnline(bpCity(H)).then(function(G){ if (G.cp){ I.cp = G.cp; I.ville = G.ville; I.kmMan = false; I.hMan = false; msg += ' · livraison '+G.cp+' '+G.ville; } else if (G.ville) msg += ' · commune '+G.ville+' : code postal à saisir';
       return msg; }); }
-/* ---- Mes chargements (enregistrés dans Firestore « chargements », chacun les siens) ---- */
-var LOADS = { list:null, err:'' };
+/* ---- Mes chargements (Firestore « chargements ») : chacun les siens, l'administrateur voit tout ---- */
+var LOADS = { list:null, err:'' }, CH_F = [['client','Client'],['po','N° PO'],['bp','N° bon de préparation'],['bl','N° bon de livraison'],['ref','Référence']];
 function loadsLoad(){ if (!STORE.listLoads){ LOADS.list = []; LOADS.err = 'indisponible'; return; } LOADS.err = '';
-  STORE.listLoads().then(function(L){ LOADS.list = L.sort(function(a, b){ return (b.upd || 0) - (a.upd || 0); }); if (ST.module === 'chgm') render(); },
+  STORE.listLoads(isAdmin()).then(function(L){ LOADS.list = L; if (ST.module === 'chgm') render(); },
     function(e){ LOADS.list = []; LOADS.err = e.message; if (ST.module === 'chgm') render(); }); }
-function chSnap(){ var I = trIn(), cd = trCand(), T = trTot();
-  return { ref:String(I.ref || '').trim(), hayon:!!I.hayon, grue:!!I.grue, vt:cd ? cd.t.code : '', veh:cd ? trWhat(cd) : '', camions:cd ? cd.n : 0, n:T.n, kg:Math.round(T.kg), m3:Math.round(T.m3 * 100) / 100,
+function chNum(x){ return x.num || 'CH-'+String(x.id || '').slice(0, 6).toUpperCase(); }
+function chNewNum(){ var d = new Date(), p = function(n){ return String(n).padStart(2, '0'); }, r = ''; for (var i = 0; i < 4; i++) r += '23456789ABCDEFGHJKMNPQRSTUVWXYZ'.charAt(Math.floor(Math.random() * 31));
+  return 'CH-'+String(d.getFullYear()).slice(2)+p(d.getMonth() + 1)+p(d.getDate())+'-'+r; }
+function chSnap(){ var I = trIn(), cd = trCand(), T = trTot(), o = { hayon:!!I.hayon, grue:!!I.grue, vt:cd ? cd.t.code : '', veh:cd ? trWhat(cd) : '', camions:cd ? cd.n : 0, n:T.n, kg:Math.round(T.kg), m3:Math.round(T.m3 * 100) / 100,
     items:trItems().map(function(it){ return { name:String(it.name || ''), L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty) || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }),
-    bps:(I.bps || []).map(function(b){ return { ref:b.ref || '', H:b.H || {} }; }) }; }
+    bps:(I.bps || []).map(function(b){ return { ref:b.ref || '', H:b.H || {} }; }) };
+  CH_F.forEach(function(f){ o[f[0]] = String(I[f[0]] || '').trim(); }); return o; }
 function chSave(){ var I = trIn(); if (!trTot().n){ toast('Aucun colis à enregistrer'); return; }
-  if (!String(I.ref || '').trim()) I.ref = 'Chargement du '+new Date().toLocaleDateString('fr-FR')+' '+new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
-  var D = chSnap(), p = I.id ? STORE.updateLoad(I.id, D).then(function(){ return I.id; }) : STORE.addLoad(D);
-  p.then(function(id){ I.id = id; I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); LOADS.list = null; toast('Chargement « '+I.ref+' » enregistré'); render(); },
+  var D = chSnap(), cp = I.id && I.byUid && I.byUid !== myUid();
+  if (cp){ I.id = null; I.num = null; I.by = ''; I.byUid = ''; } /* plan d'un autre utilisateur : enregistré comme une copie à son nom */
+  if (!I.id){ I.num = I.num || chNewNum(); D.num = I.num; }
+  var p = I.id ? STORE.updateLoad(I.id, D).then(function(){ return I.id; }) : STORE.addLoad(D);
+  p.then(function(id){ I.id = id; I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); LOADS.list = null; I.byUid = I.byUid || myUid(); toast((cp ? 'Copie enregistrée : ' : 'Chargement ')+I.num+(cp ? '' : ' enregistré')); render(); },
     function(e){ toast('Enregistrement impossible : '+e.message+(/permission/i.test(e.message || '') ? ' (règle Firestore « chargements » à publier)' : '')); }); }
 function chOpen(id){ var x = (LOADS.list || []).filter(function(l){ return l.id === id; })[0]; if (!x) return; var v = function(n){ return n === null || n === undefined ? '' : n; };
-  ST.chIn = { id:x.id, ref:x.ref || '', hayon:!!x.hayon, grue:!!x.grue, vt:x.vt || '', bps:x.bps || [], items:(x.items || []).map(function(it){ return { name:it.name || '', L:v(it.L), W:v(it.W), H:v(it.H), kg:v(it.kg), qty:it.qty || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }) };
+  ST.chIn = { id:x.id, num:chNum(x), by:x.by || '', byUid:x.byUid || '', hayon:!!x.hayon, grue:!!x.grue, vt:x.vt || '', bps:x.bps || [], items:(x.items || []).map(function(it){ return { name:it.name || '', L:v(it.L), W:v(it.W), H:v(it.H), kg:v(it.kg), qty:it.qty || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }) };
+  CH_F.forEach(function(f){ ST.chIn[f[0]] = x[f[0]] || ''; });
   ST.chTab = 'plan'; ST.chStep = 'chg'; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); }
+/* colonnes : clé de tri, libellé, valeur */
+var CH_COLS = [['num','ID',chNum],['at','Créé le',function(x){ return x.at || 0; }],['client','Client'],['ref','Référence'],['po','N° PO'],['bp','N° BP'],['bl','N° BL'],['n','Colis',function(x){ return x.n || 0; }],['kg','Poids',function(x){ return x.kg || 0; }],['veh','Camion(s)'],['by','Créé par']];
+function chVal(c, x){ return c[2] ? c[2](x) : (x[c[0]] || ''); }
 function vChgList(){ if (!LOADS.list){ loadsLoad(); return '<section class="view"><div class="panel pb muted">Chargement de la liste…</div></section>'; }
-  var L = LOADS.list, d = function(ms){ return ms ? new Date(ms).toLocaleDateString('fr-FR')+' '+new Date(ms).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '—'; };
-  var h = '<section class="view"><div class="panel"><div class="ph"><h2>Mes chargements</h2><span class="muted small">'+L.length+' plan'+(L.length > 1 ? 's' : '')+' enregistré'+(L.length > 1 ? 's' : '')+'</span><div class="sp"><button class="btn sm pri" data-chnew>Nouveau chargement</button></div></div>';
-  if (LOADS.err) h += '<div class="pb note">Liste inaccessible : '+esc(LOADS.err)+(isAdmin() ? '<br>Les règles Firestore doivent inclure le bloc « chargements » (v7.0) : Console Firebase › Firestore › Règles.' : '')+'</div>';
-  h += '<div class="tw"><table class="tbl"><thead><tr><th>Référence</th><th class="n">Colis</th><th class="n">Poids</th><th class="n">Volume</th><th>Camion(s)</th><th>Contraintes</th><th>Modifié le</th><th></th></tr></thead><tbody>'+
+  var A = LOADS.list, F = ST.chF = ST.chF || { q:'', client:'', by:'', s:'at', d:-1 }, n = GRP.norm, d = function(ms){ return ms ? new Date(ms).toLocaleDateString('fr-FR') : '—'; };
+  var opts = function(k){ return A.map(function(x){ return x[k] || ''; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; }).sort(function(a, b){ return a.localeCompare(b, 'fr'); }); };
+  var q = n(F.q || ''), L = A.filter(function(x){ if (F.client && x.client !== F.client) return false; if (F.by && x.by !== F.by) return false;
+      return !q || [chNum(x), x.client, x.ref, x.po, x.bp, x.bl, x.by].some(function(v){ return n(v || '').indexOf(q) >= 0; }); });
+  var sc = CH_COLS.filter(function(c){ return c[0] === F.s; })[0] || CH_COLS[1];
+  L.sort(function(a, b){ var u = chVal(sc, a), v = chVal(sc, b); return (typeof u === 'number' && typeof v === 'number' ? u - v : String(u).localeCompare(String(v), 'fr', { numeric:true })) * F.d; });
+  var sel = function(id, k, lab){ return '<label class="fld"><span>'+lab+'</span><select id="'+id+'"><option value="">Tous</option>'+opts(k).map(function(v){ return '<option'+(F[k] === v ? ' selected' : '')+'>'+esc(v)+'</option>'; }).join('')+'</select></label>'; };
+  var h = '<section class="view"><div class="panel"><div class="ph"><h2>'+(isAdmin() ? 'Chargements' : 'Mes chargements')+'</h2><span class="muted small">'+(L.length === A.length ? A.length : L.length+' sur '+A.length)+' plan'+(A.length > 1 ? 's' : '')+(isAdmin() ? ' · tous les utilisateurs' : '')+'</span><div class="sp"><button class="btn sm pri" data-chnew>Nouveau chargement</button></div></div>'+
+    '<div class="pb chopt"><label class="fld chq"><span>Rechercher</span><input id="chq" type="search" value="'+esc(F.q || '')+'" placeholder="ID, PO, bon de livraison, bon de préparation, client, utilisateur…"></label>'+sel('chcli', 'client', 'Client')+sel('chby', 'by', 'Créé par')+
+    (F.q || F.client || F.by ? '<button class="btn sm g" data-chfx>Effacer les filtres</button>' : '')+'</div>';
+  if (LOADS.err) h += '<div class="pb note">Liste inaccessible : '+esc(LOADS.err)+'</div>';
+  h += '<div class="tw"><table class="tbl chl"><thead><tr>'+CH_COLS.map(function(c){ var on = c[0] === F.s, num = c[0] === 'n' || c[0] === 'kg';
+      return '<th'+(num ? ' class="n"' : '')+' aria-sort="'+(on ? (F.d > 0 ? 'ascending' : 'descending') : 'none')+'"><button class="lnk chs'+(on ? ' on' : '')+'" data-chsort="'+c[0]+'">'+c[1]+(on ? (F.d > 0 ? ' ▲' : ' ▼') : '')+'</button></th>'; }).join('')+'<th></th></tr></thead><tbody>'+
     (L.length ? L.map(function(x){ var ask = ST.chDelAsk === x.id;
-      return '<tr data-chopen="'+esc(x.id)+'" style="cursor:pointer"><td><b>'+esc(x.ref || '—')+'</b></td><td class="n">'+(x.n || 0)+'</td><td class="n">'+fr(x.kg || 0, 0)+' kg</td><td class="n">'+fr(x.m3 || 0, 2)+' m³</td><td>'+esc(x.veh || '—')+'</td><td>'+esc([x.hayon ? 'hayon' : '', x.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—')+'</td><td>'+d(x.upd)+'</td>'+
-        '<td style="white-space:nowrap"><button class="btn sm" data-chopen="'+esc(x.id)+'">Ouvrir</button> <button class="btn sm '+(ask ? 'pri' : 'g')+'" data-chdel="'+esc(x.id)+'">'+(ask ? 'Confirmer la suppression' : 'Supprimer')+'</button></td></tr>'; }).join('')
-      : '<tr><td colspan="8" class="empty">Aucun chargement enregistré. Modéliser un plan puis « Enregistrer ».</td></tr>')+'</tbody></table></div></div></section>';
+      return '<tr data-chopen="'+esc(x.id)+'" style="cursor:pointer"><td class="nowr"><b>'+esc(chNum(x))+'</b></td><td>'+d(x.at)+'</td><td>'+esc(x.client || '—')+'</td><td>'+esc(x.ref || '—')+'</td><td class="nowr">'+esc(x.po || '—')+'</td><td class="nowr">'+esc(x.bp || '—')+'</td><td class="nowr">'+esc(x.bl || '—')+'</td><td class="n">'+(x.n || 0)+'</td><td class="n">'+fr(x.kg || 0, 0)+' kg</td><td>'+esc(x.veh || '—')+'</td><td>'+esc(x.by || '—')+'</td>'+
+        '<td class="nowr"><button class="btn sm" data-chopen="'+esc(x.id)+'">Ouvrir</button> <button class="btn sm '+(ask ? 'pri' : 'g')+'" data-chdel="'+esc(x.id)+'">'+(ask ? 'Confirmer' : 'Supprimer')+'</button></td></tr>'; }).join('')
+      : '<tr><td colspan="12" class="empty">'+(A.length ? 'Aucun chargement ne correspond à la recherche.' : 'Aucun chargement enregistré. Modéliser un plan puis « Enregistrer ».')+'</td></tr>')+'</tbody></table></div></div></section>';
   return h; }
 /* ---- Chargement seul (sans devis) ---- */
 var CH_STEPS = [['col','Colis'],['chg','Plan de chargement']];
 function chStep(){ return ST.chStep === 'chg' && trTot().n ? 'chg' : 'col'; }
 function vChg(){ var I = trIn(), s = chStep(), i0 = s === 'chg' ? 1 : 0;
   var h = '<section class="view trw">'+(TRW.busy ? '<div class="note">Traitement en cours…</div>' : '')+
-    '<div class="panel"><div class="pb chopt"><label class="fld"><span>Référence</span><input id="c_ref" value="'+esc(I.ref || '')+'" placeholder="bon de préparation, chantier…"></label>'+
+    '<div class="panel">'+(I.id ? '<div class="ph"><h2>'+esc(I.num || '')+'</h2>'+(I.by ? '<span class="muted small">créé par '+esc(I.by)+'</span>' : '')+'</div>' : '')+'<div class="pb chopt">'+CH_F.map(function(f){ return '<label class="fld"><span>'+f[1]+'</span><input id="c_'+f[0]+'" value="'+esc(I[f[0]] || '')+'"></label>'; }).join('')+
     '<label class="ck"><input type="checkbox" id="c_hayon"'+(I.hayon ? ' checked' : '')+'> Avec hayon</label><label class="ck"><input type="checkbox" id="c_grue"'+(I.grue ? ' checked' : '')+'> Avec grue</label>'+
     '<span class="sp"></span><button class="btn sm g" data-chnew>Nouveau chargement</button></div></div>'+
     '<nav class="trw-st" aria-label="Étapes du chargement">'+CH_STEPS.map(function(x, i){ var dis = x[0] === 'chg' && !trTot().n;
@@ -5410,7 +5430,7 @@ function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); r
     doc.text = function(t){ var A = [].slice.call(arguments); A[0] = Array.isArray(t) ? t.map(pdfTxt) : pdfTxt(t); return _tx.apply(null, A); };
     doc.autoTable = function(o){ if (o.head) o.head = o.head.map(_cl); if (o.body) o.body = o.body.map(_cl); return _at(o); };
     doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor.apply(doc, ink); doc.text(CH ? 'Plan de chargement'+(I.ref ? ' · '+I.ref : '') : 'Transport · synthèse', M, y); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text('LEGAA · Pilotage Logistique · édité le '+new Date().toLocaleDateString('fr-FR')+' par '+((ST.user || {}).name || ''), M, y + 5); y += 12;
-    var rows = CH ? [['Référence', I.ref || '—'], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—'], ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)]] : [['Client', agLabel(I.ag)+(I.cm ? ' · '+I.cm : '')+(I.cmd ? ' · '+I.cmd : '')], ['Livraison', (I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : '', I.man ? 'manutentionnaire' : ''].filter(Boolean).join(', ') || '—'],
+    var rows = CH ? [['ID', I.num || '—'], ['Client', I.client || '—'], ['Référence', I.ref || '—'], ['N° PO', I.po || '—'], ['N° bon de préparation', I.bp || '—'], ['N° bon de livraison', I.bl || '—'], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—'], ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)]] : [['Client', agLabel(I.ag)+(I.cm ? ' · '+I.cm : '')+(I.cmd ? ' · '+I.cmd : '')], ['Livraison', (I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : '', I.man ? 'manutentionnaire' : ''].filter(Boolean).join(', ') || '—'],
       ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)], ['Transporteur', D.P ? D.P.x.carrier+(D.P.picked ? ' (retenu)' : '') : '—'], ['Achat HT', D.buy !== null ? eur(D.buy) : '—'], ['Vente HT', D.sell !== null ? eur(D.sell) : 'sur devis'], ['Marge', D.mg !== null ? n2(D.mg)+' € · '+fr(D.pc, 1)+' %' : '—']].concat(I.obs ? [['Observation', I.obs]] : []);
     doc.autoTable({ startY:y, body:rows, theme:'plain', styles:{ fontSize:9.5, cellPadding:1.6, textColor:ink }, columnStyles:{ 0:{ fontStyle:'bold', cellWidth:34, textColor:mut } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6;
     if (D.P) { doc.autoTable({ startY:y, head:[['Camion', 'Grille', 'Solution', 'Achat HT']], body:D.P.x.per.map(function(q, k){ return [String(k + 1), q.G.label, q.what, n2(q.price)]; }), theme:'grid', styles:{ fontSize:8.5, cellPadding:1.6 }, headStyles:{ fillColor:[29, 32, 36] }, columnStyles:{ 3:{ halign:'right' } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6; }
@@ -6658,6 +6678,8 @@ document.addEventListener('click', function(e){
   if (d.trpdf !== undefined){ trPdf(); return; }
   if (d.chtab){ ST.chTab = d.chtab; ST.chDelAsk = null; if (d.chtab === 'list') LOADS.list = null; render(); window.scrollTo(0, 0); return; }
   if (d.chsave !== undefined){ chSave(); return; }
+  if (d.chsort){ var CF = ST.chF; if (CF.s === d.chsort) CF.d = -CF.d; else { CF.s = d.chsort; CF.d = d.chsort === 'at' ? -1 : 1; } render(); return; }
+  if (d.chfx !== undefined){ ST.chF.q = ''; ST.chF.client = ''; ST.chF.by = ''; render(); return; }
   if (d.chopen){ chOpen(d.chopen); return; }
   if (d.chdel){ if (ST.chDelAsk !== d.chdel){ ST.chDelAsk = d.chdel; render(); return; } ST.chDelAsk = null; STORE.deleteLoad(d.chdel).then(function(){ if (ST.chIn && ST.chIn.id === d.chdel) ST.chIn.id = null; LOADS.list = null; toast('Chargement supprimé'); render(); }, function(e){ toast('Suppression impossible : '+e.message); }); return; }
   if (d.govt !== undefined){ railGo('car'); ST.carSel = 'veh'; render(); window.scrollTo(0, 0); return; }
@@ -6879,6 +6901,7 @@ document.addEventListener('click', function(e){
 });
 document.addEventListener('change', function(e){
   if (e.target && e.target.id === 'trfiles'){ var fl = Array.prototype.slice.call(e.target.files || []); e.target.value = ''; trFiles(fl); return; }
+  if (e.target && (e.target.id === 'chcli' || e.target.id === 'chby')){ ST.chF[e.target.id === 'chcli' ? 'client' : 'by'] = e.target.value; render(); return; }
   if (e.target && (e.target.id === 'c_hayon' || e.target.id === 'c_grue')){ trIn()[e.target.id.slice(2)] = e.target.checked; TRW.k = 0; render(); return; }
   if (e.target && e.target.id === 'trimp'){ var tf = e.target.files && e.target.files[0]; e.target.value = ''; if (tf) trImport(tf); return; }
   if (e.target && e.target.id === 'carmsel'){ var cv = e.target.value; ST.carSel = /^(an|veh|dest|home|list)$/.test(cv) ? cv : +cv; ST.carSub = null; ST.carDel = null; ST.gridDel = null; ST.carNew = false; render(); return; }
@@ -6941,7 +6964,8 @@ document.addEventListener('change', function(e){
 });
 document.addEventListener('input', function(e){
   if (e.target.id === 'infoq'){ INFO.q = e.target.value; var pq = e.target.selectionStart; render(); var q2 = $('infoq'); if (q2){ q2.focus(); q2.setSelectionRange(pq, pq); } return; }
-  if (e.target && e.target.id === 'c_ref'){ trIn().ref = e.target.value; return; }
+  if (e.target && /^c_(client|po|bp|bl|ref)$/.test(e.target.id)){ trIn()[e.target.id.slice(2)] = e.target.value; return; }
+  if (e.target && e.target.id === 'chq'){ var cq = e.target, cp = cq.selectionStart; ST.chF.q = cq.value; render(); var nq = $('chq'); if (nq){ nq.focus(); try { nq.setSelectionRange(cp, cp); } catch(_){} } return; }
   var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
   if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
