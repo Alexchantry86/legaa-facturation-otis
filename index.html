@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.4 · 22/11/2026 (Chargements : client, PO, BP, BL, référence, ID, auteur, tri, filtres, recherche) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.5 · 23/11/2026 (Devis transport : accueil, brouillons, entité dans la demande, hors OTIS ; chargement : 3D refaite, déplacement manuel, gerbage 2/3/4) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1296,6 +1296,9 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
 .rail .rgrp.nb{border-top:0;margin-top:0}
 .chopt .chq{flex:1 1 280px}.chopt .chq input{width:100%;min-width:0}.chl .nowr{white-space:nowrap}.chl th .chs{font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;text-decoration:none;cursor:pointer;padding:0}.chl th .chs.on{color:var(--ink)}
+.trl{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:16px}.trl-c{display:flex;gap:14px;align-items:center;text-align:left;padding:18px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;font:inherit;color:inherit}.trl-c:hover{border-color:var(--ink-2)}.trl-c b{display:block;font-size:16px;margin-bottom:2px}.trl-i{flex:0 0 44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:3px}
+.trreco{border:1px solid var(--line);border-radius:3px;padding:12px}.trreco-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:10px}.trreco-r{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}.trk-o{display:flex;flex-direction:column;gap:2px;min-width:120px;padding:8px 12px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;text-align:left;font:inherit;color:inherit}.trk-o.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}.trk-o b{font-size:16px}.trk-m{display:flex;flex-direction:column;gap:3px;min-width:180px}.trk-m input{max-width:180px}
+.trsn{margin-left:4px;padding:2px 4px;font-size:12.5px}.trx{list-style:none;padding-left:0}.trx li{margin:4px 0}.tr3d canvas{touch-action:none}
 .trsrc{border-top:1px solid var(--line-2)}.trsrc details{margin-top:4px}.trsrc summary{cursor:pointer}.trsrc ul{margin:4px 0 0;padding-left:18px}
 .trdz{display:flex;gap:10px;align-items:stretch}.trdz .drop{flex:1;padding:16px;cursor:pointer}.trtpl{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;color:var(--ink-2);font-size:11px}.trtpl:hover{color:var(--ink);border-color:var(--ink-2)}
 .chopt{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}.chopt .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.chopt .fld input{min-width:220px}.chopt .ck{display:flex;align-items:center;gap:6px;font-size:14px;min-height:36px}
@@ -2727,7 +2730,7 @@ function renderTop(){
   else if (railKey() === 'qual'){ tabs = [['dq','Contrôle des données Odoo'],['sui','Suivi des anomalies']]; cur = mod === 'dq' ? 'dq' : 'sui'; att = 'piltab'; }
   else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
   var h = '';
-  if (mod === 'trp' || mod === 'mod'){ var TE = trpEnts(); if (TE.length) h += '<label class="entsel"><span>Entité</span><select id="railent" aria-label="Entité du transport">'+(mod === 'mod' && !ST.ent ? '<option value="">—</option>' : '')+TE.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === ST.ent ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></label>'; }
+  if (mod === 'mod'){ var TE = trpEnts(); if (TE.length) h += '<label class="entsel"><span>Entité</span><select id="railent" aria-label="Entité du transport">'+(mod === 'mod' && !ST.ent ? '<option value="">—</option>' : '')+TE.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === ST.ent ? ' selected' : '')+'>'+esc(a.label || a.code)+'</option>'; }).join('')+'</select></label>'; }
   h += tabs.map(function(t, i){ return '<button class="tab" role="tab" data-'+att+'="'+t[0]+'" aria-selected="'+(cur===t[0])+'"><b>'+(i+1)+'</b>'+t[1]+'</button>'; }).join('');
   if (mod === 'log' && ST.ent && ST.cfg.agencies[ST.ent]) h += '<button class="tablink" data-rail="pil" title="Ouvrir Piloter filtré sur cette entité">KPI de '+esc(ST.cfg.agencies[ST.ent].label || ST.ent)+' →</button>';
   $('tabs').innerHTML = h; $('tabs').hidden = !h;
@@ -3131,6 +3134,8 @@ var DEF_KNOW = [
   { id:'k2', title:'Books de passation ADV (un onglet par flux)', url:'https://claude.ai/artifact/UKbr6KcCiyutUjGiVMNsxn', desc:'Mode opératoire de facturation par entité OTIS, à l\'usage des ADV qui reprennent les comptes.' }
 ];
 function allAgencies(all){ return Object.keys(ST.cfg.agencies).map(function(k){ return ST.cfg.agencies[k]; }).filter(function(a){ return all || a.active !== false; }).sort(function(a,b){ return String(a.label||a.code).localeCompare(String(b.label||b.code), 'fr', { numeric:true }); }); }
+/* entité OTIS : grille de vente OTIS, contremaître, appareil. Réglage explicite (Paramétrage), sinon : parcours Logistique activé ou « OTIS » dans le nom / le client Odoo */
+function entOtis(code){ var a = ST.cfg.agencies[code]; if (!a) return false; if (a.otis === true || a.otis === false) return a.otis; return entScreens(a).log || /otis/i.test((a.label || '')+' '+(a.match || '')); }
 function entScreens(a){ var s = (a && a.screens) || {}; return { log:s.log !== false, trp:s.trp !== false }; }
 function myEnts(){
   var L = allAgencies(); if (!ST.user || isAdmin()) return L;
@@ -3203,9 +3208,9 @@ function vEntParams(){
   var L = allAgencies(true), h = '<section class="view onecol">';
   if (ST.newAg) return h + newAgForm() + '</section>';
   h += '<div class="card2"><div class="h2"><b>Entités et écrans disponibles</b><span class="muted small">Cocher les écrans proposés à l\'entrée de chaque entité.</span><div class="r"><button class="btn sm pri" data-newag>+ Créer une entité</button></div></div>'+
-    '<div class="tw"><table class="ct2"><thead><tr><th>Entité</th><th class="w1">Code</th><th>Client Odoo</th><th class="c">Logistique</th><th class="c">Transport</th><th class="c">Active</th><th></th></tr></thead><tbody>'+
+    '<div class="tw"><table class="ct2"><thead><tr><th>Entité</th><th class="w1">Code</th><th>Client Odoo</th><th class="c">OTIS</th><th class="c">Logistique</th><th class="c">Transport</th><th class="c">Active</th><th></th></tr></thead><tbody>'+
     L.map(function(a){ var sc = entScreens(a); return '<tr><td><b>'+esc(a.label || a.code)+'</b></td><td class="mono">'+esc(a.code)+'</td><td class="small muted">'+esc(a.match || '')+'</td>'+
-      '<td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|log"'+(sc.log?' checked':'')+'></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|trp"'+(sc.trp?' checked':'')+'></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|active"'+(a.active !== false?' checked':'')+'></td>'+
+      '<td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|otis"'+(entOtis(a.code)?' checked':'')+' title="Entité OTIS : grille de vente OTIS, contremaître et appareil dans les devis transport"></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|log"'+(sc.log?' checked':'')+'></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|trp"'+(sc.trp?' checked':'')+'></td><td class="c"><input type="checkbox" data-scr="'+esc(a.code)+'|active"'+(a.active !== false?' checked':'')+'></td>'+
       '<td class="c"><button class="btn sm" data-entpar="'+esc(a.code)+'">Paramètres de facturation</button></td></tr>'; }).join('')+'</tbody></table></div></div>';
   return h + '</section>';
 }
@@ -4877,10 +4882,11 @@ function trForm(mode){
     con:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M8 1.5l6.5 12h-13zM8 6v3.5M8 11.5v.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
     obs:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 3h12v8H7l-3 3v-3H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' };
   var h = '<div class="panel"><div class="ph"><h2>'+(mode === 'wiz' ? 'Demande de transport' : 'Livraison à réaliser')+'</h2>'+(mode === 'wiz' ? '<span class="muted small">client, adresse de livraison et contraintes</span>' : '')+'</div><form class="pb tform'+(mode === 'wiz' ? ' tform-w' : '')+'" id="tform" autocomplete="off">';
-  if (!MD) h += sec(1, 'Quelle entité ?', IC.ent)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Entité OTIS</label><select id="t_ag"'+(ST.ent ? ' disabled' : '')+'>'+ags.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === I.ag ? ' selected' : '')+'>'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+'</select></div>'+
-    '<div class="fld"><label class="lbl" for="t_cm">Contremaître</label><input id="t_cm" list="t_cml" value="'+esc(I.cm)+'"><datalist id="t_cml">'+cmL.map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join('')+'</datalist></div>'+
-    fld('Appareil / affaire','t_cmd','text',I.cmd)+fld('Date de livraison','t_date','date',I.date)+'</div></div>';
-  h += sec(2, 'Quel chantier ?', IC.chan)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_cp">Code postal</label><input id="t_cp" type="text" inputmode="numeric" maxlength="5" value="'+esc(I.cp)+'"></div>'+
+  var OT = entOtis(I.ag), EL = mode === 'wiz' ? myEnts() : ags;
+  if (!MD) h += sec(1, 'Quelle entité ?', IC.ent)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Entité</label><select id="t_ag"'+(ST.ent && mode !== 'wiz' ? ' disabled' : '')+'>'+EL.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === I.ag ? ' selected' : '')+'>'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+'</select>'+(mode === 'wiz' ? '<span class="hint">'+(OT ? 'Entité OTIS : grille de vente OTIS' : 'Hors OTIS : pas de grille de vente, prix préconisé à partir de l\'achat')+'</span>' : '')+'</div>'+
+    (OT ? '<div class="fld"><label class="lbl" for="t_cm">Contremaître</label><input id="t_cm" list="t_cml" value="'+esc(I.cm)+'"><datalist id="t_cml">'+cmL.map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join('')+'</datalist></div>'+
+    fld('Appareil / affaire','t_cmd','text',I.cmd) : '')+fld('Date de livraison','t_date','date',I.date)+'</div></div>';
+  h += sec(2, 'Lieu de livraison', IC.chan)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_cp">Code postal</label><input id="t_cp" type="text" inputmode="numeric" maxlength="5" value="'+esc(I.cp)+'"></div>'+
     '<div class="fld tf-com"><label class="lbl" for="t_ville">Commune</label><input id="t_ville" type="text" list="t_vl" value="'+esc(I.ville)+'"><datalist id="t_vl"></datalist></div>'+
     '<div class="fld" id="w78"'+(String(I.cp).slice(0,2) === '78' ? '' : ' hidden')+'><span class="lbl">Yvelines (78) : zone</span><select id="t_z78"><option value="">Choisir</option><option value="A"'+(I.z78==='A'?' selected':'')+'>Zone A (moitié Est)</option><option value="B"'+(I.z78==='B'?' selected':'')+'>Zone B (moitié Ouest)</option></select></div></div>'+
     '<div class="tf-geo" id="t_geo"></div>'+
@@ -5061,12 +5067,16 @@ var TR_STEPS = [['dem','Demande'],['col','Colis'],['chg','Chargement'],['ven','V
 var TR_COL = ['#7A93B0','#C9A66B','#8DAE8B','#B5838D','#6D8A96','#D4A373','#9C89B8','#A3B18A','#E0A458','#5E7D7E','#BC8A5F','#7B8FA1'];
 function trNum(v){ if (v === null || v === undefined || v === '') return null; var x = parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); return isNaN(x) ? null : x; }
 function trItems(){ var I = trIn(); if (!Array.isArray(I.items)) I.items = []; return I.items; }
-function trStep(){ var s = ST.trStep || 'dem'; return TR_STEPS.some(function(x){ return x[0] === s; }) ? s : 'dem'; }
+/* hors OTIS : pas de grille de vente, donc pas d'étape Vente */
+function trOtis(){ return entOtis(trIn().ag); }
+function trSteps(){ return trOtis() ? TR_STEPS : TR_STEPS.filter(function(x){ return x[0] !== 'ven'; }); }
+function trStep(){ var s = ST.trStep || 'dem'; return trSteps().some(function(x){ return x[0] === s; }) ? s : 'dem'; }
 /* ---- colis → unités ---- */
 function trUnits(){ var U = [], bad = [];
   trItems().forEach(function(it, ti){ var L = trNum(it.L), W = trNum(it.W), H = trNum(it.H), kg = trNum(it.kg) || 0, q = Math.max(0, Math.round(trNum(it.qty) || 0));
     if (!(L > 0 && W > 0 && H > 0)){ if (q) bad.push(it.name || 'Colis '+(ti + 1)); return; }
-    for (var k = 0; k < q; k++) U.push({ ti:ti, name:(it.name || 'Colis '+(ti + 1))+(q > 1 ? ' #'+(k + 1) : ''), L:L, W:W, H:H, kg:kg, stack:!!it.stack, rot:it.rot !== false }); });
+    var sn = it.stack ? Math.min(4, Math.max(2, Math.round(trNum(it.sn) || 2))) : 1;
+    for (var k = 0; k < q; k++) U.push({ ti:ti, name:(it.name || 'Colis '+(ti + 1))+(q > 1 ? ' #'+(k + 1) : ''), L:L, W:W, H:H, kg:kg, stack:!!it.stack, sn:sn, rot:it.rot !== false }); });
   return { U:U, bad:bad }; }
 function trTot(){ var r = trUnits(), U = r.U; return { n:U.length, kg:U.reduce(function(s, u){ return s + u.kg; }, 0), m3:U.reduce(function(s, u){ return s + u.L * u.W * u.H / 1e9; }, 0), len:U.reduce(function(m, u){ return Math.max(m, u.L, u.W); }, 0), bad:r.bad }; }
 /* ---- moteur de chargement (repris de ToolBox · Chargement) ---- */
@@ -5080,8 +5090,10 @@ function trPack(c, U0){
     K.eps.forEach(function(p){ ori(u).forEach(function(d){ var l = d[0], w = d[1], h = u.H, x = p[0], y = p[1], z = p[2];
       if (x + l > c.L + E || y + w > c.W + E || z + h > c.H + E) return; if (K.kg + u.kg > c.P + E) return;
       for (var i = 0; i < K.b.length; i++){ var b = K.b[i]; if (overl(x, x + l, b.x, b.x + b.l) && overl(y, y + w, b.y, b.y + b.w) && overl(z, z + h, b.z, b.z + b.h)) return; }
-      if (z > E){ var a = 0; for (var j = 0; j < K.b.length; j++){ var o = K.b[j]; if (Math.abs(o.z + o.h - z) > 1) continue; var ox = Math.min(x + l, o.x + o.l) - Math.max(x, o.x), oy = Math.min(y + w, o.y + o.w) - Math.max(y, o.y); if (ox > E && oy > E){ if (!o.u.stack) return; a += ox * oy; } } if (a < 0.8 * l * w) return; }
-      if (!best || x < best.x - E || (Math.abs(x - best.x) <= E && (z < best.z - E || (Math.abs(z - best.z) <= E && y < best.y - E)))) best = { x:x, y:y, z:z, l:l, w:w, h:h }; }); });
+      /* gerbage : supports gerbables, hauteur de pile (en nombre de colis) limitée par le gerbage de chaque colis de la pile */
+      var lv = 1, lim = u.stack ? u.sn : 99;
+      if (z > E){ var a = 0; for (var j = 0; j < K.b.length; j++){ var o = K.b[j]; if (Math.abs(o.z + o.h - z) > 1) continue; var ox = Math.min(x + l, o.x + o.l) - Math.max(x, o.x), oy = Math.min(y + w, o.y + o.w) - Math.max(y, o.y); if (ox > E && oy > E){ if (!o.u.stack || o.lv + 1 > o.lim) return; lv = Math.max(lv, o.lv + 1); lim = Math.min(lim, o.lim); a += ox * oy; } } if (a < 0.8 * l * w || lv > lim) return; }
+      if (!best || x < best.x - E || (Math.abs(x - best.x) <= E && (z < best.z - E || (Math.abs(z - best.z) <= E && y < best.y - E)))) best = { x:x, y:y, z:z, l:l, w:w, h:h, lv:lv, lim:lim }; }); });
     return best; }
   function addEps(K, b){ var pts = [[b.x + b.l, b.y, b.z], [b.x, b.y + b.w, b.z], [b.x, b.y, b.z + b.h]], more = [];
     pts.forEach(function(p){ var x = p[0], y = p[1], z = p[2], yy = 0, zz = 0, xx = 0;
@@ -5095,7 +5107,7 @@ function trPack(c, U0){
     if (!fitsEmpty(u) || u.kg > c.P){ out.push({ u:u, why:u.kg > c.P ? 'plus lourd que la charge utile' : 'plus grand que la caisse' }); return; }
     var pl = null, K = null; for (var i = 0; i < C.length; i++){ var p = tryCont(C[i], u); if (p){ pl = p; K = C[i]; break; } }
     if (!pl){ K = { b:[], eps:[[0, 0, 0]], kg:0 }; pl = tryCont(K, u); if (!pl){ out.push({ u:u, why:'non placé' }); return; } C.push(K); }
-    var b = { u:u, x:pl.x, y:pl.y, z:pl.z, l:pl.l, w:pl.w, h:pl.h, rot:pl.l !== u.L }; K.b.push(b); K.kg += u.kg; addEps(K, b); });
+    var b = { u:u, x:pl.x, y:pl.y, z:pl.z, l:pl.l, w:pl.w, h:pl.h, lv:pl.lv, lim:pl.lim, rot:pl.l !== u.L }; K.b.push(b); K.kg += u.kg; addEps(K, b); });
   C.forEach(function(K){ K.b.sort(function(a, b){ return a.x - b.x || a.z - b.z || a.y - b.y; }); });
   return { c:c, C:C, out:out }; }
 function trKStats(c, K){ var v = K.b.reduce(function(s, b){ return s + b.l * b.w * b.h; }, 0), kg = K.b.reduce(function(s, b){ return s + b.u.kg; }, 0);
@@ -5107,28 +5119,37 @@ function trCands(){
   if (TRW.cache && TRW.cache.sig === sig) return TRW.cache;
   /* véhicules = Gestion des transporteurs › Types de véhicules (dimensions intérieures, charge utile, hayon, grue) */
   var L = [], X = [];
-  if (r.U.length) vehTypes().forEach(function(t){ var no = function(w){ X.push({ t:t, why:w }); };
+  if (r.U.length) vehTypes().forEach(function(t){ var no = function(w, cd){ X.push({ t:t, why:w, cd:cd || null }); };
     var Lm = +t.L > 0 ? +t.L : +t.ml > 0 ? Math.round(+t.ml * 1000) : 0;
     if (!(Lm > 0 && +t.W > 0 && +t.cu > 0)) return no('longueur, largeur ou charge utile non renseignée');
-    if (I.grue && !t.grue) return no('sans grue'); if (!I.grue && t.grue) return no('porteur grue (grue non demandée)'); if (I.hayon && !t.hayon && !t.grue) return no('sans hayon');
+    /* contrainte hayon / grue non respectée : type écarté, mais il reste sélectionnable par l'utilisateur */
+    var cw = I.grue && !t.grue ? 'sans grue' : !I.grue && t.grue ? 'porteur grue (grue non demandée)' : I.hayon && !t.hayon && !t.grue ? 'sans hayon' : '';
     var c = { L:Lm, W:+t.W, H:+t.H > 0 ? +t.H : 3000, P:+t.cu }, R = trPack(c, r.U);
     if (R.out.length || !R.C.length) return no(R.out.length+' colis hors gabarit ou trop lourd'+(R.out.length > 1 ? 's' : ''));
     var S = R.C.map(function(K){ return trKStats(c, K); });
-    L.push({ t:t, c:c, R:R, n:R.C.length, S:S, fill:S.reduce(function(s, x){ return s + x.vp; }, 0) / S.length, size:c.L * c.W * c.H });
+    var cd = { t:t, c:c, R:R, n:R.C.length, S:S, fill:S.reduce(function(s, x){ return s + x.vp; }, 0) / S.length, size:c.L * c.W * c.H };
+    if (cw){ cd.force = cw; return no(cw, cd); }
+    L.push(cd);
   });
   L.sort(function(a, b){ return a.n - b.n || a.size - b.size; });
   TRW.cache = { sig:sig, L:L, X:X, bad:r.bad, n:r.U.length };
+  TRW.cache.usig = trUSig(r.U); if (I.pos && I.pos.sig !== TRW.cache.usig) I.pos = null;
   return TRW.cache; }
 /* coût d'achat le plus bas de chaque solution de camions (meilleur transporteur couvrant tous les camions) : sert à classer et à proposer */
 function trCandCost(cd){ var B = trBuy(cd); return B && B.ok.length ? B.ok[0].price : null; }
 function trRanked(){ var C = trCands(); C.L.forEach(function(x){ x.cost = trCandCost(x); });
   return C.L.slice().sort(function(a, b){ return ((a.cost === null) - (b.cost === null)) || ((a.cost || 0) - (b.cost || 0)) || a.n - b.n || a.size - b.size; }); }
-function trCand(){ var C = trCands(), I = trIn(), x = C.L.filter(function(c){ return c.t.code === I.vt; })[0]; if (x) return x; if (!C.L.length) return null; if (ST.module === 'chgm') return C.L[0];
-  var key = JSON.stringify([I.cp, I.z78, I.flux, I.h, I.km, I.man]); if (!C.best || C.best.k !== key) C.best = { k:key, cd:trRanked()[0] }; return C.best.cd; }
+function trCand(){ var C = trCands(), I = trIn(), x = C.L.filter(function(c){ return c.t.code === I.vt; })[0] || (C.X.filter(function(e){ return e.cd && e.t.code === I.vt; })[0] || {}).cd; if (x) return trManApply(x); if (!C.L.length) return null; if (ST.module === 'chgm') return trManApply(C.L[0]);
+  var key = JSON.stringify([I.cp, I.z78, I.flux, I.h, I.km, I.man]); if (!C.best || C.best.k !== key) C.best = { k:key, cd:trRanked()[0] }; return trManApply(C.best.cd); }
+function trUSig(U){ return JSON.stringify(U.map(function(u){ return [u.L, u.W, u.H, u.kg, u.stack, u.sn, u.rot]; })); }
+/* déplacements manuels (vue 3D) : I.pos = { sig, vt, mv:{ 'camion:colis':{ x, y, z, l, w } } }, réappliqués tant que les colis ne changent pas */
+function trManApply(cd){ var I = trIn(), M = I.pos; if (!cd || !M || M.vt !== cd.t.code || cd.manSig === JSON.stringify(M.mv)) return cd;
+  Object.keys(M.mv || {}).forEach(function(key){ var p = key.split(':'), K = cd.R.C[+p[0]], b = K && K.b[+p[1]], v = M.mv[key]; if (!b) return; b.x = v.x; b.y = v.y; b.z = v.z; if (v.l && v.w){ b.l = v.l; b.w = v.w; b.rot = b.l !== b.u.L; } b.man = true; });
+  cd.S = cd.R.C.map(function(K){ return trKStats(cd.c, K); }); cd.manSig = JSON.stringify(M.mv); return cd; }
 /* entrée du moteur de prix pour un camion : charge réelle du camion */
 function trTruckIn(cd, k){ var I = clone(trIn()), s = cd.S[k]; I.pal = String(s.pal); I.kg = String(Math.round(s.kg)); I.vol = String(Math.round(s.m3 * 100) / 100); I.len = String(Math.round(s.len)); I.items = null; return I; }
 /* ---- vente : camion par camion ---- */
-function trSell(){ var cd = trCand(); if (!cd) return null; var out = { rows:[], total:0, ok:true, zone:null, G:null };
+function trSell(){ var cd = trCand(); if (!cd || !trOtis()) return null; var out = { rows:[], total:0, ok:true, zone:null, G:null };
   for (var k = 0; k < cd.n; k++){ var S = sellCalc(trTruckIn(cd, k)); out.zone = S.zone; out.G = S.G; if (!S.zone){ out.ok = false; out.noZone = true; break; }
     if (!S.best){ out.ok = false; out.rows.push({ k:k, best:null, rows:S.rows }); continue; } out.rows.push({ k:k, best:S.best, rows:S.rows }); out.total = E.r2(out.total + S.best.q.total); }
   return out; }
@@ -5141,6 +5162,10 @@ function trBuy(cd0){ var cd = cd0 || trCand(); if (!cd) return null; var by = {}
     X.ok = ok; X.price = ok ? E.r2(X.per.reduce(function(s, q){ return s + q.price; }, 0)) : null; X.unk = ok && X.per.some(function(q){ return q.unk; }); X.id = id; return X; });
   L.sort(function(a, b){ return (b.ok - a.ok) || ((a.price || 0) - (b.price || 0)); });
   return { L:L, ok:L.filter(function(x){ return x.ok; }), flux:I0.flux === 'ab' ? 'ab' : 'aa' }; }
+/* prix de vente : grille (OTIS) ou prix retenu par l'utilisateur (hors OTIS) */
+var TR_K = [1.2, 1.3, 1.4];
+function trSellVal(expl){ if (trOtis()){ var V = trSell(); return V && V.ok ? V.total : null; } var I = trIn(), v = trNum(I.sellMan); if (v !== null && v > 0) return v; if (expl) return null;
+  var P = trBuyPicked(trBuy()); return P ? Math.round(P.x.price * (+I.sellK || 1.3)) : null; }
 function trBuyPicked(B){ var P = ST.trPick, ok = B ? B.ok : []; if (P){ var x = ok.filter(function(o){ return o.id === P; })[0]; if (x) return { x:x, picked:true }; } return ok[0] ? { x:ok[0], picked:false } : null; }
 function trWhat(cd){ return cd ? (cd.n > 1 ? cd.n+' × ' : '')+cd.t.label : ''; }
 /* ---- écrans ---- */
@@ -5148,13 +5173,14 @@ function trStepOk(s){ var T = trTot(), cd = trCand();
   if (s === 'col' || s === 'dem') return true;
   if (s === 'chg') return T.n > 0;
   return !!cd; }
-function trStepper(){ var cur = trStep(), i0 = TR_STEPS.map(function(x){ return x[0]; }).indexOf(cur);
-  return '<nav class="trw-st" aria-label="Étapes du devis transport">'+TR_STEPS.map(function(s, i){ var dis = !trStepOk(s[0]);
+function trStepper(){ var ST0 = trSteps(), cur = trStep(), i0 = ST0.map(function(x){ return x[0]; }).indexOf(cur);
+  return '<nav class="trw-st" aria-label="Étapes du devis transport">'+ST0.map(function(s, i){ var dis = !trStepOk(s[0]);
     return (i ? '<i class="stc'+(i <= i0 ? ' done' : '')+'" aria-hidden="true"></i>' : '')+'<button class="trw-b'+(i < i0 ? ' done' : '')+'" data-trstep="'+s[0]+'" aria-current="'+(cur === s[0] ? 'step' : 'false')+'"'+(dis ? ' disabled' : '')+'><span class="stl">'+(i < i0 ? '✓' : i + 1)+'</span><span class="stx">'+s[1]+'</span></button>'; }).join('')+'</nav>'; }
-function trNav(){ var i = TR_STEPS.map(function(x){ return x[0]; }).indexOf(trStep()), pv = TR_STEPS[i - 1], nx = TR_STEPS[i + 1], why = '';
+function trNav(){ var ST0 = trSteps(), i = ST0.map(function(x){ return x[0]; }).indexOf(trStep()), pv = ST0[i - 1], nx = ST0[i + 1], why = '';
   if (nx && !trStepOk(nx[0])) why = nx[0] === 'chg' ? 'Ajouter au moins un colis avec ses trois dimensions.' : 'Aucun camion du référentiel ne prend ces colis avec ces contraintes.';
-  return '<div class="nextbar">'+(pv ? '<button class="btn" data-trstep="'+pv[0]+'">← '+pv[1]+'</button>' : '')+'<span class="why">'+esc(why)+'</span>'+(nx ? '<button class="btn pri" data-trstep="'+nx[0]+'"'+(why ? ' disabled' : '')+'>Étape suivante : '+nx[1]+' →</button>' : '')+'</div>'; }
-function vTrWiz(){ var V = ST.trDone, s = trStep();
+  var I = trIn(), sv = role() !== 'lecture' ? '<button class="btn" data-trdraft>'+(I.tid ? 'Enregistrer les modifications' : 'Enregistrer le brouillon')+'</button>' : '';
+  return '<div class="nextbar">'+(pv ? '<button class="btn" data-trstep="'+pv[0]+'">← '+pv[1]+'</button>' : '')+'<span class="why">'+esc(why || (I.savedAt ? 'Enregistré à '+I.savedAt : I.tid ? (TRST[I.tstatus] || 'Enregistré') : ''))+'</span>'+sv+(nx ? '<button class="btn pri" data-trstep="'+nx[0]+'"'+(why ? ' disabled' : '')+'>Étape suivante : '+nx[1]+' →</button>' : '')+'</div>'; }
+function vTrWiz(){ if (ST.trLand) return vTrLand(); var V = ST.trDone, s = trStep();
   var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+'</span><span class="sp"></span><button class="btn sm" data-ttab="hist">Transports validés</button><button class="btn sm g" data-trnew>Nouveau devis</button></div>' : '';
   var h = '<section class="view trw">'+ban+trStepper();
   h += s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn();
@@ -5165,14 +5191,14 @@ function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<
     '<button class="trtpl" data-trtpl title="Télécharger le modèle Excel" aria-label="Télécharger le modèle Excel"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M12 10v7M9 14l3 3 3-3"/></svg><span>Modèle</span></button></div>';
   h += '<div class="tw"><table class="trc"><thead><tr><th>Colis</th><th class="n">Long.</th><th class="n">Larg.</th><th class="n">Haut.</th><th class="n">Poids</th><th class="n">Qté</th><th class="c">'+(IT.length ? '<button class="lnk" data-trall="stack" title="Tout cocher / tout décocher">Gerbable</button>' : 'Gerbable')+'</th><th class="c">'+(IT.length ? '<button class="lnk" data-trall="rot" title="Tout cocher / tout décocher">Rotation</button>' : 'Rotation')+'</th><th></th></tr></thead><tbody>'+
     (IT.length ? IT.map(function(it, i){ return '<tr>'+cell(i, 'name', it.name, '100%;min-width:130px')+cell(i, 'L', it.L, '72px', 'n')+cell(i, 'W', it.W, '72px', 'n')+cell(i, 'H', it.H, '72px', 'n')+cell(i, 'kg', it.kg, '72px', 'n')+cell(i, 'qty', it.qty, '52px', 'n')+
-      '<td class="c"><input type="checkbox" data-tri="'+i+'|stack"'+(it.stack ? ' checked' : '')+' aria-label="Gerbable"></td><td class="c"><input type="checkbox" data-tri="'+i+'|rot"'+(it.rot !== false ? ' checked' : '')+' aria-label="Rotation autorisée"></td><td><button class="btn sm g" data-trcdel="'+i+'" aria-label="Supprimer la ligne">✕</button></td></tr>'; }).join('')
+      '<td class="c nowr"><input type="checkbox" data-tri="'+i+'|stack"'+(it.stack ? ' checked' : '')+' aria-label="Gerbable"> <select class="trsn" data-tri="'+i+'|sn" aria-label="Gerbage possible"'+(it.stack ? '' : ' hidden')+'>'+[2, 3, 4].map(function(n){ return '<option value="'+n+'"'+(+(it.sn || 2) === n ? ' selected' : '')+'>sur '+n+'</option>'; }).join('')+'</select></td><td class="c"><input type="checkbox" data-tri="'+i+'|rot"'+(it.rot !== false ? ' checked' : '')+' aria-label="Rotation autorisée"></td><td><button class="btn sm g" data-trcdel="'+i+'" aria-label="Supprimer la ligne">✕</button></td></tr>'; }).join('')
       : '<tr><td colspan="9" class="empty">Aucun colis : déposer un bon de préparation Odoo (PDF) ou le fichier Excel ci-dessus, ou ajouter une palette, une ligne (modèle ToolBox : colis, longueur, largeur, hauteur, poids, quantité, gerbable, rotation).</td></tr>')+'</tbody></table></div>';
   return h + '<div class="pb" id="trtot">'+trTotHtml()+'</div></div>'; }
 function trTotHtml(){ var T = trTot(); return '<div class="trk"><span><b>'+T.n+'</b> colis</span><span><b>'+fr(T.kg, 0)+'</b> kg</span><span><b>'+fr(T.m3, 2)+'</b> m³</span><span>plus grande longueur <b>'+fr(T.len, 0)+'</b> mm</span>'+(T.bad.length ? '<span class="neg">Sans dimensions : '+esc(T.bad.join(', '))+'</span>' : '')+'</div>'; }
 /* origine des véhicules + types écartés, avec leur raison */
 function trVtSrc(C){ var X = C.X || [];
   return '<div class="pb small muted trsrc">Véhicules et dimensions : Gestion des transporteurs › Types de véhicules ('+vehTypes().length+' types)'+(isAdmin() ? ' · <button class="lnk small" data-govt>modifier</button>' : '')+
-    (X.length ? '<details><summary>'+X.length+' type'+(X.length > 1 ? 's' : '')+' non retenu'+(X.length > 1 ? 's' : '')+'</summary><ul>'+X.map(function(x){ return '<li>'+esc(x.t.label || x.t.code)+' : '+esc(x.why)+'</li>'; }).join('')+'</ul></details>' : '')+'</div>'; }
+    (X.length ? '<details'+(X.some(function(x){ return x.cd && trIn().vt === x.t.code; }) ? ' open' : '')+'><summary>'+X.length+' type'+(X.length > 1 ? 's' : '')+' non retenu'+(X.length > 1 ? 's' : '')+'</summary><ul class="trx">'+X.map(function(x){ var on = x.cd && trIn().vt === x.t.code; return '<li>'+(x.cd ? '<button class="btn sm'+(on ? ' pri' : '')+'" data-trveh="'+esc(x.t.code)+'">'+(on ? 'Choisi' : 'Choisir')+'</button> ' : '')+esc(x.t.label || x.t.code)+' : '+esc(x.why)+(x.cd ? ' <span class="small">('+x.cd.n+' camion'+(x.cd.n > 1 ? 's' : '')+')</span>' : '')+'</li>'; }).join('')+'</ul>'+(X.some(function(x){ return x.cd; }) ? '<p class="small muted" style="margin:4px 0 0">Les types écartés pour une contrainte (hayon, grue) peuvent être choisis ; ceux qui ne prennent pas les colis ne le peuvent pas.</p>' : '')+'</details>' : '')+'</div>'; }
 function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand(), ch = ST.module === 'chgm';
   if (!cd) return '<div class="panel pb note"><b>Aucun camion du référentiel ne prend ces colis</b>'+(I.hayon ? ' avec hayon' : '')+(I.grue ? ' avec grue' : '')+'. Vérifier les dimensions et les poids, ou compléter les types de véhicules (Gestion transporteurs › Types de véhicules).</div>'+'<div class="panel">'+trVtSrc(C)+'</div>';
   var h = '<div class="trw-2"><div class="panel"><div class="ph"><h2>Camions possibles</h2><span class="muted small">'+C.n+' colis · '+(I.hayon ? 'hayon · ' : '')+(I.grue ? 'grue · ' : 'hors porteurs grue · ')+(ch ? 'classés par nombre de camions puis taille' : 'classés par coût d\'achat estimé')+'</span></div><div class="tw"><table class="trv"><thead><tr><th></th><th>Véhicule</th><th class="n">Nb</th><th class="n">Volume</th><th class="n">Charge</th>'+(ch ? '' : '<th class="n">Achat estimé</th>')+'</tr></thead><tbody>'+
@@ -5180,9 +5206,10 @@ function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand(), ch = ST.module 
       return '<tr class="'+(on ? 'open' : '')+'" data-trveh="'+esc(x.t.code)+'" style="cursor:pointer"><td><input type="radio" name="trveh" data-trveh="'+esc(x.t.code)+'"'+(on ? ' checked' : '')+' aria-label="'+esc(x.t.label)+'"></td><td><b>'+esc(x.t.label)+'</b><br><span class="small muted">'+esc(vtShort(x.t))+' · '+fr(x.c.L / 1000, 2)+' × '+fr(x.c.W / 1000, 2)+' × '+fr(x.c.H / 1000, 2)+' m</span></td><td class="n">'+x.n+'</td><td class="n">'+Math.round(x.fill * 100)+' %</td><td class="n">'+Math.round(kp * 100)+' %</td>'+(ch ? '' : '<td class="n">'+(x.cost !== null ? n2(x.cost) : '<span class="muted" title="aucun transporteur ne couvre cette solution">—</span>')+'</td>')+'</tr>'; }).join('')+'</tbody></table></div>'+trVtSrc(C)+'</div>';
   var k = Math.min(TRW.k, cd.n - 1), s = cd.S[k];
   h += '<div class="panel"><div class="ph"><h2>Plan de chargement · '+esc(trWhat(cd))+'</h2>'+(cd.n > 1 ? '<span class="seg2">'+cd.S.map(function(_, i){ return '<button class="'+(i === k ? 'on' : '')+'" data-trk="'+i+'">Camion '+(i + 1)+'</button>'; }).join('')+'</span>' : '')+'</div>'+
-    '<div class="pb"><div class="trk"><span><b>'+s.n+'</b> colis</span><span><b>'+fr(s.kg, 0)+'</b> kg ('+Math.round(s.kp * 100)+' % de la CU)</span><span><b>'+fr(s.m3, 2)+'</b> m³ ('+Math.round(s.vp * 100)+' %)</span><span>longueur utilisée <b>'+fr(s.ldm / 1000, 2)+'</b> m</span><span>≈ <b>'+s.pal+'</b> pal. au sol</span></div>'+
+    (cd.force ? '<div class="pb note" style="margin:0">Type non retenu ('+esc(cd.force)+') choisi manuellement.</div>' : '')+
+    '<div class="pb"><div class="trk"><span>caisse <b>'+fr(cd.c.L / 1000, 2)+' × '+fr(cd.c.W / 1000, 2)+' × '+fr(cd.c.H / 1000, 2)+'</b> m · CU '+fr(cd.c.P / 1000, 1)+' t</span><span><b>'+s.n+'</b> colis</span><span><b>'+fr(s.kg, 0)+'</b> kg ('+Math.round(s.kp * 100)+' % de la CU)</span><span><b>'+fr(s.m3, 2)+'</b> m³ ('+Math.round(s.vp * 100)+' %)</span><span>longueur utilisée <b>'+fr(s.ldm / 1000, 2)+'</b> m</span><span>≈ <b>'+s.pal+'</b> pal. au sol</span></div>'+
     '<div class="tr3w"><div id="tr3d" class="tr3d" role="img" aria-label="Plan de chargement en 3D du camion '+(k + 1)+'"><span class="muted small">Chargement de la vue 3D…</span></div><div class="tr3v seg2">'+[['iso','3D'],['top','Dessus'],['side','Côté'],['back','Arrière']].map(function(v){ return '<button class="'+(TRW.view === v[0] ? 'on' : '')+'" data-trv="'+v[0]+'">'+v[1]+'</button>'; }).join('')+'</div></div>'+
-    '<p class="small muted" style="margin:8px 0 0">Avant du camion (cabine) à gauche, porte à droite · ordre de chargement du fond vers la porte · glisser pour tourner, molette pour zoomer.</p></div></div></div>';
+    '<p class="small muted" style="margin:8px 0 0">Avant (cabine) à gauche, portes à droite. Glisser un colis pour le déplacer (vue Dessus conseillée), double-clic pour le tourner ; glisser le fond pour tourner la vue, molette pour zoomer.'+(trIn().pos && trIn().pos.vt === cd.t.code ? ' <button class="lnk small" data-tr3reset>Rétablir le plan calculé</button>' : '')+'</p></div></div></div>';
   return h; }
 function vTrVen(){ var cd = trCand(), V = trSell(), I = trIn();
   if (!V || V.noZone) return '<div class="panel pb note">'+(String(I.cp).slice(0, 2) === '78' ? 'Yvelines : choisir la zone A ou B à l\'étape Demande.' : 'Code postal à compléter à l\'étape Demande pour déterminer la zone.')+'</div>';
@@ -5192,7 +5219,7 @@ function vTrVen(){ var cd = trCand(), V = trSell(), I = trIn();
     '<tr class="tot"><td colspan="4">Total vente</td><td class="n">'+(V.ok ? n2(V.total) : '—')+'</td></tr></tbody></table></div>';
   if (!V.ok) h += '<p class="pb note" style="margin:0"><span class="pill p-bloquant">Sur devis</span> Au moins un camion n\'entre dans aucun véhicule de la grille de vente : prix à établir manuellement.</p>';
   return h + '<p class="pb small muted" style="margin:0">Chaque camion est chiffré séparément avec la grille de vente de l\'entité (zone, durée '+esc(fr(+I.h || 0))+' h, '+esc(fr(+I.km || 0, 0))+' km'+(I.man ? ', manutentionnaire' : '')+'). Au-delà de 6 h, bascule en journée.</p></div>'; }
-function vTrAch(){ var cd = trCand(), B = trBuy(), V = trSell(), sell = V && V.ok ? V.total : null, P = trBuyPicked(B);
+function vTrAch(){ var cd = trCand(), B = trBuy(), sell = trSellVal(true), P = trBuyPicked(B);
   var h = '<div class="panel"><div class="ph"><h2>Achat · les 3 solutions les plus économiques</h2><span class="pill p-info">Flux '+FLUX[B.flux]+'</span><span class="muted small">'+esc(trWhat(cd))+' · '+carriers().filter(function(c){ return c.active !== false; }).length+' transporteur(s) paramétré(s)</span></div><div class="pb">';
   if (!B.ok.length) h += '<p class="note">Aucun transporteur ne couvre cette livraison avec ses grilles : devis spécifique à demander.</p>';
   else h += '<div class="tr-opts3">'+B.ok.slice(0, 3).map(function(x, i){ var mg = sell !== null ? E.r2(sell - x.price) : null, on = P && P.picked && P.x === x;
@@ -5202,21 +5229,29 @@ function vTrAch(){ var cd = trCand(), B = trBuy(), V = trSell(), sell = V && V.o
   h += '<div class="tw" style="margin-top:14px"><table class="buy-t"><thead><tr><th class="c">Rang</th><th>Transporteur</th><th>Solution</th><th class="n">Achat HT</th></tr></thead><tbody>'+B.L.map(function(x, r){
     return '<tr'+(x.ok ? (r < 3 ? ' class="top3"' : '') : ' class="excl"')+'><td class="c">'+(x.ok ? '<span class="rk'+(r < 3 ? ' on' : '')+'">'+(r + 1)+'</span>' : '')+'</td><td>'+esc(x.carrier)+'</td><td class="small">'+(x.ok ? esc(x.per.map(function(q, k){ return (cd.n > 1 ? 'C'+(k + 1)+' : ' : '')+q.G.label+' · '+q.what; }).join(' | ')) : '<span class="muted">'+esc(uniqA(x.why).slice(0, 2).join(' · '))+'</span>')+'</td><td class="n">'+(x.ok ? n2(x.price) : '—')+'</td></tr>'; }).join('')+'</tbody></table></div>';
   return h + '</div></div>'; }
-function trInfoOpen(id){ var B = trBuy(), x = B && B.L.filter(function(o){ return o.id === id; })[0], box = $('modal'); if (!x || !box) return; var cd = trCand(), V = trSell(), sell = V && V.ok ? V.total : null, mg = sell !== null ? E.r2(sell - x.price) : null;
+function trInfoOpen(id){ var B = trBuy(), x = B && B.L.filter(function(o){ return o.id === id; })[0], box = $('modal'); if (!x || !box) return; var cd = trCand(), sell = trSellVal(true), mg = sell !== null ? E.r2(sell - x.price) : null;
   box.innerHTML = '<div class="mbox mbox-s bi" role="dialog" aria-modal="true" aria-labelledby="bi-t"><div class="mhead"><div><span class="lbl">Flux '+FLUX[B.flux]+' · '+esc(trWhat(cd))+'</span><h2 id="bi-t">'+esc(x.carrier)+' · '+eur(x.price)+' HT</h2></div><div class="row"><button class="btn" data-buyinfoclose>Fermer</button></div></div><div class="mbody">'+
     '<table class="bi-t"><tbody>'+x.per.map(function(q, k){ return '<tr><th>'+(cd.n > 1 ? 'Camion '+(k + 1) : 'Calcul')+'</th><td><b>'+esc(q.G.label)+'</b> · '+esc(q.what)+'<br><span class="formula">'+esc(q.detail)+'</span><br><b>'+eur(q.price)+' HT</b></td></tr>'; }).join('')+
     (mg !== null ? '<tr><th>Vente</th><td>'+eur(sell)+' HT</td></tr><tr><th>Marge</th><td><b class="'+mgClass(mg / sell * 100)+'">'+(mg >= 0 ? '+' : '')+n2(mg)+' € · '+fr(mg / sell * 100, 1)+' %</b></td></tr>' : '')+
     '<tr><th>Contact</th><td>'+esc([x.c.contact, x.c.phone, x.c.email].filter(Boolean).join(' · ') || '—')+'</td></tr></tbody></table>'+
     (role() === 'lecture' ? '' : '<div class="row" style="margin-top:12px"><button class="btn pri" data-trpick="'+esc(x.id)+'" data-buyinfoclose>Retenir ce transporteur</button></div>')+'</div></div>';
   box.hidden = false; document.body.classList.add('noscroll'); var b = box.querySelector('[data-buyinfoclose]'); if (b) b.focus(); }
-function trSynData(){ var I = trIn(), cd = trCand(), V = trSell(), B = trBuy(), P = trBuyPicked(B), sell = V && V.ok ? V.total : null, buy = P ? P.x.price : null;
+function trSynData(){ var I = trIn(), cd = trCand(), V = trSell(), B = trBuy(), P = trBuyPicked(B), sell = trSellVal(), buy = P ? P.x.price : null;
   var mg = sell !== null && buy !== null ? E.r2(sell - buy) : null; return { I:I, cd:cd, V:V, B:B, P:P, sell:sell, buy:buy, mg:mg, pc:mg !== null && sell ? mg / sell * 100 : null }; }
-function vTrSyn(){ var D = trSynData(), I = D.I, cls = mgClass(D.pc), T = trTot();
+function vTrSyn(){ var D = trSynData(), I = D.I, cls = mgClass(D.pc), T = trTot(), OT = trOtis(), man = trNum(I.sellMan) > 0, kk = +I.sellK || 1.3;
   var h = '<div class="panel syn"><div class="ph"><h2>Synthèse · marge</h2><span class="muted small">objectif de marge '+MG_TARGET+' %</span></div><div class="pb" style="display:grid;gap:14px">';
-  h += '<div class="syn-k"><div><span class="lbl">Vente HT</span><b>'+(D.sell !== null ? eur(D.sell) : '—')+'</b><span class="small muted">'+esc(D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.v.label; }).join(' + ') : 'sur devis')+'</span></div>'+
+  h += '<div class="syn-k"><div><span class="lbl">Vente HT</span><b>'+(D.sell !== null ? eur(D.sell) : '—')+'</b><span class="small muted">'+esc(OT ? (D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.v.label; }).join(' + ') : 'sur devis') : man ? 'prix saisi' : D.sell !== null ? 'achat × '+fr(kk, 2) : 'achat à retenir')+'</span></div>'+
     '<div><span class="lbl">Achat HT</span><b>'+(D.buy !== null ? eur(D.buy) : '—')+'</b><span class="small muted">'+(D.P ? esc(D.P.x.carrier)+(D.P.picked ? ' · retenu' : ' · le moins cher, non retenu') : 'devis spécifique')+'</span></div>'+
     '<div class="'+cls+'"><span class="lbl">Marge</span><b>'+(D.mg !== null ? (D.mg >= 0 ? '+' : '')+n2(D.mg)+' €' : '—')+'</b><span class="small">&nbsp;</span></div>'+
     '<div class="'+cls+' syn-pc"><span class="lbl">Taux de marge</span><b>'+(D.pc !== null ? fr(D.pc, 1)+' %' : '—')+'</b><span class="small">'+(D.pc === null ? '&nbsp;' : D.pc < MG_LOW ? 'sous le seuil de '+MG_LOW+' %' : D.pc < MG_TARGET ? 'sous l\'objectif' : 'objectif atteint')+'</span></div></div>';
+  /* hors OTIS : pas de grille de vente, préconisation entre ×1,20 et ×1,40 de l'achat retenu */
+  if (!OT){ var bu = D.buy;
+    h += '<div class="trreco"><div class="trreco-h"><b>Prix de vente préconisé</b><span class="small muted">'+esc(agLabel(I.ag))+' n\'a pas de grille de vente : préconisation entre ×1,20 et ×1,40 de l\'achat retenu</span></div>'+
+      (bu !== null ? '<div class="trreco-r">'+TR_K.map(function(k){ var on = !man && Math.abs(kk - k) < 1e-6, v = Math.round(bu * k), pc = (v - bu) / v * 100;
+        return '<button class="trk-o'+(on ? ' on' : '')+'" data-trsk="'+k+'"><span>× '+fr(k, 2)+'</span><b>'+eur(v)+'</b><span class="small">marge '+fr(pc, 1)+' %</span></button>'; }).join('')+
+        '<label class="fld trk-m"><span class="lbl">Prix de vente retenu (€ HT)</span><input id="t_sell" inputmode="decimal" value="'+esc(D.sell !== null ? String(D.sell) : '')+'"></label></div>'+
+        (man && (D.sell < Math.round(bu * 1.2) || D.sell > Math.round(bu * 1.4)) ? '<p class="small neg" style="margin:6px 0 0">Prix retenu hors de la fourchette préconisée ('+eur(Math.round(bu * 1.2))+' à '+eur(Math.round(bu * 1.4))+').</p>' : '')
+      : '<p class="note" style="margin:0">Aucun achat disponible : prix de vente à saisir.</p><label class="fld trk-m"><span class="lbl">Prix de vente retenu (€ HT)</span><input id="t_sell" inputmode="decimal" value="'+esc(I.sellMan || '')+'"></label>')+'</div>'; }
   h += '<table class="bi-t trs"><tbody>'+
     '<tr><th>Client</th><td>'+esc(agLabel(I.ag))+(I.cm ? ' · '+esc(I.cm) : '')+(I.cmd ? ' · '+esc(I.cmd) : '')+'</td></tr>'+
     '<tr><th>Livraison</th><td>'+esc((I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville)+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']+(I.hayon ? ' · hayon' : '')+(I.grue ? ' · grue' : '')+(I.man ? ' · manutentionnaire' : '')+'</td></tr>'+
@@ -5226,40 +5261,130 @@ function vTrSyn(){ var D = trSynData(), I = D.I, cls = mgClass(D.pc), T = trTot(
   h += '<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-trpdf'+(TRW.busy ? ' disabled' : '')+'>'+(TRW.busy ? 'Préparation du PDF…' : 'Télécharger le PDF de synthèse')+'</button><span class="small muted">à joindre au bon de commande (PO) dans Odoo</span><span class="sp"></span><button class="btn pri" data-a="addTr"'+(role() === 'lecture' || D.sell === null ? ' disabled' : '')+'>Valider le transport</button></div>';
   return h + '</div></div>'; }
 /* ---- vue 3D (three.js, chargé à la demande) ---- */
-var TR3 = { lib:null, rd:null, scn:null, cam:null, ctl:null, grp:null, raf:0, el:null };
+var TR3 = { lib:null, rd:null, scn:null, cam:null, ctl:null, grp:null, raf:0, el:null, cd:null, k:0, meshes:[], drag:null, keep:null };
 function tr3Lib(){ if (TR3.lib) return Promise.resolve(TR3.lib);
   return Promise.all([import('three'), import('three/addons/controls/OrbitControls.js')]).then(function(m){ TR3.lib = { T:m[0], OC:m[1].OrbitControls }; return TR3.lib; }); }
-function tr3Scene(T, c, K){ var g = new T.Group(), m = 1 / 1000, L = c.L * m, W = c.W * m, H = c.H * m;
-  var fl = new T.Mesh(new T.PlaneGeometry(L, W), new T.MeshLambertMaterial({ color:0xC9D2DC })); fl.rotation.x = -Math.PI / 2; fl.position.set(L / 2, 0, W / 2); g.add(fl);
-  var sh = new T.Mesh(new T.BoxGeometry(L, H, W), new T.MeshBasicMaterial({ color:0x52647A, transparent:true, opacity:.06, side:T.BackSide, depthWrite:false })); sh.position.set(L / 2, H / 2, W / 2); g.add(sh);
-  var ed = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(L, H, W)), new T.LineBasicMaterial({ color:0x0F2238 })); ed.position.copy(sh.position); g.add(ed);
-  var fr0 = new T.Mesh(new T.PlaneGeometry(W, H), new T.MeshBasicMaterial({ color:0x0F2238, transparent:true, opacity:.14, side:T.DoubleSide, depthWrite:false })); fr0.rotation.y = Math.PI / 2; fr0.position.set(0, H / 2, W / 2); g.add(fr0);
-  K.b.forEach(function(b){ var geo = new T.BoxGeometry(b.l * m, b.h * m, b.w * m), me = new T.Mesh(geo, new T.MeshLambertMaterial({ color:new T.Color(TR_COL[b.u.ti % TR_COL.length]) }));
-    me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); me.add(new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color:0x0F2238 }))); g.add(me); });
+/* silhouette selon le type de véhicule (libellé / code du référentiel) */
+function tr3Kind(t){ var s = GRP.norm(((t && t.label) || '')+' '+((t && t.code) || ''));
+  return /semi|remorque|13 ?6/.test(s) ? 'semi' : /plateau|plate|nue/.test(s) ? 'plateau' : /fourgon|vl|utilitaire|m3|m³|van/.test(s) ? 'van' : 'porteur'; }
+function tr3Label(T, txt, h){ var cv = document.createElement('canvas'), x = cv.getContext('2d'), f = 44; x.font = '600 '+f+'px Barlow, Arial, sans-serif';
+  var w = Math.ceil(x.measureText(txt).width) + 28; cv.width = w; cv.height = f + 22; x.font = '600 '+f+'px Barlow, Arial, sans-serif';
+  x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(0, 0, w, cv.height); x.strokeStyle = '#0F2238'; x.lineWidth = 3; x.strokeRect(1.5, 1.5, w - 3, cv.height - 3); x.fillStyle = '#0F2238'; x.textBaseline = 'middle'; x.fillText(txt, 14, cv.height / 2 + 2);
+  var tx = new T.CanvasTexture(cv); tx.anisotropy = 4; var sp = new T.Sprite(new T.SpriteMaterial({ map:tx, depthTest:false, transparent:true })); sp.scale.set(h * w / cv.height, h, 1); sp.renderOrder = 10; return sp; }
+/* caisse, cabine, roues, portes, hayon, grue, cotes ; colis numérotés (userData.i) ; boîte englobante dans g.userData.bb */
+function tr3Scene(T, c, K, t){ var g = new T.Group(), m = 1 / 1000, L = c.L * m, W = c.W * m, H = c.H * m, kind = tr3Kind(t), ink = 0x0F2238, meshes = [];
+  var mat = function(col, op){ return new T.MeshLambertMaterial({ color:col, transparent:op !== undefined && op < 1, opacity:op === undefined ? 1 : op, depthWrite:op === undefined || op >= 1 }); };
+  var box = function(x0, x1, y0, y1, z0, z1, mt){ var me = new T.Mesh(new T.BoxGeometry(Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0)), mt); me.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); g.add(me); return me; };
+  var line = function(P, col){ var G = new T.BufferGeometry().setFromPoints(P.map(function(p){ return new T.Vector3(p[0], p[1], p[2]); })); var l = new T.Line(G, new T.LineBasicMaterial({ color:col || ink })); g.add(l); return l; };
+  var wr = kind === 'van' ? 0.33 : 0.5, chY = -0.3, gy = chY - wr * 0.5 - wr, cabC = 0x47627F, glass = 0x1B2836, steel = 0x2B3440;
+  /* plancher et châssis */
+  box(0, L, -0.08, 0, 0, W, mat(0xB4BEC9));
+  var cx0 = kind === 'semi' ? -0.3 : kind === 'van' ? -1.75 : (t && t.grue ? -2.65 : -2.2);
+  box(cx0, L - 0.25, chY, -0.08, W * 0.22, W * 0.78, mat(steel));
+  /* roues (essieux) */
+  var wheel = function(x){ [0.14, W - 0.14].forEach(function(z){ var me = new T.Mesh(new T.CylinderGeometry(wr, wr, 0.28, 24), mat(0x16191D)); me.rotation.x = Math.PI / 2; me.position.set(x, gy + wr, z); g.add(me);
+    var hb = new T.Mesh(new T.CylinderGeometry(wr * 0.45, wr * 0.45, 0.3, 16), mat(0x8E99A6)); hb.rotation.x = Math.PI / 2; hb.position.copy(me.position); g.add(hb); }); };
+  if (kind === 'semi'){ [L - 1.3, L - 2.65, L - 4.0].forEach(wheel); }
+  else if (kind === 'van'){ wheel(-1.15); wheel(Math.max(0.8, L * 0.72)); }
+  else { wheel(cx0 + 0.95); wheel(L * 0.68); if (L > 6.8) wheel(L * 0.68 + 1.15); }
+  /* cabine (avant du camion = x négatif) */
+  var cab = function(x0, x1, y1){ box(x0, x1, gy + wr * 0.9, y1, -0.02, W + 0.02, mat(cabC));
+    box(x0 - 0.01, x0 + 0.02, (gy + y1) / 2 + 0.25, y1 - 0.18, 0.12, W - 0.12, mat(glass)); /* pare-brise */
+    [-0.03, W + 0.03].forEach(function(z){ box(x0 + 0.15, x0 + (x1 - x0) * 0.55, (gy + y1) / 2 + 0.25, y1 - 0.2, z - 0.005, z + 0.005, mat(glass)); }); /* vitres latérales */
+    box(x0 - 0.04, x0, gy + wr * 0.9, gy + wr * 1.6, 0.05, W - 0.05, mat(steel)); /* pare-chocs */ };
+  if (kind === 'semi'){ var tx0 = -4.9; box(tx0 + 1.9, 0.9, chY - 0.15, chY + 0.05, W * 0.2, W * 0.8, mat(steel)); cab(tx0, tx0 + 2.2, gy + 3.55); [tx0 + 1.0, -0.6, 0.55].forEach(wheel); }
+  else if (kind === 'van'){ box(-1.75, -0.95, gy + wr * 0.9, gy + 1.35, 0.02, W - 0.02, mat(cabC)); cab(-1.15, -0.04, Math.min(H, 1.9)); }
+  else cab(cx0, (t && t.grue ? -0.55 : -0.12), Math.max(1.8, Math.min(H, 2.1)));
+  /* caisse : plateau ouvert, sinon parois translucides, avant plein, portes arrière ouvertes */
+  var edgeBox = function(){ var ed = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(L, H, W)), new T.LineBasicMaterial({ color:ink })); ed.position.set(L / 2, H / 2, W / 2); g.add(ed); return ed; };
+  if (kind === 'plateau'){ box(0, L, 0, 0.25, -0.02, 0.02, mat(0x8C99A8)); box(0, L, 0, 0.25, W - 0.02, W + 0.02, mat(0x8C99A8)); box(-0.03, 0.01, 0, 1.0, 0, W, mat(0x8C99A8));
+    var ed = edgeBox(); ed.material = new T.LineDashedMaterial({ color:ink, dashSize:0.15, gapSize:0.1 }); ed.computeLineDistances(); }
+  else { var sh = new T.Mesh(new T.BoxGeometry(L, H, W), new T.MeshBasicMaterial({ color:0x52647A, transparent:true, opacity:.07, side:T.BackSide, depthWrite:false })); sh.position.set(L / 2, H / 2, W / 2); g.add(sh); edgeBox();
+    box(-0.04, 0, 0, H, 0, W, mat(0x7D8B9B, 0.55)); /* face avant */
+    box(L - 0.02, L + 0.02, H - 0.06, H, 0, W, mat(steel)); /* traverse arrière */
+    [[-W / 2, -0.03], [W + 0.03, W * 1.5]].forEach(function(zz){ var dr = box(L + 0.01, L + 0.05, 0.03, H - 0.03, zz[0], zz[1], mat(0x9AA6B3, 0.6)); dr.add(new T.LineSegments(new T.EdgesGeometry(dr.geometry), new T.LineBasicMaterial({ color:ink }))); }); /* portes arrière ouvertes à 90° */ }
+  if (t && t.hayon){ box(L, L + 1.1, -0.08, -0.02, 0.05, W - 0.05, mat(0x9AA6B3)); line([[L + 1.1, -0.02, 0.05], [L + 1.1, -0.02, W - 0.05]]); }
+  if (t && t.grue){ var gc = mat(0xC9A227); box(-0.5, -0.2, chY, H + 0.5, W * 0.35, W * 0.65, gc); box(-0.5, L * 0.6, H + 0.32, H + 0.52, W * 0.42, W * 0.58, gc); }
+  /* cotes de la caisse */
+  var sf = Math.max(0.6, Math.min(1.6, Math.max(L, W * 2.5, H * 2.5) / 7)), lh = 0.34 * sf, tk = 0.08 * sf, f2 = function(v){ return fr(v, 2)+' m'; };
+  var dim = function(a, b, n, txt, lp){ line([a, b]); line([[a[0] - n[0] * tk, a[1] - n[1] * tk, a[2] - n[2] * tk], [a[0] + n[0] * tk, a[1] + n[1] * tk, a[2] + n[2] * tk]]); line([[b[0] - n[0] * tk, b[1] - n[1] * tk, b[2] - n[2] * tk], [b[0] + n[0] * tk, b[1] + n[1] * tk, b[2] + n[2] * tk]]);
+    var sp = tr3Label(T, txt, lh); sp.position.set(lp[0], lp[1], lp[2]); g.add(sp); };
+  var o = 0.18 * sf;
+  dim([0, H + o, W], [L, H + o, W], [0, 1, 0], 'L '+f2(L), [L / 2, H + o + lh * 0.9, W]);
+  dim([L, H + o, 0], [L, H + o, W], [0, 1, 0], 'l '+f2(W), [L, H + o + lh * 0.9, W / 2]);
+  dim([L + o, 0, W], [L + o, H, W], [1, 0, 0], 'H '+f2(H), [L + o + lh * 1.6, H / 2, W]);
+  /* colis */
+  K.b.forEach(function(b, i){ var geo = new T.BoxGeometry(b.l * m, b.h * m, b.w * m), me = new T.Mesh(geo, new T.MeshLambertMaterial({ color:new T.Color(TR_COL[b.u.ti % TR_COL.length]), emissive:0x000000 }));
+    me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); me.add(new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color:ink }))); me.userData.i = i; g.add(me); meshes.push(me); });
+  var x0 = kind === 'semi' ? -4.95 : cx0 - 0.1, x1 = L + (t && t.hayon ? 1.15 : 0) + o + lh * 3, y1 = Math.max(H + o + lh * 1.6, t && t.grue ? H + 0.6 : 0);
+  g.userData = { meshes:meshes, bb:{ x0:x0, x1:x1, y0:gy, y1:y1, z0:kind === 'plateau' ? -0.1 : -W / 2, z1:kind === 'plateau' ? W + 0.1 : W * 1.5 } };
   return g; }
-function tr3View(T, cam, ctl, c, v, aspect){ var L = c.L / 1000, W = c.W / 1000, H = c.H / 1000, ctr = new T.Vector3(L / 2, H / 2, W / 2);
+function tr3View(T, cam, ctl, bb, v, aspect){ var Lx = bb.x1 - bb.x0, Hy = bb.y1 - bb.y0, Wz = bb.z1 - bb.z0, ctr = new T.Vector3((bb.x0 + bb.x1) / 2, (bb.y0 + bb.y1) / 2, (bb.z0 + bb.z1) / 2);
   cam.fov = v === 'iso' ? 35 : 10; cam.aspect = aspect; cam.updateProjectionMatrix();
-  var fit = function(fw, fh){ var t = Math.tan(T.MathUtils.degToRad(cam.fov / 2)); return Math.max(fh / (2 * t), fw / (2 * t * cam.aspect)) * 1.12; };
-  var vf = T.MathUtils.degToRad(cam.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * cam.aspect), rr = 0.5 * Math.hypot(L, W, H) / Math.sin(Math.min(vf, hf) / 2) * 0.95, dv = new T.Vector3(0.5, 0.55, 0.8).normalize().multiplyScalar(rr);
-  var P = { iso:[L / 2 + dv.x, H / 2 + dv.y, W / 2 + dv.z], top:[L / 2, H + fit(L, W), W / 2 + 0.001], side:[L / 2, H / 2, W + fit(L, H)], back:[L + fit(W, H), H / 2, W / 2] }[v];
-  cam.position.set(P[0], P[1], P[2]); cam.up.set(0, 1, 0); if (v === 'top') cam.up.set(0, 0, -1); if (ctl){ ctl.target.copy(ctr); } cam.lookAt(ctr);
-  if (v === 'iso') for (var k = 0; k < 3; k++){ cam.updateMatrixWorld(); var mx = 0; [0, L].forEach(function(x){ [0, H].forEach(function(y){ [0, W].forEach(function(z){ var q = new T.Vector3(x, y, z).project(cam); mx = Math.max(mx, Math.abs(q.x), Math.abs(q.y)); }); }); });
-    var off = cam.position.clone().sub(ctr); cam.position.copy(ctr).add(off.multiplyScalar(mx / 0.9)); cam.lookAt(ctr); }
+  var fit = function(fw, fh){ var t = Math.tan(T.MathUtils.degToRad(cam.fov / 2)); return Math.max(fh / (2 * t), fw / (2 * t * cam.aspect)) * 1.1; };
+  var vf = T.MathUtils.degToRad(cam.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * cam.aspect), rr = 0.5 * Math.hypot(Lx, Wz, Hy) / Math.sin(Math.min(vf, hf) / 2) * 0.95, dv = new T.Vector3(0.55, 0.5, 0.8).normalize().multiplyScalar(rr);
+  var P = { iso:[ctr.x + dv.x, ctr.y + dv.y, ctr.z + dv.z], top:[ctr.x, bb.y1 + fit(Lx, Wz), ctr.z + 0.001], side:[ctr.x, ctr.y, bb.z1 + fit(Lx, Hy)], back:[bb.x1 + fit(Wz, Hy), ctr.y, ctr.z] }[v];
+  cam.position.set(P[0], P[1], P[2]); cam.up.set(0, 1, 0); if (v === 'top') cam.up.set(0, 0, -1); if (ctl) ctl.target.copy(ctr); cam.lookAt(ctr);
+  if (v === 'iso') for (var k = 0; k < 3; k++){ cam.updateMatrixWorld(); var mx = 0; [bb.x0, bb.x1].forEach(function(x){ [bb.y0, bb.y1].forEach(function(y){ [bb.z0, bb.z1].forEach(function(z){ var q = new T.Vector3(x, y, z).project(cam); mx = Math.max(mx, Math.abs(q.x), Math.abs(q.y)); }); }); });
+    var off = cam.position.clone().sub(ctr); cam.position.copy(ctr).add(off.multiplyScalar(mx / 0.92)); cam.lookAt(ctr); }
   if (ctl) ctl.update(); }
+/* ---- déplacement manuel : glisser un colis sur le plancher (ou sur un colis gerbable), double-clic pour le tourner ---- */
+function tr3Fit(c, K, b, x, y, l, w){ var E0 = 1, ov = function(a0, a1, b0, b1){ return a0 < b1 - E0 && b0 < a1 - E0; }, z = 0, S = [];
+  if (x < -E0 || y < -E0 || x + l > c.L + E0 || y + w > c.W + E0) return { ok:false, why:'hors de la caisse' };
+  K.b.forEach(function(o){ if (o === b || !ov(x, x + l, o.x, o.x + o.l) || !ov(y, y + w, o.y, o.y + o.w)) return; z = Math.max(z, o.z + o.h); });
+  if (z + b.h > c.H + E0) return { ok:false, why:'trop haut à cet endroit' };
+  var lv = 1, lim = b.u.stack ? b.u.sn : 99, a = 0, bad = '';
+  if (z > E0){ K.b.forEach(function(o){ if (o === b || Math.abs(o.z + o.h - z) > E0 || !ov(x, x + l, o.x, o.x + o.l) || !ov(y, y + w, o.y, o.y + o.w)) return; if (!o.u.stack) bad = o.u.name+' n\'est pas gerbable'; else if ((o.lv || 1) + 1 > (o.lim || 99)) bad = 'gerbage maximum atteint sur '+o.u.name;
+      lv = Math.max(lv, (o.lv || 1) + 1); lim = Math.min(lim, o.lim || 99); a += (Math.min(x + l, o.x + o.l) - Math.max(x, o.x)) * (Math.min(y + w, o.y + o.w) - Math.max(y, o.y)); });
+    if (bad) return { ok:false, why:bad }; if (a < 0.8 * l * w) return { ok:false, why:'appui insuffisant (moins de 80 %)' }; if (lv > lim) return { ok:false, why:'gerbage maximum atteint' }; }
+  return { ok:true, z:z, lv:lv, lim:lim }; }
+function tr3Ray(e){ var T = TR3.lib.T, r = TR3.rd.domElement.getBoundingClientRect(), rc = new T.Raycaster(); rc.setFromCamera(new T.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), TR3.cam); return rc; }
+function tr3Commit(b, x, y, z, l, w, f){ var cd = TR3.cd, I = trIn(), k = TR3.k, K = cd.R.C[k];
+  b.x = x; b.y = y; b.z = z; b.l = l; b.w = w; b.rot = l !== b.u.L; b.lv = f.lv; b.lim = f.lim; b.man = true;
+  if (!I.pos || I.pos.vt !== cd.t.code) I.pos = { sig:(TRW.cache || {}).usig, vt:cd.t.code, mv:{} };
+  I.pos.mv[k+':'+K.b.indexOf(b)] = { x:x, y:y, z:z, l:l, w:w }; cd.manSig = JSON.stringify(I.pos.mv); cd.S[k] = trKStats(cd.c, K);
+  TR3.keep = { p:TR3.cam.position.clone(), t:TR3.ctl.target.clone(), up:TR3.cam.up.clone(), fov:TR3.cam.fov }; render(); }
+function tr3Bind(dom){
+  dom.addEventListener('pointerdown', function(e){ if (!TR3.cd || e.button > 0) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return;
+    var K = TR3.cd.R.C[TR3.k], b = K.b[hit.object.userData.i], T = TR3.lib.T, m = 1 / 1000; if (!b) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    if (K.b.some(function(o){ return o !== b && Math.abs(o.z - (b.z + b.h)) <= 1 && o.x < b.x + b.l - 1 && b.x < o.x + o.l - 1 && o.y < b.y + b.w - 1 && b.y < o.y + o.w - 1; })){ toast('Déplacer d\'abord les colis posés sur '+b.u.name); return; }
+    var pl = new T.Plane(new T.Vector3(0, 1, 0), -(b.z + b.h / 2) * m), pt = new T.Vector3(); if (!tr3Ray(e).ray.intersectPlane(pl, pt)) return;
+    TR3.ctl.enabled = false; hit.object.material.emissive.setHex(0x2A3B50); dom.setPointerCapture(e.pointerId);
+    TR3.drag = { me:hit.object, b:b, pl:pl, dx:pt.x / m - b.x, dy:pt.z / m - b.y, x:b.x, y:b.y, f:null, moved:false }; }, true);
+  dom.addEventListener('pointermove', function(e){ var D = TR3.drag; if (!D) return; var pt = new TR3.lib.T.Vector3(); if (!tr3Ray(e).ray.intersectPlane(D.pl, pt)) return;
+    var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = D.b, m = 1 / 1000, x = Math.round((pt.x / m - D.dx) / 10) * 10, y = Math.round((pt.z / m - D.dy) / 10) * 10;
+    /* aimantation sur les parois et les colis voisins (60 mm) */
+    var sn = function(v, C){ var bst = v, d0 = 61; C.forEach(function(q){ var d = Math.abs(q - v); if (d < d0){ d0 = d; bst = q; } }); return bst; };
+    var CX = [0, c.L - b.l], CY = [0, c.W - b.w]; K.b.forEach(function(o){ if (o === b) return; CX.push(o.x + o.l, o.x - b.l); CY.push(o.y + o.w, o.y - b.w); });
+    x = Math.max(0, Math.min(c.L - b.l, sn(x, CX))); y = Math.max(0, Math.min(c.W - b.w, sn(y, CY)));
+    var f = tr3Fit(c, K, b, x, y, b.l, b.w); D.x = x; D.y = y; D.f = f; D.moved = true;
+    D.me.position.set((x + b.l / 2) * m, ((f.ok ? f.z : b.z) + b.h / 2) * m, (y + b.w / 2) * m); D.me.material.emissive.setHex(f.ok ? 0x2A3B50 : 0x8A1F1F); });
+  var up = function(){ var D = TR3.drag; if (!D) return; TR3.drag = null; TR3.ctl.enabled = true; D.me.material.emissive.setHex(0x000000); var b = D.b, m = 1 / 1000;
+    if (!D.moved) return;
+    if (D.f && D.f.ok){ tr3Commit(b, D.x, D.y, D.f.z, b.l, b.w, D.f); return; }
+    D.me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); toast('Déplacement impossible : '+((D.f && D.f.why) || 'position invalide')); };
+  dom.addEventListener('pointerup', up); dom.addEventListener('pointercancel', up);
+  dom.addEventListener('dblclick', function(e){ if (!TR3.cd) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return; var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = K.b[hit.object.userData.i];
+    if (!b.u.rot){ toast('Rotation non autorisée pour '+b.u.name); return; }
+    var x = Math.min(b.x, c.L - b.w), y = Math.min(b.y, c.W - b.l), f = tr3Fit(c, K, b, x, y, b.w, b.l);
+    if (!f.ok){ toast('Rotation impossible : '+f.why); return; } tr3Commit(b, x, y, f.z, b.w, b.l, f); }); }
 function tr3Show(){ var el = $('tr3d'), cd = trCand(); if (!el || !cd) return; var k = Math.min(TRW.k, cd.n - 1), K = cd.R.C[k];
   tr3Lib().then(function(Lb){ var T = Lb.T; if (!document.body.contains(el)) return;
     if (!TR3.rd){ TR3.rd = new T.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true }); TR3.rd.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); TR3.scn = new T.Scene(); TR3.scn.background = new T.Color(0xE9EEF4);
-      TR3.cam = new T.PerspectiveCamera(35, 1, 0.05, 200); TR3.scn.add(new T.HemisphereLight(0xffffff, 0x9aa6b2, 1.1)); var dl = new T.DirectionalLight(0xffffff, 1.1); dl.position.set(-6, 12, 9); TR3.scn.add(dl); }
+      TR3.cam = new T.PerspectiveCamera(35, 1, 0.05, 300); TR3.scn.add(new T.HemisphereLight(0xffffff, 0x9aa6b2, 1.1)); var dl = new T.DirectionalLight(0xffffff, 1.1); dl.position.set(-6, 12, 9); TR3.scn.add(dl); tr3Bind(TR3.rd.domElement); }
     el.innerHTML = ''; el.appendChild(TR3.rd.domElement); var w = el.clientWidth || 600, hh = el.clientHeight || 360; TR3.rd.setSize(w, hh, false);
     if (TR3.ctl) TR3.ctl.dispose(); TR3.ctl = new Lb.OC(TR3.cam, TR3.rd.domElement); TR3.ctl.enableDamping = true; TR3.ctl.dampingFactor = .12;
-    if (TR3.grp){ TR3.scn.remove(TR3.grp); TR3.grp.traverse(function(o){ if (o.geometry) o.geometry.dispose(); if (o.material && o.material.dispose) o.material.dispose(); }); }
-    TR3.grp = tr3Scene(T, cd.c, K); TR3.scn.add(TR3.grp); tr3View(T, TR3.cam, TR3.ctl, cd.c, TRW.view, w / hh);
+    if (TR3.grp){ TR3.scn.remove(TR3.grp); TR3.grp.traverse(function(o){ if (o.geometry) o.geometry.dispose(); if (o.material){ if (o.material.map) o.material.map.dispose(); if (o.material.dispose) o.material.dispose(); } }); }
+    TR3.grp = tr3Scene(T, cd.c, K, cd.t); TR3.scn.add(TR3.grp); TR3.cd = cd; TR3.k = k; TR3.meshes = TR3.grp.userData.meshes;
+    if (TR3.keep){ var kp = TR3.keep; TR3.keep = null; TR3.cam.fov = kp.fov; TR3.cam.aspect = w / hh; TR3.cam.updateProjectionMatrix(); TR3.cam.position.copy(kp.p); TR3.cam.up.copy(kp.up); TR3.ctl.target.copy(kp.t); TR3.ctl.update(); }
+    else tr3View(T, TR3.cam, TR3.ctl, TR3.grp.userData.bb, TRW.view, w / hh);
     cancelAnimationFrame(TR3.raf); var loop = function(){ if (!document.body.contains(TR3.rd.domElement)){ cancelAnimationFrame(TR3.raf); return; } TR3.raf = requestAnimationFrame(loop); TR3.ctl.update(); TR3.rd.render(TR3.scn, TR3.cam); }; loop();
   }, function(){ el.innerHTML = '<span class="muted small">Vue 3D indisponible (bibliothèque 3D non chargée, connexion requise).</span>'; }); }
 /* image du plan d'un camion (vue 3D) pour le PDF */
 function tr3Snap(cd, k, v){ return tr3Lib().then(function(Lb){ var T = Lb.T, rd = new T.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true }), W0 = 1400, H0 = 640; rd.setSize(W0, H0, false);
   var scn = new T.Scene(); scn.background = new T.Color(0xFFFFFF); scn.add(new T.HemisphereLight(0xffffff, 0x9aa6b2, 1.1)); var dl = new T.DirectionalLight(0xffffff, 1.1); dl.position.set(-6, 12, 9); scn.add(dl);
-  var cam = new T.PerspectiveCamera(35, W0 / H0, 0.05, 200); scn.add(tr3Scene(T, cd.c, cd.R.C[k])); tr3View(T, cam, null, cd.c, v || 'iso', W0 / H0); rd.render(scn, cam); var u = rd.domElement.toDataURL('image/jpeg', 0.9); rd.dispose(); return u; }).catch(function(){ return null; }); }
+  var cam = new T.PerspectiveCamera(35, W0 / H0, 0.05, 300), g = tr3Scene(T, cd.c, cd.R.C[k], cd.t); scn.add(g); tr3View(T, cam, null, g.userData.bb, v || 'iso', W0 / H0); rd.render(scn, cam); var u = rd.domElement.toDataURL('image/jpeg', 0.9); rd.dispose(); return u; }).catch(function(){ return null; }); }
 /* ---- colis : import Excel (modèle ToolBox) et modèle ---- */
 function trParseXls(A){ var low = function(s){ return String(s === undefined || s === null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s*\(.*?\)\s*/g, ' ').trim(); };
   var RX = { name:/^(colis|nom|id|ref|reference|code|article|designation|description|libelle|item)/, dim:/^(dim|dimensions?|encombrement)/, L:/^(longueur|long|length|lg|l)$/, W:/^(largeur|larg|width|w)$/, H:/^(hauteur|haut|height|h|ht)$/, kg:/^(poids|masse|weight|kg|pds)/, qty:/^(qte|qty|quantite|quantity|nb|nombre|nbre)/, stack:/^(gerb|empil|stack)/, rot:/^(rot|tourn)/ };
@@ -5276,7 +5401,7 @@ function trParseXls(A){ var low = function(s){ return String(s === undefined || 
     if ((L === null || W === null || H === null) && map.dim !== undefined){ var d = String(g('dim')).replace(/,/g, '.').match(/(\d+(?:\.\d+)?)\s*[x×*\/]\s*(\d+(?:\.\d+)?)\s*[x×*\/]\s*(\d+(?:\.\d+)?)/i); if (d){ var u = unit(map.dim); L = +d[1] * u; W = +d[2] * u; H = +d[3] * u; } }
     else { if (L !== null) L *= unit(map.L); if (W !== null) W *= unit(map.W); if (H !== null) H *= unit(map.H); }
     if (L === null || W === null || H === null) continue; var name = String(g('name')).trim(); if (/^(total|sous-total)/i.test(name)) continue;
-    out.push({ name:name, L:Math.round(L), W:Math.round(W), H:Math.round(H), kg:trNum(g('kg')) === null ? '' : trNum(g('kg')), qty:Math.max(1, Math.round(trNum(g('qty')) || 1)), stack:map.stack !== undefined ? yes(g('stack')) : false, rot:map.rot !== undefined ? yes(g('rot')) : true }); }
+    out.push({ name:name, L:Math.round(L), W:Math.round(W), H:Math.round(H), kg:trNum(g('kg')) === null ? '' : trNum(g('kg')), qty:Math.max(1, Math.round(trNum(g('qty')) || 1)), stack:map.stack !== undefined ? (yes(g('stack')) || /^[234]$/.test(String(g('stack')).trim())) : false, sn:/^[234]$/.test(String(g('stack')).trim()) ? +String(g('stack')).trim() : 2, rot:map.rot !== undefined ? yes(g('rot')) : true }); }
   return out; }
 function trImport(f){ f.arrayBuffer().then(trImportBuf); }
 function trImportBuf(buf){ return Promise.resolve().then(function(){ var wb = XLSX.read(buf, { type:'array' }), sh = wb.Sheets[wb.SheetNames.filter(function(n){ return /colis/i.test(n); })[0] || wb.SheetNames[0]], A = XLSX.utils.sheet_to_json(sh, { header:1, raw:true, defval:'' }), L = trParseXls(A);
@@ -5362,8 +5487,8 @@ function loadsLoad(){ if (!STORE.listLoads){ LOADS.list = []; LOADS.err = 'indis
 function chNum(x){ return x.num || 'CH-'+String(x.id || '').slice(0, 6).toUpperCase(); }
 function chNewNum(){ var d = new Date(), p = function(n){ return String(n).padStart(2, '0'); }, r = ''; for (var i = 0; i < 4; i++) r += '23456789ABCDEFGHJKMNPQRSTUVWXYZ'.charAt(Math.floor(Math.random() * 31));
   return 'CH-'+String(d.getFullYear()).slice(2)+p(d.getMonth() + 1)+p(d.getDate())+'-'+r; }
-function chSnap(){ var I = trIn(), cd = trCand(), T = trTot(), o = { hayon:!!I.hayon, grue:!!I.grue, vt:cd ? cd.t.code : '', veh:cd ? trWhat(cd) : '', camions:cd ? cd.n : 0, n:T.n, kg:Math.round(T.kg), m3:Math.round(T.m3 * 100) / 100,
-    items:trItems().map(function(it){ return { name:String(it.name || ''), L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty) || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }),
+function chSnap(){ var I = trIn(), cd = trCand(), T = trTot(), o = { pos:I.pos || null, hayon:!!I.hayon, grue:!!I.grue, vt:cd ? cd.t.code : '', veh:cd ? trWhat(cd) : '', camions:cd ? cd.n : 0, n:T.n, kg:Math.round(T.kg), m3:Math.round(T.m3 * 100) / 100,
+    items:trItems().map(function(it){ return { name:String(it.name || ''), L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty) || 1, stack:!!it.stack, sn:it.stack ? (+it.sn || 2) : null, rot:it.rot !== false, src:it.src || '' }; }),
     bps:(I.bps || []).map(function(b){ return { ref:b.ref || '', H:b.H || {} }; }) };
   CH_F.forEach(function(f){ o[f[0]] = String(I[f[0]] || '').trim(); }); return o; }
 function chSave(){ var I = trIn(); if (!trTot().n){ toast('Aucun colis à enregistrer'); return; }
@@ -5374,8 +5499,8 @@ function chSave(){ var I = trIn(); if (!trTot().n){ toast('Aucun colis à enregi
   p.then(function(id){ I.id = id; I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); LOADS.list = null; I.byUid = I.byUid || myUid(); toast((cp ? 'Copie enregistrée : ' : 'Chargement ')+I.num+(cp ? '' : ' enregistré')); render(); },
     function(e){ toast('Enregistrement impossible : '+e.message+(/permission/i.test(e.message || '') ? ' (règle Firestore « chargements » à publier)' : '')); }); }
 function chOpen(id){ var x = (LOADS.list || []).filter(function(l){ return l.id === id; })[0]; if (!x) return; var v = function(n){ return n === null || n === undefined ? '' : n; };
-  ST.chIn = { id:x.id, num:chNum(x), by:x.by || '', byUid:x.byUid || '', hayon:!!x.hayon, grue:!!x.grue, vt:x.vt || '', bps:x.bps || [], items:(x.items || []).map(function(it){ return { name:it.name || '', L:v(it.L), W:v(it.W), H:v(it.H), kg:v(it.kg), qty:it.qty || 1, stack:!!it.stack, rot:it.rot !== false, src:it.src || '' }; }) };
-  CH_F.forEach(function(f){ ST.chIn[f[0]] = x[f[0]] || ''; });
+  ST.chIn = { id:x.id, num:chNum(x), by:x.by || '', byUid:x.byUid || '', hayon:!!x.hayon, grue:!!x.grue, vt:x.vt || '', bps:x.bps || [], items:(x.items || []).map(function(it){ return { name:it.name || '', L:v(it.L), W:v(it.W), H:v(it.H), kg:v(it.kg), qty:it.qty || 1, stack:!!it.stack, sn:it.sn || 2, rot:it.rot !== false, src:it.src || '' }; }) };
+  CH_F.forEach(function(f){ ST.chIn[f[0]] = x[f[0]] || ''; }); ST.chIn.pos = x.pos || null;
   ST.chTab = 'plan'; ST.chStep = 'chg'; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); }
 /* colonnes : clé de tri, libellé, valeur */
 var CH_COLS = [['num','ID',chNum],['at','Créé le',function(x){ return x.at || 0; }],['client','Client'],['ref','Référence'],['po','N° PO'],['bp','N° BP'],['bl','N° BL'],['n','Colis',function(x){ return x.n || 0; }],['kg','Poids',function(x){ return x.kg || 0; }],['veh','Camion(s)'],['by','Créé par']];
@@ -5416,8 +5541,8 @@ function vChg(){ var I = trIn(), s = chStep(), i0 = s === 'chg' ? 1 : 0;
     (s === 'col' ? sv+'<button class="btn pri" data-chstep="chg"'+(why ? ' disabled' : '')+'>Étape suivante : Plan de chargement →</button>'
       : sv+(trCand() ? '<button class="btn" data-trpdf>PDF du plan de chargement</button>' : '')+(trpEnts().length && role() !== 'lecture' ? '<button class="btn pri" data-ch2dev>Faire un devis avec ces colis →</button>' : ''))+'</div>';
   return h + '</section>'; }
-function chToDevis(){ var C = clone(ST.chIn || {}); railGo('trp'); if (ST.module !== 'trp') return; ST.ttab = 'devis'; ST.trIn = null;
-  var I = trIn(); I.items = (C.items || []).map(clone); I.hayon = !!C.hayon; I.grue = !!C.grue; I.vt = C.vt || ''; if (C.ref && !I.cmd) I.cmd = C.ref;
+function chToDevis(){ var C = clone(ST.chIn || {}); railGo('trp'); if (ST.module !== 'trp') return; ST.ttab = 'devis'; ST.trIn = null; ST.trLand = false;
+  var I = trIn(); I.items = (C.items || []).map(clone); I.hayon = !!C.hayon; I.grue = !!C.grue; I.vt = C.vt || ''; I.pos = C.pos || null; if (C.ref && !I.cmd) I.cmd = C.ref;
   ST.trDone = null; ST.trPick = null; TRW.cache = null; ST.trStep = 'dem';
   var p = Promise.resolve(''); (C.bps || []).forEach(function(b){ p = p.then(function(m){ return trBpApply(I, b.H, b.ref).then(function(m2){ return m + m2; }); }); });
   p.then(function(m){ render(); window.scrollTo(0, 0); toast('Colis repris dans le devis'+m+' : compléter la demande'); }); }
@@ -5434,23 +5559,53 @@ function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); r
       ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)], ['Transporteur', D.P ? D.P.x.carrier+(D.P.picked ? ' (retenu)' : '') : '—'], ['Achat HT', D.buy !== null ? eur(D.buy) : '—'], ['Vente HT', D.sell !== null ? eur(D.sell) : 'sur devis'], ['Marge', D.mg !== null ? n2(D.mg)+' € · '+fr(D.pc, 1)+' %' : '—']].concat(I.obs ? [['Observation', I.obs]] : []);
     doc.autoTable({ startY:y, body:rows, theme:'plain', styles:{ fontSize:9.5, cellPadding:1.6, textColor:ink }, columnStyles:{ 0:{ fontStyle:'bold', cellWidth:34, textColor:mut } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6;
     if (D.P) { doc.autoTable({ startY:y, head:[['Camion', 'Grille', 'Solution', 'Achat HT']], body:D.P.x.per.map(function(q, k){ return [String(k + 1), q.G.label, q.what, n2(q.price)]; }), theme:'grid', styles:{ fontSize:8.5, cellPadding:1.6 }, headStyles:{ fillColor:[29, 32, 36] }, columnStyles:{ 3:{ halign:'right' } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6; }
-    doc.autoTable({ startY:y, head:[['Colis', 'L × l × H (mm)', 'Poids', 'Qté', 'Gerbable']], body:trItems().map(function(it){ return [it.name || '', [it.L, it.W, it.H].join(' × '), it.kg === '' ? '' : fr(trNum(it.kg) || 0, 0)+' kg', String(it.qty || ''), it.stack ? 'oui' : 'non']; }), theme:'grid', styles:{ fontSize:8.5, cellPadding:1.6 }, headStyles:{ fillColor:[29, 32, 36] }, margin:{ left:M, right:M } });
+    doc.autoTable({ startY:y, head:[['Colis', 'L × l × H (mm)', 'Poids', 'Qté', 'Gerbable']], body:trItems().map(function(it){ return [it.name || '', [it.L, it.W, it.H].join(' × '), it.kg === '' ? '' : fr(trNum(it.kg) || 0, 0)+' kg', String(it.qty || ''), it.stack ? 'sur '+(it.sn || 2) : 'non']; }), theme:'grid', styles:{ fontSize:8.5, cellPadding:1.6 }, headStyles:{ fillColor:[29, 32, 36] }, margin:{ left:M, right:M } });
     cd.R.C.forEach(function(K, k){ var s = cd.S[k]; doc.addPage(); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor.apply(doc, ink); doc.text('Plan de chargement · camion '+(k + 1)+' / '+cd.n+' · '+cd.t.label, M, 16);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text(s.n+' colis · '+fr(s.kg, 0)+' kg ('+Math.round(s.kp * 100)+' % CU) · '+fr(s.m3, 2)+' m³ ('+Math.round(s.vp * 100)+' %) · longueur utilisée '+fr(s.ldm / 1000, 2)+' m · avant à gauche, porte à droite', M, 21);
       if (shots[k]) doc.addImage(shots[k], 'JPEG', M, 26, 182, 83);
       doc.autoTable({ startY:shots[k] ? 114 : 28, head:[['N°', 'Colis', 'Position x / y / z (mm)', 'Dimensions posées (mm)']], body:K.b.map(function(b, i){ return [String(i + 1), b.u.name, [b.x, b.y, b.z].map(Math.round).join(' / '), [b.l, b.w, b.h].map(Math.round).join(' × ')+(b.rot ? ' (tourné)' : '')+(b.z > 0 ? ' · gerbé' : '')]; }), theme:'grid', styles:{ fontSize:8, cellPadding:1.3 }, headStyles:{ fillColor:[29, 32, 36] }, margin:{ left:M, right:M } }); });
     doc.save(CH ? 'Plan de chargement '+String(I.ref || new Date().toISOString().slice(0, 10)).replace(/[^\w -]/g, '-')+'.pdf' : 'Transport '+(I.date || '')+' '+String(agLabel(I.ag)).replace(/[^\w -]/g, '')+' '+(I.ville || '')+'.pdf'); TRW.busy = false; render();
   }).catch(function(e){ TRW.busy = false; render(); toast('PDF impossible : '+e.message); }); }
-/* ---- validation ---- */
-function validateTransport(){ if (role() === 'lecture') return; var D = trSynData(), I = D.I; if (!D.cd || D.sell === null){ toast('Prix de vente à établir avant validation'); return; } if (!I.date){ toast('Renseigner la date de livraison'); ST.trStep = 'dem'; render(); return; }
-  var T = trTot(), t = { date:I.date, ag:I.ag, agLabel:agLabel(I.ag), cm:I.cm, cmd:I.cmd, cp:I.cp, ville:I.ville, flux:I.flux === 'ab' ? 'ab' : 'aa', hayon:!!I.hayon, grue:!!I.grue, man:!!I.man,
-    pal:D.cd.S.reduce(function(s, x){ return s + x.pal; }, 0), kg:Math.round(T.kg), vol:Math.round(T.m3 * 100) / 100, len:Math.round(T.len), h:+I.h || 0, km:+I.km || 0, obs:I.obs || '',
-    zone:D.V.zone, veh:D.V.rows.map(function(r){ return r.best.v.label; }).join(' + '), detail:D.V.rows.map(function(r){ return r.best.q.detail; }).join(' | '), total:D.sell, status:'valide',
-    colis:trItems().map(function(it){ return { name:it.name || '', L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty), stack:!!it.stack, rot:it.rot !== false }; }),
-    camions:D.cd.S.map(function(s){ return { type:D.cd.t.code, label:D.cd.t.label, n:s.n, kg:Math.round(s.kg), m3:Math.round(s.m3 * 100) / 100, ldm:Math.round(s.ldm) }; }) };
+/* ---- Devis transport : accueil (nouveau / reprendre), brouillons ---- */
+function trInSnap(){ var I = clone(trIn()); delete I.tid; delete I.tstatus; return I; }
+function trDoc(){ var D = trSynData(), I = D.I, T = trTot(), cd = D.cd;
+  var t = { date:I.date || '', ag:I.ag, agLabel:agLabel(I.ag), cm:I.cm || '', cmd:I.cmd || '', cp:I.cp || '', ville:I.ville || '', flux:I.flux === 'ab' ? 'ab' : 'aa', hayon:!!I.hayon, grue:!!I.grue, man:!!I.man,
+    kg:Math.round(T.kg), vol:Math.round(T.m3 * 100) / 100, len:Math.round(T.len), h:+I.h || 0, km:+I.km || 0, obs:I.obs || '', otis:trOtis(), total:D.sell,
+    colis:trItems().map(function(it){ return { name:it.name || '', L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty), stack:!!it.stack, sn:it.stack ? (+it.sn || 2) : null, rot:it.rot !== false }; }),
+    inp:trInSnap(), pick:ST.trPick || null, step:trStep() };
+  if (cd){ t.pal = cd.S.reduce(function(s, x){ return s + x.pal; }, 0); t.veh = D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.v.label; }).join(' + ') : trWhat(cd); t.zone = D.V ? D.V.zone : null;
+    t.detail = D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.q.detail; }).join(' | ') : (trNum(I.sellMan) > 0 ? 'Prix de vente saisi (hors grille)' : 'Prix de vente = achat × '+fr(+I.sellK || 1.3, 2)+' (hors grille)');
+    t.camions = cd.S.map(function(s){ return { type:cd.t.code, label:cd.t.label, n:s.n, kg:Math.round(s.kg), m3:Math.round(s.m3 * 100) / 100, ldm:Math.round(s.ldm) }; }); }
   if (D.P){ t.buyCarrier = D.P.x.carrier; t.buyWhat = D.P.x.per.map(function(q){ return q.what; }).join(' | '); t.buyPrice = D.P.x.price; t.buyPicked = !!D.P.picked; t.marge = D.mg; t.margePct = D.pc === null ? null : Math.round(D.pc * 10) / 10; }
-  STORE.addTransport(t).then(function(){ ST.trDone = { at:new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }), total:t.total, buy:t.buyPrice, carrier:t.buyCarrier, pc:t.margePct };
-    window.scrollTo(0, 0); toast('Transport validé : '+eur(t.total)+' HT'); ST.trPick = null; ST.transports = null; loadTransports(); }, function(e){ toast('Validation impossible : '+e.message); }); }
+  return { t:t, D:D }; }
+function trSaveDoc(t){ var I = trIn(); return (I.tid ? STORE.updateTransport(I.tid, t).then(function(){ return I.tid; }) : STORE.addTransport(t)).then(function(id){ I.tid = id; I.tstatus = t.status; ST.transports = null; loadTransports(); return id; }); }
+function trDraft(){ if (role() === 'lecture') return; var I = trIn(), X = trDoc(), t = X.t; t.status = I.tstatus && I.tstatus !== 'brouillon' ? I.tstatus : 'brouillon';
+  trSaveDoc(t).then(function(){ I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); toast(t.status === 'brouillon' ? 'Brouillon enregistré' : 'Modifications enregistrées'); render(); }, function(e){ toast('Enregistrement impossible : '+e.message); }); }
+/* reprise d'un devis : brouillon ou transport validé (anciens transports : reconstruits depuis leurs champs) */
+function trOpen(id){ var t = (ST.transports || []).filter(function(x){ return x.id === id; })[0]; if (!t) return;
+  var I = t.inp ? clone(t.inp) : { ag:t.ag, cm:t.cm || '', cmd:t.cmd || '', date:t.date || '', cp:t.cp || '', ville:t.ville || '', z78:'', h:String(t.h || ''), km:String(t.km || ''), hayon:!!t.hayon, grue:!!t.grue, man:!!t.man, flux:t.flux || 'aa', obs:t.obs || '',
+    items:(t.colis || []).map(function(c){ return { name:c.name || '', L:c.L === null ? '' : c.L, W:c.W === null ? '' : c.W, H:c.H === null ? '' : c.H, kg:c.kg === null ? '' : c.kg, qty:c.qty || 1, stack:!!c.stack, sn:c.sn || 2, rot:c.rot !== false }; }),
+    vt:((t.camions || [])[0] || {}).type || '' };
+  if (!t.inp && t.otis === false && t.total) I.sellMan = String(t.total);
+  I.tid = t.id; I.tstatus = t.status || 'valide'; if (ST.cfg.agencies[I.ag]){ ST.ent = I.ag; ST.parAg = I.ag; }
+  ST.trIn = I; ST.trPick = t.pick || null; ST.trDone = null; TRW.cache = null; TRW.k = 0; ST.trLand = false;
+  ST.trStep = t.step || ((t.colis || []).length ? 'syn' : 'dem'); render(); window.scrollTo(0, 0); }
+function vTrLand(){ var L = ST.transports, cur = ST.trIn && ((ST.trIn.items || []).length || ST.trIn.tid), q = GRP.norm(ST.trQ || '');
+  var card = function(a, ic, t1, t2){ return '<button class="trl-c" '+a+'><span class="trl-i" aria-hidden="true">'+ic+'</span><span><b>'+t1+'</b><span class="small muted">'+t2+'</span></span></button>'; };
+  var h = '<section class="view"><div class="trl">'+card('data-trnew2', '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>', 'Nouveau devis transport', 'Demande, colis, chargement, prix, achat, synthèse')+
+    (cur ? card('data-trcont', '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h12M13 7l5 5-5 5"/></svg>', 'Continuer le devis en cours', esc([agLabel(ST.trIn.ag), ST.trIn.ville, (ST.trIn.items || []).length+' ligne(s) de colis'].filter(Boolean).join(' · '))) : '')+'</div>';
+  h += '<div class="panel"><div class="ph"><h2>Reprendre un devis transport existant</h2><span class="muted small">brouillons et transports validés</span></div>'+
+    '<div class="pb chopt"><label class="fld chq"><span>Rechercher</span><input id="trq" type="search" value="'+esc(ST.trQ || '')+'" placeholder="entité, commune, contremaître, appareil, transporteur, utilisateur…"></label></div>';
+  if (!L) return h + '<div class="pb muted">Chargement…</div></div></section>';
+  var F = L.filter(function(t){ return !q || [t.agLabel, t.cm, t.cmd, t.ville, t.cp, t.veh, t.buyCarrier, t.createdBy, (TRST[t.status] || t.status)].some(function(v){ return GRP.norm(v || '').indexOf(q) >= 0; }); });
+  h += '<div class="tw"><table class="chl"><thead><tr><th>Statut</th><th>Livraison</th><th>Entité</th><th>Lieu</th><th>Camion(s)</th><th class="n">Vente</th><th class="n">Achat</th><th class="n">Marge</th><th>Créé par</th><th></th></tr></thead><tbody>'+
+    (F.length ? F.slice(0, 200).map(function(t){ return '<tr data-tropen="'+esc(t.id)+'" style="cursor:pointer"><td><span class="pill '+(t.status === 'brouillon' ? 'p-info' : t.status === 'annule' ? 'p-bloquant' : 'p-ok')+'">'+esc(TRST[t.status] || t.status || '—')+'</span></td><td class="nowr">'+(t.date ? E.frDate(t.date) : '—')+'</td><td>'+esc(t.agLabel || agLabel(t.ag))+(t.cm ? '<br><span class="small muted">'+esc(t.cm)+'</span>' : '')+'</td><td>'+esc([t.cp, t.ville].filter(Boolean).join(' ') || '—')+'</td><td>'+esc(t.veh || '—')+'</td><td class="n">'+(t.total ? n2(t.total) : '—')+'</td><td class="n">'+(t.buyPrice ? n2(t.buyPrice) : '—')+'</td><td class="n">'+(t.margePct !== null && t.margePct !== undefined ? fr(t.margePct, 1)+' %' : '—')+'</td><td class="small">'+esc(t.createdBy || '')+'</td><td><button class="btn sm" data-tropen="'+esc(t.id)+'">Reprendre</button></td></tr>'; }).join('')
+      : '<tr><td colspan="10" class="empty">'+(L.length ? 'Aucun devis ne correspond à la recherche.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
+  return h; }
+/* ---- validation ---- */
+function validateTransport(){ if (role() === 'lecture') return; var X = trDoc(), D = X.D, I = D.I, t = X.t; if (!D.cd || D.sell === null){ toast('Prix de vente à établir avant validation'); return; } if (!I.date){ toast('Renseigner la date de livraison'); ST.trStep = 'dem'; render(); return; }
+  t.status = 'valide'; trSaveDoc(t).then(function(){ ST.trDone = { at:new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }), total:t.total, buy:t.buyPrice, carrier:t.buyCarrier, pc:t.margePct };
+    window.scrollTo(0, 0); toast('Transport validé : '+eur(t.total)+' HT'); render(); }, function(e){ toast('Validation impossible : '+e.message); }); }
 
 function vDevis(){ var V = ST.trDone;
   var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+(V.ville ? ' · '+esc(V.cp+' '+V.ville) : '')+'</span><span class="sp"></span><button class="btn sm" data-ttab="hist">Voir l\'historique</button><button class="btn sm g" data-trdone>Nouveau devis</button></div>' : '';
@@ -6478,7 +6633,7 @@ function vEntTrp(a){
 
 function trCalc(){ calcTransport(); calcBuy(); calcSyn(); }
 function loadTransports(){ return STORE.listTransports().then(function(L){ ST.transports = L; if (ST.module !== 'log') render(); }, function(e){ toast('Historique inaccessible : '+e.message); }); }
-var TRST = { valide:'Validé', facture:'Facturé', annule:'Annulé' };
+var TRST = { brouillon:'Brouillon', valide:'Validé', facture:'Facturé', annule:'Annulé' };
 function vTrHistory(){
   if (!ST.transports){ loadTransports(); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
   var L = ST.transports, months = uniqA(L.map(function(t){ return (t.date||'').slice(0,7); }).filter(Boolean)).sort().reverse();
@@ -6642,7 +6797,7 @@ document.addEventListener('click', function(e){
     render(); var qi = document.querySelector('#fpop .fq'); if (qi && fd.fopen) qi.focus(); return; }
   if (e.target.id === 'modal'){ ST.modal = null; renderModal(); return; }
   if (e.target.classList && e.target.classList.contains('dv-ov')){ ST.docView = null; render(); return; }
-  var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem,[data-trveh],[data-chopen]');
+  var t = e.target.closest('button,[data-mod],[data-home],[data-acc],tr[data-pdf],.mitem,[data-trveh],[data-chopen],[data-tropen]');
   if (!t || t.disabled) return;
   var d = t.dataset;
   if (d.menu !== undefined){ navOpen(!document.body.classList.contains('nav-open')); return; }
@@ -6651,7 +6806,7 @@ document.addEventListener('click', function(e){
   if (d.closego !== undefined){ ST.sub = 'ctl'; render(); setTimeout(function(){ var cb = document.querySelector('.closebar'); if (cb) cb.scrollIntoView({ behavior:'smooth', block:'center' }); }, 30); return; }
   if (d.entfac){ navOpen(false); ST.ltab = 'fac'; enterEnt(d.entfac, 'log'); return; }
   if (d.facall !== undefined){ ST.facAll = !ST.facAll; render(); return; }
-  if (d.trtab){ if (d.trtab === 'mod'){ ST.module = 'mod'; render(); window.scrollTo(0,0); return; } ST.ttab = d.trtab; if (ST.ent && entScreens(ST.cfg.agencies[ST.ent] || {}).trp) enterEnt(ST.ent, 'trp'); else railGo('trp'); return; }
+  if (d.trtab){ if (d.trtab === 'mod'){ ST.module = 'mod'; render(); window.scrollTo(0,0); return; } if (d.trtab === 'devis') ST.trLand = true; if (ST.module === 'trp'){ ST.ttab = d.trtab; render(); window.scrollTo(0, 0); return; } ST.ttab = d.trtab; if (ST.ent && entScreens(ST.cfg.agencies[ST.ent] || {}).trp) enterEnt(ST.ent, 'trp'); else railGo('trp'); return; }
   if (d.ideasend !== undefined){ ideaSend(); return; }
   if (d.ideaf){ IDEA.f = d.ideaf; renderChat(true); return; }
   if (d.ideavote){ var iv = (IDEA.list || []).filter(function(x){ return x.id === d.ideavote; })[0]; if (!iv) return; var me0 = myUid(), on0 = (iv.votes || []).indexOf(me0) < 0; iv.votes = (iv.votes || []).filter(function(v){ return v !== me0; }); if (on0) iv.votes.push(me0); renderChat(true); STORE.voteIdea(iv.id, on0).catch(function(e){ toast('Vote non enregistré : '+e.message); ideaLoad(); }); return; }
@@ -6665,7 +6820,11 @@ document.addEventListener('click', function(e){
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
   if (d.trstep){ if (t.disabled) return; ST.trStep = d.trstep; render(); window.scrollTo(0, 0); return; }
-  if (d.trnew !== undefined){ ST.trIn = null; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); return; }
+  if (d.trnew2 !== undefined){ ST.trIn = null; ST.trLand = false; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); return; }
+  if (d.trcont !== undefined){ ST.trLand = false; render(); window.scrollTo(0, 0); return; }
+  if (d.tropen){ trOpen(d.tropen); return; }
+  if (d.trdraft !== undefined){ trDraft(); return; }
+  if (d.trnew !== undefined){ ST.trLand = false; ST.trIn = null; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); return; }
   if (d.trpal !== undefined){ trItems().push({ name:'Palette Europe', L:1200, W:800, H:1200, kg:300, qty:1, stack:false, rot:true }); render(); return; }
   if (d.tradd !== undefined){ trItems().push({ name:'', L:'', W:'', H:'', kg:'', qty:1, stack:false, rot:true }); render(); var nl = document.querySelectorAll('[data-tri$="|name"]'); if (nl.length) nl[nl.length - 1].focus(); return; }
   if (d.trcdel !== undefined){ trItems().splice(+d.trcdel, 1); render(); return; }
@@ -6676,6 +6835,8 @@ document.addEventListener('click', function(e){
   if (d.trpick){ if (d.buyinfoclose !== undefined) buyInfoClose(); ST.trPick = ST.trPick === d.trpick && d.buyinfoclose === undefined ? null : d.trpick; render(); return; }
   if (d.trinfo){ trInfoOpen(d.trinfo); return; }
   if (d.trpdf !== undefined){ trPdf(); return; }
+  if (d.trsk){ var IK = trIn(); IK.sellK = +d.trsk; IK.sellMan = ''; render(); return; }
+  if (d.tr3reset !== undefined){ trIn().pos = null; TRW.cache = null; render(); return; }
   if (d.chtab){ ST.chTab = d.chtab; ST.chDelAsk = null; if (d.chtab === 'list') LOADS.list = null; render(); window.scrollTo(0, 0); return; }
   if (d.chsave !== undefined){ chSave(); return; }
   if (d.chsort){ var CF = ST.chF; if (CF.s === d.chsort) CF.d = -CF.d; else { CF.s = d.chsort; CF.d = d.chsort === 'at' ? -1 : 1; } render(); return; }
@@ -6942,7 +7103,7 @@ document.addEventListener('change', function(e){
   if (t.id === 'dqmsel'){ dqSelect(DQ.co, t.value); return; }
   if (t.dataset && t.dataset.asinv && ST.modal && ST.modal.assoc){ ST.modal.assoc.sel[t.dataset.asinv] = t.checked ? 1 : 0; renderModal(); return; }
   if (t.id === 'advsheet'){ ST.ov.advSheet = t.value; persist('Contrôle détaillé : feuille « '+t.value+' » du fichier de calcul'); render(); return; }
-  if (t.dataset && t.dataset.scr && isAdmin()){ var sp = t.dataset.scr.split('|'), ea = ST.cfg.agencies[sp[0]]; if (ea){ if (sp[1] === 'active') ea.active = t.checked; else { ea.screens = entScreens(ea); ea.screens[sp[1]] = t.checked; if (!ea.screens.log && !ea.screens.trp){ ea.screens[sp[1]] = true; toast('Au moins un écran par entité'); } } saveCfg((ea.label||ea.code)+' : écrans '+[ea.screens && ea.screens.log !== false ? 'Logistique' : '', ea.screens && ea.screens.trp !== false ? 'Transport' : ''].filter(Boolean).join(' + ')); render(); } return; }
+  if (t.dataset && t.dataset.scr && isAdmin()){ var sp = t.dataset.scr.split('|'), ea = ST.cfg.agencies[sp[0]]; if (ea){ if (sp[1] === 'otis'){ ea.otis = t.checked; TRW.cache = null; saveCfg((ea.label || ea.code)+' : entité OTIS '+(t.checked ? 'oui' : 'non')); return; } if (sp[1] === 'active') ea.active = t.checked; else { ea.screens = entScreens(ea); ea.screens[sp[1]] = t.checked; if (!ea.screens.log && !ea.screens.trp){ ea.screens[sp[1]] = true; toast('Au moins un écran par entité'); } } saveCfg((ea.label||ea.code)+' : écrans '+[ea.screens && ea.screens.log !== false ? 'Logistique' : '', ea.screens && ea.screens.trp !== false ? 'Transport' : ''].filter(Boolean).join(' + ')); render(); } return; }
   if (t.dataset && t.dataset.asg && isAdmin()){ var sg = t.dataset.asg.split('|'); ST.cfg.assign = ST.cfg.assign || {}; var cur2 = ST.cfg.assign[sg[0]] || []; ST.cfg.assign[sg[0]] = t.checked ? uniqA(cur2.concat([sg[1]])) : cur2.filter(function(x){ return x !== sg[1]; }); saveCfg('Affectation '+sg[0]+' : '+(ST.cfg.assign[sg[0]].join(', ') || 'toutes les entités')); return; }
   if (t.id === 'affin'){ if (t.files[0]) affImport(t.files[0]); t.value = ''; return; }
   if (t.id === 'piladv' || t.id === 'pilfrom' || t.id === 'pilto'){ ST.pf = ST.pf || { ents:[] }; ST.pf[t.id === 'piladv' ? 'adv' : t.id === 'pilfrom' ? 'from' : 'to'] = t.value; render(); return; }
@@ -6958,6 +7119,8 @@ document.addEventListener('change', function(e){
     if (v2 === '__EXCL__') ST.ov.exclude[k] = 'Non rattachée : non facturée';
     else if (v2){ var q = v2.split('|'), ref = ST.R.records.filter(function(r){ return r.ag===q[0] && r.cm===q[1]; })[0]; ST.ov.assign[k] = { ag:q[0], agLabel:ref.agLabel, cm:q[1], cmCode:ref.cmCode }; }
     rebuild(); persist('Rattachement '+k+' → '+(v2||'aucun')); return; }
+  if (t.id === 't_sell'){ trIn().sellMan = t.value; render(); return; }
+  if (t.id === 't_ag' && ST.module === 'trp'){ trSave(); ST.ent = t.value; ST.parAg = t.value; ST.trIn.ag = t.value; ST.trPick = null; TRW.cache = null; if (ST.trStep === 'ven' && !entOtis(t.value)) ST.trStep = 'dem'; render(); return; }
   if (t.id === 't_ag'){ var dlst = $('t_cml'); if (dlst) dlst.innerHTML = ((ST.cfg.agencies[t.value]||{}).cmList||[]).map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join(''); }
   if (t.id === 't_vsel'){ var vv = $('t_ville'); if (vv){ vv.value = t.value; var TI2 = trIn(); TI2.ville = t.value; TI2.kmMan = false; TI2.hMan = false; trGeo(false); } trCalc(); return; }
   if (t.closest && t.closest('#tform')) trCalc();
@@ -6965,8 +7128,9 @@ document.addEventListener('change', function(e){
 document.addEventListener('input', function(e){
   if (e.target.id === 'infoq'){ INFO.q = e.target.value; var pq = e.target.selectionStart; render(); var q2 = $('infoq'); if (q2){ q2.focus(); q2.setSelectionRange(pq, pq); } return; }
   if (e.target && /^c_(client|po|bp|bl|ref)$/.test(e.target.id)){ trIn()[e.target.id.slice(2)] = e.target.value; return; }
+  if (e.target && e.target.id === 'trq'){ var rq = e.target, rp = rq.selectionStart; ST.trQ = rq.value; render(); var nr = $('trq'); if (nr){ nr.focus(); try { nr.setSelectionRange(rp, rp); } catch(_){} } return; }
   if (e.target && e.target.id === 'chq'){ var cq = e.target, cp = cq.selectionStart; ST.chF.q = cq.value; render(); var nq = $('chq'); if (nq){ nq.focus(); try { nq.setSelectionRange(cp, cp); } catch(_){} } return; }
-  var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
+  var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (tp[1] === 'stack'){ var sq = document.querySelector('[data-tri="'+tp[0]+'|sn"]'); if (sq) sq.hidden = !e.target.checked; if (e.target.checked && !it0.sn) it0.sn = 2; } var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
   if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
     else if (ti === 't_ville'){ TI.kmMan = false; TI.hMan = false; trGeo(false); }
@@ -7542,7 +7706,7 @@ function railGo(key){
   if (key === 'home'){ ST.ent = null; ST.module = 'home'; if (!ST.transports) loadTransports(); if (!INFO.list) infoLoad(); render(); }
   else if (key === 'info'){ ST.ent = null; ST.module = 'info'; render(); }
   else if (key === 'chg'){ ST.ent = null; ST.module = 'chgm'; render(); vtRefresh(); }
-  else if (key === 'trp'){ vtRefresh(); var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
+  else if (key === 'trp'){ vtRefresh(); ST.trLand = true; var T = trpEnts(), c = ST.ent && T.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (T[0] && T[0].code); if (c){ ST.ttab = ST.ttab === 'hist' ? 'hist' : 'devis'; enterEnt(c, 'trp'); return; } ST.ent = null; ST.module = 'mod'; render(); }
   else if (key === 'fac'){ var L = logEnts(), F = facEntsMine(), c2 = ST.ent && L.some(function(a){ return a.code === ST.ent; }) ? ST.ent : (F[0] && F[0].code); if (!c2){ toast('Aucune entité avec la facturation logistique'); return; } ST.ltab = 'fac'; enterEnt(c2, 'log'); return; }
   else if (key === 'pil'){ if (ST.ent){ ST.pf = ST.pf || { ents:[], adv:'', from:'', to:'' }; ST.pf.ents = [ST.ent]; ST.pfInh = ST.ent; } ST.ent = null; ST.module = 'pil'; ST.piltab = 'syn'; render(); }
   else if (key === 'qual'){ if (role() === 'lecture') return; ST.ent = null; ST.module = 'dq'; render(); }
