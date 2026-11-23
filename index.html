@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.5 · 23/11/2026 (Devis transport : accueil, brouillons, entité dans la demande, hors OTIS ; chargement : 3D refaite, déplacement manuel, gerbage 2/3/4) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.6 · 23/11/2026 (Devis transport : liste unique triable et filtrable, détail du prix, taux de marge, client hors OTIS) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1296,6 +1296,11 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
 .rail .rgrp.nb{border-top:0;margin-top:0}
 .chopt .chq{flex:1 1 280px}.chopt .chq input{width:100%;min-width:0}.chl .nowr{white-space:nowrap}.chl th .chs{font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;text-decoration:none;cursor:pointer;padding:0}.chl th .chs.on{color:var(--ink)}
+.trw-back{display:flex;gap:10px;align-items:center;margin:0 0 10px}.trl-top{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin-bottom:16px}.trl-new{display:inline-flex;align-items:center;gap:10px;font-size:17px;padding:14px 24px;min-height:56px}.trl-cont{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 16px}
+.trpi{width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font:600 11px/1 Georgia,serif;font-style:italic;color:var(--ink-2);cursor:pointer;margin-left:4px;vertical-align:1px}.trpi:hover{border-color:var(--ink);color:var(--ink)}
+.mgp{display:inline-block;padding:1px 7px;border-radius:10px;font-weight:600;font-size:12.5px}.mgp.mg-r{background:#fdecea;color:#b42318}.mgp.mg-o{background:#fff4e5;color:#b45309}.mgp.mg-g{background:#e9f6ee;color:#1e7b3c}
+.prt{width:100%;border-collapse:collapse}.prt th,.prt td{padding:6px 8px;border-bottom:1px solid var(--line-2);text-align:left}.prt .n{text-align:right;white-space:nowrap}.prt tr.grp th{background:var(--surface-2,#f3f5f8);font-size:12.5px}.prt tr.sub td{font-style:italic}.prt tr.tot td{font-weight:600;border-top:1px solid var(--ink-2)}
+.trlt select{font-size:12.5px;padding:2px 4px}
 .trl{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:16px}.trl-c{display:flex;gap:14px;align-items:center;text-align:left;padding:18px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;font:inherit;color:inherit}.trl-c:hover{border-color:var(--ink-2)}.trl-c b{display:block;font-size:16px;margin-bottom:2px}.trl-i{flex:0 0 44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:3px}
 .trreco{border:1px solid var(--line);border-radius:3px;padding:12px}.trreco-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:10px}.trreco-r{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}.trk-o{display:flex;flex-direction:column;gap:2px;min-width:120px;padding:8px 12px;border:1px solid var(--line);background:var(--surface);border-radius:3px;cursor:pointer;text-align:left;font:inherit;color:inherit}.trk-o.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}.trk-o b{font-size:16px}.trk-m{display:flex;flex-direction:column;gap:3px;min-width:180px}.trk-m input{max-width:180px}
 .trsn{margin-left:4px;padding:2px 4px;font-size:12.5px}.trx{list-style:none;padding-left:0}.trx li{margin:4px 0}.tr3d canvas{touch-action:none}
@@ -2725,7 +2730,7 @@ function renderTop(){
   if ((mod === 'log' || mod === 'trp') && !ST.ent && ST.ag) ST.ent = ST.ag;
   var ent = (mod === 'log' || mod === 'trp' || mod === 'entchoice') && ST.ent ? ST.cfg.agencies[ST.ent] : null;
   if (mod === 'log'){ tabs = [['fac','Parcours de facturation'],['con','Documents de l\'entité']].concat(isAdmin() ? [['par','Paramètres de l\'entité']] : []); cur = ST.ltab; att = 'ltab'; }
-  else if (mod === 'trp' || mod === 'mod'){ tabs = [['devis','Devis transport'],['hist','Transports validés'],['mod','Modélisation']]; cur = mod === 'mod' ? 'mod' : ST.ttab === 'hist' ? 'hist' : 'devis'; att = 'trtab'; }
+  else if (mod === 'mod'){ tabs = [['devis','Devis transport'],['mod','Modélisation']]; cur = 'mod'; att = 'trtab'; }
   else if (mod === 'chgm'){ tabs = [['plan','Plan de chargement'],['list','Mes chargements']]; cur = ST.chTab === 'list' ? 'list' : 'plan'; att = 'chtab'; }
   else if (railKey() === 'qual'){ tabs = [['dq','Contrôle des données Odoo'],['sui','Suivi des anomalies']]; cur = mod === 'dq' ? 'dq' : 'sui'; att = 'piltab'; }
   else if (mod === 'cfg'){ tabs = [['adm','Administration'],['aff','Affectation'],['par','Paramétrage']]; cur = ST.cfgTab; att = 'cfgtab'; }
@@ -2761,7 +2766,7 @@ function render(){
   else if (ST.module === 'pil') h = '<section class="view">'+pilBar()+pilInh()+'</section>' + (pilTab() === 'sui' ? vSuivi() : vSynth());
   else if (ST.module === 'car') h = vCarriers();
   else if (ST.module === 'cfg') h = ST.cfgTab === 'aff' ? vAffect() : ST.cfgTab === 'par' ? vEntParams() : vAdmin();
-  else if (ST.module === 'trp') h = ST.ttab === 'hist' ? vTrHistory() : vTrWiz();
+  else if (ST.module === 'trp') h = vTrWiz();
   else if (ST.module === 'chgm') h = ST.chTab === 'list' ? vChgList() : vChg();
   else if (ST.module === 'mod') h = vModel();
   else if (ST.module === 'info') h = vInfo();
@@ -2778,7 +2783,7 @@ function render(){
   if (ST.module === 'log' && ST.ltab === 'fac'){ if (ST.sub === 'imp') bindDrops(); if (ST.sub === 'ctl') bindPdfDrop(); if (ST.sub === 'cdf') bindAdv(); }
   if ((ST.module === 'log' && ST.ltab === 'syn') || (ST.module === 'pil' && pilTab() === 'syn') || (ST.module === 'dq' && DQ.tab === 'syn')) bindChartTips();
   if ((ST.module === 'trp' && ST.ttab !== 'hist') || ST.module === 'mod'){ trGeo(false); trCalc(); }
-  if ((ST.module === 'trp' && ST.ttab !== 'hist' && trStep() === 'chg') || (ST.module === 'chgm' && ST.chTab !== 'list' && chStep() === 'chg')) tr3Show();
+  if ((ST.module === 'trp' && !ST.trLand && trStep() === 'chg') || (ST.module === 'chgm' && ST.chTab !== 'list' && chStep() === 'chg')) tr3Show();
   bindTrDrop();
   if (ST.module === 'car') bindGridDrop();
   if (ST.docView) docvFill();
@@ -4870,8 +4875,10 @@ function zoneOf(cp, half78, G){
 }
 /* Formulaire commun aux onglets Achat et Vente : la saisie est conservée d'un onglet à l'autre */
 var TR_DEF = { ag:'', cm:'', cmd:'', date:new Date().toISOString().slice(0,10), cp:'92400', ville:'Courbevoie', z78:'', pal:'3', kg:'850', vol:'2.5', len:'2500', h:'3.5', km:'60', hayon:true, grue:false, man:false, obs:'' };
-function trIn(){ if (ST.module === 'chgm'){ if (!ST.chIn) ST.chIn = { ref:'', hayon:false, grue:false, items:[], vt:'' }; return ST.chIn; } if (!ST.trIn){ ST.trIn = JSON.parse(JSON.stringify(TR_DEF)); } if (!ST.trIn.ag){ var A = agencies(); ST.trIn.ag = ST.ent || (A[0] ? A[0].code : ''); } if (ST.ent) ST.trIn.ag = ST.ent; return ST.trIn; }
-function trSave(){ var I = trIn(); ['ag','cm','cmd','date','cp','ville','z78','pal','kg','vol','len','h','km','obs'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.value; }); ['hayon','grue','man'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.checked; }); var fx = $('t_fluxab'); if (fx) I.flux = fx.checked ? 'ab' : 'aa'; return I; }
+function trIn(){ if (ST.module === 'chgm'){ if (!ST.chIn) ST.chIn = { ref:'', hayon:false, grue:false, items:[], vt:'' }; return ST.chIn; } if (!ST.trIn){ ST.trIn = JSON.parse(JSON.stringify(TR_DEF)); } if (!ST.trIn.ag && !ST.trIn.ext){ var A = agencies(); ST.trIn.ag = ST.ent || (A[0] ? A[0].code : ''); } if (ST.ent && !ST.trIn.ext) ST.trIn.ag = ST.ent; return ST.trIn; }
+/* client du devis : entité, ou client libre hors OTIS */
+function trClient(I){ return I && I.ext ? (I.client || 'Client hors OTIS') : agLabel(I.ag); }
+function trSave(){ var I = trIn(); ['ag','cm','cmd','date','cp','ville','z78','pal','kg','vol','len','h','km','obs','client'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.value; }); if (I.ag === '__ext'){ I.ag = ''; I.ext = true; } ['hayon','grue','man'].forEach(function(k){ var e = $('t_'+k); if (e) I[k] = e.checked; }); var fx = $('t_fluxab'); if (fx) I.flux = fx.checked ? 'ab' : 'aa'; return I; }
 function trForm(mode){
   var I = trIn(), ags = agencies(), cmL = ((ST.cfg.agencies[I.ag]||{}).cmList||[]);
   var MD = mode === 'model', N = 0;
@@ -4883,7 +4890,10 @@ function trForm(mode){
     obs:'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 3h12v8H7l-3 3v-3H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>' };
   var h = '<div class="panel"><div class="ph"><h2>'+(mode === 'wiz' ? 'Demande de transport' : 'Livraison à réaliser')+'</h2>'+(mode === 'wiz' ? '<span class="muted small">client, adresse de livraison et contraintes</span>' : '')+'</div><form class="pb tform'+(mode === 'wiz' ? ' tform-w' : '')+'" id="tform" autocomplete="off">';
   var OT = entOtis(I.ag), EL = mode === 'wiz' ? myEnts() : ags;
-  if (!MD) h += sec(1, 'Quelle entité ?', IC.ent)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Entité</label><select id="t_ag"'+(ST.ent && mode !== 'wiz' ? ' disabled' : '')+'>'+EL.map(function(a){ return '<option value="'+esc(a.code)+'"'+(a.code === I.ag ? ' selected' : '')+'>'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+'</select>'+(mode === 'wiz' ? '<span class="hint">'+(OT ? 'Entité OTIS : grille de vente OTIS' : 'Hors OTIS : pas de grille de vente, prix préconisé à partir de l\'achat')+'</span>' : '')+'</div>'+
+  if (mode === 'wiz') OT = trOtis();
+  var XC = uniqA((ST.transports || []).filter(function(t){ return t.ext && t.client; }).map(function(t){ return t.client; }));
+  if (!MD) h += sec(1, 'Quelle entité ?', IC.ent)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_ag">Entité</label><select id="t_ag"'+(ST.ent && mode !== 'wiz' ? ' disabled' : '')+'>'+EL.map(function(a){ return '<option value="'+esc(a.code)+'"'+(!I.ext && a.code === I.ag ? ' selected' : '')+'>'+esc(a.label||'AG '+a.code)+'</option>'; }).join('')+(mode === 'wiz' ? '<option value="__ext"'+(I.ext ? ' selected' : '')+'>Autre client (hors OTIS)…</option>' : '')+'</select>'+(mode === 'wiz' ? '<span class="hint">'+(OT ? 'Entité OTIS : grille de vente OTIS' : 'Hors OTIS : pas de grille de vente, prix préconisé à partir de l\'achat')+'</span>' : '')+'</div>'+
+    (mode === 'wiz' && I.ext ? '<div class="fld"><label class="lbl" for="t_client">Client</label><input id="t_client" list="t_xcl" value="'+esc(I.client || '')+'" placeholder="Nom du client"><datalist id="t_xcl">'+XC.map(function(c){ return '<option value="'+esc(c)+'">'; }).join('')+'</datalist></div>' : '')+
     (OT ? '<div class="fld"><label class="lbl" for="t_cm">Contremaître</label><input id="t_cm" list="t_cml" value="'+esc(I.cm)+'"><datalist id="t_cml">'+cmL.map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join('')+'</datalist></div>'+
     fld('Appareil / affaire','t_cmd','text',I.cmd) : '')+fld('Date de livraison','t_date','date',I.date)+'</div></div>';
   h += sec(2, 'Lieu de livraison', IC.chan)+'<div class="grid-f"><div class="fld"><label class="lbl" for="t_cp">Code postal</label><input id="t_cp" type="text" inputmode="numeric" maxlength="5" value="'+esc(I.cp)+'"></div>'+
@@ -5068,7 +5078,7 @@ var TR_COL = ['#7A93B0','#C9A66B','#8DAE8B','#B5838D','#6D8A96','#D4A373','#9C89
 function trNum(v){ if (v === null || v === undefined || v === '') return null; var x = parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); return isNaN(x) ? null : x; }
 function trItems(){ var I = trIn(); if (!Array.isArray(I.items)) I.items = []; return I.items; }
 /* hors OTIS : pas de grille de vente, donc pas d'étape Vente */
-function trOtis(){ return entOtis(trIn().ag); }
+function trOtis(){ var I = trIn(); return !I.ext && entOtis(I.ag); }
 function trSteps(){ return trOtis() ? TR_STEPS : TR_STEPS.filter(function(x){ return x[0] !== 'ven'; }); }
 function trStep(){ var s = ST.trStep || 'dem'; return trSteps().some(function(x){ return x[0] === s; }) ? s : 'dem'; }
 /* ---- colis → unités ---- */
@@ -5181,8 +5191,8 @@ function trNav(){ var ST0 = trSteps(), i = ST0.map(function(x){ return x[0]; }).
   var I = trIn(), sv = role() !== 'lecture' ? '<button class="btn" data-trdraft>'+(I.tid ? 'Enregistrer les modifications' : 'Enregistrer le brouillon')+'</button>' : '';
   return '<div class="nextbar">'+(pv ? '<button class="btn" data-trstep="'+pv[0]+'">← '+pv[1]+'</button>' : '')+'<span class="why">'+esc(why || (I.savedAt ? 'Enregistré à '+I.savedAt : I.tid ? (TRST[I.tstatus] || 'Enregistré') : ''))+'</span>'+sv+(nx ? '<button class="btn pri" data-trstep="'+nx[0]+'"'+(why ? ' disabled' : '')+'>Étape suivante : '+nx[1]+' →</button>' : '')+'</div>'; }
 function vTrWiz(){ if (ST.trLand) return vTrLand(); var V = ST.trDone, s = trStep();
-  var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+'</span><span class="sp"></span><button class="btn sm" data-ttab="hist">Transports validés</button><button class="btn sm g" data-trnew>Nouveau devis</button></div>' : '';
-  var h = '<section class="view trw">'+ban+trStepper();
+  var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+'</span><span class="sp"></span><button class="btn sm" data-trhome>Tous les devis</button><button class="btn sm g" data-trnew>Nouveau devis</button></div>' : '';
+  var h = '<section class="view trw"><div class="trw-back"><button class="lnk" data-trhome>← Tous les devis transport</button>'+(trIn().tid ? '<span class="pill">'+esc(TRST[trIn().tstatus] || '')+'</span>' : '')+'</div>'+ban+trStepper();
   h += s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn();
   return h + trNav() + '</section>'; }
 function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<td><input class="tri" data-tri="'+i+'|'+k+'" value="'+esc(v === undefined || v === null ? '' : v)+'"'+(t === 'n' ? ' inputmode="decimal"' : '')+' style="width:'+w+'" aria-label="'+k+'"></td>'; };
@@ -5246,14 +5256,14 @@ function vTrSyn(){ var D = trSynData(), I = D.I, cls = mgClass(D.pc), T = trTot(
     '<div class="'+cls+' syn-pc"><span class="lbl">Taux de marge</span><b>'+(D.pc !== null ? fr(D.pc, 1)+' %' : '—')+'</b><span class="small">'+(D.pc === null ? '&nbsp;' : D.pc < MG_LOW ? 'sous le seuil de '+MG_LOW+' %' : D.pc < MG_TARGET ? 'sous l\'objectif' : 'objectif atteint')+'</span></div></div>';
   /* hors OTIS : pas de grille de vente, préconisation entre ×1,20 et ×1,40 de l'achat retenu */
   if (!OT){ var bu = D.buy;
-    h += '<div class="trreco"><div class="trreco-h"><b>Prix de vente préconisé</b><span class="small muted">'+esc(agLabel(I.ag))+' n\'a pas de grille de vente : préconisation entre ×1,20 et ×1,40 de l\'achat retenu</span></div>'+
+    h += '<div class="trreco"><div class="trreco-h"><b>Prix de vente préconisé</b><span class="small muted">'+esc(trClient(I))+' n\'a pas de grille de vente : préconisation entre ×1,20 et ×1,40 de l\'achat retenu</span></div>'+
       (bu !== null ? '<div class="trreco-r">'+TR_K.map(function(k){ var on = !man && Math.abs(kk - k) < 1e-6, v = Math.round(bu * k), pc = (v - bu) / v * 100;
         return '<button class="trk-o'+(on ? ' on' : '')+'" data-trsk="'+k+'"><span>× '+fr(k, 2)+'</span><b>'+eur(v)+'</b><span class="small">marge '+fr(pc, 1)+' %</span></button>'; }).join('')+
         '<label class="fld trk-m"><span class="lbl">Prix de vente retenu (€ HT)</span><input id="t_sell" inputmode="decimal" value="'+esc(D.sell !== null ? String(D.sell) : '')+'"></label></div>'+
         (man && (D.sell < Math.round(bu * 1.2) || D.sell > Math.round(bu * 1.4)) ? '<p class="small neg" style="margin:6px 0 0">Prix retenu hors de la fourchette préconisée ('+eur(Math.round(bu * 1.2))+' à '+eur(Math.round(bu * 1.4))+').</p>' : '')
       : '<p class="note" style="margin:0">Aucun achat disponible : prix de vente à saisir.</p><label class="fld trk-m"><span class="lbl">Prix de vente retenu (€ HT)</span><input id="t_sell" inputmode="decimal" value="'+esc(I.sellMan || '')+'"></label>')+'</div>'; }
   h += '<table class="bi-t trs"><tbody>'+
-    '<tr><th>Client</th><td>'+esc(agLabel(I.ag))+(I.cm ? ' · '+esc(I.cm) : '')+(I.cmd ? ' · '+esc(I.cmd) : '')+'</td></tr>'+
+    '<tr><th>Client</th><td>'+esc(trClient(I))+(I.cm ? ' · '+esc(I.cm) : '')+(I.cmd ? ' · '+esc(I.cmd) : '')+'</td></tr>'+
     '<tr><th>Livraison</th><td>'+esc((I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville)+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']+(I.hayon ? ' · hayon' : '')+(I.grue ? ' · grue' : '')+(I.man ? ' · manutentionnaire' : '')+'</td></tr>'+
     '<tr><th>Colis</th><td>'+T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³</td></tr>'+
     '<tr><th>Camion(s)</th><td>'+esc(trWhat(D.cd))+'</td></tr>'+
@@ -5474,7 +5484,7 @@ function trBpApply(I, H, ref){ var msg = '', name = H.owner ? H.owner.split(',')
     if (!I.cm && (name || H.code)) I.cm = name + (H.code ? (name ? ' · ' : '')+H.code : '');
     if (!I.cmd) I.cmd = ref;
     var ow = GRP.norm(H.owner || ''), ag = trpEnts().filter(function(a){ var l = GRP.norm(a.label || ''); return (l && ow.indexOf(l) >= 0) || ow.indexOf(GRP.norm('ag '+a.code)) >= 0; })[0];
-    if (ag && ag.code !== ST.ent){ ST.ent = ag.code; I.ag = ag.code; msg += ' · entité '+(ag.label || ag.code); }
+    if (ag && (ag.code !== ST.ent || I.ext)){ I.ext = false; ST.ent = ag.code; I.ag = ag.code; msg += ' · entité '+(ag.label || ag.code); }
     var obs = ['Bon de préparation '+ref+(H.refs ? ' ('+H.refs+')' : ''), (H.addr || []).slice(0, -1).join(', '), H.contact ? 'contact '+H.contact : ''].filter(Boolean).join(' · ');
     if (obs && (I.obs || '').indexOf(ref) < 0) I.obs = (I.obs ? I.obs+'\n' : '') + obs;
     return bpCpOnline(bpCity(H)).then(function(G){ if (G.cp){ I.cp = G.cp; I.ville = G.ville; I.kmMan = false; I.hMan = false; msg += ' · livraison '+G.cp+' '+G.ville; } else if (G.ville) msg += ' · commune '+G.ville+' : code postal à saisir';
@@ -5555,7 +5565,7 @@ function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); r
     doc.text = function(t){ var A = [].slice.call(arguments); A[0] = Array.isArray(t) ? t.map(pdfTxt) : pdfTxt(t); return _tx.apply(null, A); };
     doc.autoTable = function(o){ if (o.head) o.head = o.head.map(_cl); if (o.body) o.body = o.body.map(_cl); return _at(o); };
     doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor.apply(doc, ink); doc.text(CH ? 'Plan de chargement'+(I.ref ? ' · '+I.ref : '') : 'Transport · synthèse', M, y); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text('LEGAA · Pilotage Logistique · édité le '+new Date().toLocaleDateString('fr-FR')+' par '+((ST.user || {}).name || ''), M, y + 5); y += 12;
-    var rows = CH ? [['ID', I.num || '—'], ['Client', I.client || '—'], ['Référence', I.ref || '—'], ['N° PO', I.po || '—'], ['N° bon de préparation', I.bp || '—'], ['N° bon de livraison', I.bl || '—'], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—'], ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)]] : [['Client', agLabel(I.ag)+(I.cm ? ' · '+I.cm : '')+(I.cmd ? ' · '+I.cmd : '')], ['Livraison', (I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : '', I.man ? 'manutentionnaire' : ''].filter(Boolean).join(', ') || '—'],
+    var rows = CH ? [['ID', I.num || '—'], ['Client', I.client || '—'], ['Référence', I.ref || '—'], ['N° PO', I.po || '—'], ['N° bon de préparation', I.bp || '—'], ['N° bon de livraison', I.bl || '—'], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : ''].filter(Boolean).join(', ') || '—'], ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)]] : [['Client', trClient(I)+(I.cm ? ' · '+I.cm : '')+(I.cmd ? ' · '+I.cmd : '')], ['Livraison', (I.date ? E.frDate(I.date)+' · ' : '')+I.cp+' '+I.ville+' · flux '+FLUX[I.flux === 'ab' ? 'ab' : 'aa']], ['Contraintes', [I.hayon ? 'hayon' : '', I.grue ? 'grue' : '', I.man ? 'manutentionnaire' : ''].filter(Boolean).join(', ') || '—'],
       ['Colis', T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³'], ['Camion(s)', trWhat(cd)], ['Transporteur', D.P ? D.P.x.carrier+(D.P.picked ? ' (retenu)' : '') : '—'], ['Achat HT', D.buy !== null ? eur(D.buy) : '—'], ['Vente HT', D.sell !== null ? eur(D.sell) : 'sur devis'], ['Marge', D.mg !== null ? n2(D.mg)+' € · '+fr(D.pc, 1)+' %' : '—']].concat(I.obs ? [['Observation', I.obs]] : []);
     doc.autoTable({ startY:y, body:rows, theme:'plain', styles:{ fontSize:9.5, cellPadding:1.6, textColor:ink }, columnStyles:{ 0:{ fontStyle:'bold', cellWidth:34, textColor:mut } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6;
     if (D.P) { doc.autoTable({ startY:y, head:[['Camion', 'Grille', 'Solution', 'Achat HT']], body:D.P.x.per.map(function(q, k){ return [String(k + 1), q.G.label, q.what, n2(q.price)]; }), theme:'grid', styles:{ fontSize:8.5, cellPadding:1.6 }, headStyles:{ fillColor:[29, 32, 36] }, columnStyles:{ 3:{ halign:'right' } }, margin:{ left:M, right:M } }); y = doc.lastAutoTable.finalY + 6; }
@@ -5564,22 +5574,27 @@ function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); r
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor.apply(doc, mut); doc.text(s.n+' colis · '+fr(s.kg, 0)+' kg ('+Math.round(s.kp * 100)+' % CU) · '+fr(s.m3, 2)+' m³ ('+Math.round(s.vp * 100)+' %) · longueur utilisée '+fr(s.ldm / 1000, 2)+' m · avant à gauche, porte à droite', M, 21);
       if (shots[k]) doc.addImage(shots[k], 'JPEG', M, 26, 182, 83);
       doc.autoTable({ startY:shots[k] ? 114 : 28, head:[['N°', 'Colis', 'Position x / y / z (mm)', 'Dimensions posées (mm)']], body:K.b.map(function(b, i){ return [String(i + 1), b.u.name, [b.x, b.y, b.z].map(Math.round).join(' / '), [b.l, b.w, b.h].map(Math.round).join(' × ')+(b.rot ? ' (tourné)' : '')+(b.z > 0 ? ' · gerbé' : '')]; }), theme:'grid', styles:{ fontSize:8, cellPadding:1.3 }, headStyles:{ fillColor:[29, 32, 36] }, margin:{ left:M, right:M } }); });
-    doc.save(CH ? 'Plan de chargement '+String(I.ref || new Date().toISOString().slice(0, 10)).replace(/[^\w -]/g, '-')+'.pdf' : 'Transport '+(I.date || '')+' '+String(agLabel(I.ag)).replace(/[^\w -]/g, '')+' '+(I.ville || '')+'.pdf'); TRW.busy = false; render();
+    doc.save(CH ? 'Plan de chargement '+String(I.ref || new Date().toISOString().slice(0, 10)).replace(/[^\w -]/g, '-')+'.pdf' : 'Transport '+(I.date || '')+' '+String(trClient(I)).replace(/[^\w -]/g, '')+' '+(I.ville || '')+'.pdf'); TRW.busy = false; render();
   }).catch(function(e){ TRW.busy = false; render(); toast('PDF impossible : '+e.message); }); }
 /* ---- Devis transport : accueil (nouveau / reprendre), brouillons ---- */
 function trInSnap(){ var I = clone(trIn()); delete I.tid; delete I.tstatus; return I; }
 function trDoc(){ var D = trSynData(), I = D.I, T = trTot(), cd = D.cd;
-  var t = { date:I.date || '', ag:I.ag, agLabel:agLabel(I.ag), cm:I.cm || '', cmd:I.cmd || '', cp:I.cp || '', ville:I.ville || '', flux:I.flux === 'ab' ? 'ab' : 'aa', hayon:!!I.hayon, grue:!!I.grue, man:!!I.man,
+  var t = { date:I.date || '', ag:I.ag || '', agLabel:trClient(I), ext:!!I.ext, client:I.ext ? (I.client || '') : '', cm:I.cm || '', cmd:I.cmd || '', cp:I.cp || '', ville:I.ville || '', flux:I.flux === 'ab' ? 'ab' : 'aa', hayon:!!I.hayon, grue:!!I.grue, man:!!I.man,
     kg:Math.round(T.kg), vol:Math.round(T.m3 * 100) / 100, len:Math.round(T.len), h:+I.h || 0, km:+I.km || 0, obs:I.obs || '', otis:trOtis(), total:D.sell,
     colis:trItems().map(function(it){ return { name:it.name || '', L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty), stack:!!it.stack, sn:it.stack ? (+it.sn || 2) : null, rot:it.rot !== false }; }),
     inp:trInSnap(), pick:ST.trPick || null, step:trStep() };
   if (cd){ t.pal = cd.S.reduce(function(s, x){ return s + x.pal; }, 0); t.veh = D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.v.label; }).join(' + ') : trWhat(cd); t.zone = D.V ? D.V.zone : null;
     t.detail = D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.q.detail; }).join(' | ') : (trNum(I.sellMan) > 0 ? 'Prix de vente saisi (hors grille)' : 'Prix de vente = achat × '+fr(+I.sellK || 1.3, 2)+' (hors grille)');
-    t.camions = cd.S.map(function(s){ return { type:cd.t.code, label:cd.t.label, n:s.n, kg:Math.round(s.kg), m3:Math.round(s.m3 * 100) / 100, ldm:Math.round(s.ldm) }; }); }
+    t.camions = cd.S.map(function(s){ return { type:cd.t.code, label:cd.t.label, n:s.n, kg:Math.round(s.kg), m3:Math.round(s.m3 * 100) / 100, ldm:Math.round(s.ldm) }; });
+    /* détail du prix, une ligne par élément */
+    if (D.V && D.V.ok) t.price = D.V.rows.map(function(r, k){ var q = r.best.q, v = r.best.v;
+      return { truck:(cd.n > 1 ? 'Camion '+(k + 1)+' · ' : '')+v.label, total:q.total, lines:[{ l:'Forfait '+(q.half ? '½ journée' : 'journée'), q:'', u:'', v:q.base }, { l:'Heures supplémentaires', q:fr(q.xh)+' h', u:fr(+v.h || 0, 2)+' €/h', v:E.r2(q.xh * (+v.h || 0)) },
+        { l:'Kilomètres au-delà de '+q.kmi+' km inclus', q:fr(q.xk, 0)+' km', u:fr(+v.km || 0, 2)+' €/km', v:E.r2(q.xk * (+v.km || 0)) }].concat(q.man ? [{ l:'Manutentionnaire', q:'', u:'', v:q.man }] : []) }; });
+    else if (D.sell !== null) t.price = [{ truck:'Prix hors grille', total:D.sell, lines:trNum(I.sellMan) > 0 || D.buy === null ? [{ l:'Prix de vente saisi', q:'', u:'', v:D.sell }] : [{ l:'Achat retenu'+(D.P ? ' · '+D.P.x.carrier : ''), q:'', u:'', v:D.buy }, { l:'Coefficient appliqué', q:'× '+fr(+I.sellK || 1.3, 2), u:'', v:E.r2(D.sell - D.buy) }] }]; }
   if (D.P){ t.buyCarrier = D.P.x.carrier; t.buyWhat = D.P.x.per.map(function(q){ return q.what; }).join(' | '); t.buyPrice = D.P.x.price; t.buyPicked = !!D.P.picked; t.marge = D.mg; t.margePct = D.pc === null ? null : Math.round(D.pc * 10) / 10; }
   return { t:t, D:D }; }
 function trSaveDoc(t){ var I = trIn(); return (I.tid ? STORE.updateTransport(I.tid, t).then(function(){ return I.tid; }) : STORE.addTransport(t)).then(function(id){ I.tid = id; I.tstatus = t.status; ST.transports = null; loadTransports(); return id; }); }
-function trDraft(){ if (role() === 'lecture') return; var I = trIn(), X = trDoc(), t = X.t; t.status = I.tstatus && I.tstatus !== 'brouillon' ? I.tstatus : 'brouillon';
+function trDraft(){ if (role() === 'lecture') return; if ($('tform')) trSave(); var I = trIn(), X = trDoc(), t = X.t; t.status = I.tstatus && I.tstatus !== 'brouillon' ? I.tstatus : 'brouillon';
   trSaveDoc(t).then(function(){ I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); toast(t.status === 'brouillon' ? 'Brouillon enregistré' : 'Modifications enregistrées'); render(); }, function(e){ toast('Enregistrement impossible : '+e.message); }); }
 /* reprise d'un devis : brouillon ou transport validé (anciens transports : reconstruits depuis leurs champs) */
 function trOpen(id){ var t = (ST.transports || []).filter(function(x){ return x.id === id; })[0]; if (!t) return;
@@ -5590,18 +5605,57 @@ function trOpen(id){ var t = (ST.transports || []).filter(function(x){ return x.
   I.tid = t.id; I.tstatus = t.status || 'valide'; if (ST.cfg.agencies[I.ag]){ ST.ent = I.ag; ST.parAg = I.ag; }
   ST.trIn = I; ST.trPick = t.pick || null; ST.trDone = null; TRW.cache = null; TRW.k = 0; ST.trLand = false;
   ST.trStep = t.step || ((t.colis || []).length ? 'syn' : 'dem'); render(); window.scrollTo(0, 0); }
-function vTrLand(){ var L = ST.transports, cur = ST.trIn && ((ST.trIn.items || []).length || ST.trIn.tid), q = GRP.norm(ST.trQ || '');
-  var card = function(a, ic, t1, t2){ return '<button class="trl-c" '+a+'><span class="trl-i" aria-hidden="true">'+ic+'</span><span><b>'+t1+'</b><span class="small muted">'+t2+'</span></span></button>'; };
-  var h = '<section class="view"><div class="trl">'+card('data-trnew2', '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>', 'Nouveau devis transport', 'Demande, colis, chargement, prix, achat, synthèse')+
-    (cur ? card('data-trcont', '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h12M13 7l5 5-5 5"/></svg>', 'Continuer le devis en cours', esc([agLabel(ST.trIn.ag), ST.trIn.ville, (ST.trIn.items || []).length+' ligne(s) de colis'].filter(Boolean).join(' · '))) : '')+'</div>';
-  h += '<div class="panel"><div class="ph"><h2>Reprendre un devis transport existant</h2><span class="muted small">brouillons et transports validés</span></div>'+
-    '<div class="pb chopt"><label class="fld chq"><span>Rechercher</span><input id="trq" type="search" value="'+esc(ST.trQ || '')+'" placeholder="entité, commune, contremaître, appareil, transporteur, utilisateur…"></label></div>';
-  if (!L) return h + '<div class="pb muted">Chargement…</div></div></section>';
-  var F = L.filter(function(t){ return !q || [t.agLabel, t.cm, t.cmd, t.ville, t.cp, t.veh, t.buyCarrier, t.createdBy, (TRST[t.status] || t.status)].some(function(v){ return GRP.norm(v || '').indexOf(q) >= 0; }); });
-  h += '<div class="tw"><table class="chl"><thead><tr><th>Statut</th><th>Livraison</th><th>Entité</th><th>Lieu</th><th>Camion(s)</th><th class="n">Vente</th><th class="n">Achat</th><th class="n">Marge</th><th>Créé par</th><th></th></tr></thead><tbody>'+
-    (F.length ? F.slice(0, 200).map(function(t){ return '<tr data-tropen="'+esc(t.id)+'" style="cursor:pointer"><td><span class="pill '+(t.status === 'brouillon' ? 'p-info' : t.status === 'annule' ? 'p-bloquant' : 'p-ok')+'">'+esc(TRST[t.status] || t.status || '—')+'</span></td><td class="nowr">'+(t.date ? E.frDate(t.date) : '—')+'</td><td>'+esc(t.agLabel || agLabel(t.ag))+(t.cm ? '<br><span class="small muted">'+esc(t.cm)+'</span>' : '')+'</td><td>'+esc([t.cp, t.ville].filter(Boolean).join(' ') || '—')+'</td><td>'+esc(t.veh || '—')+'</td><td class="n">'+(t.total ? n2(t.total) : '—')+'</td><td class="n">'+(t.buyPrice ? n2(t.buyPrice) : '—')+'</td><td class="n">'+(t.margePct !== null && t.margePct !== undefined ? fr(t.margePct, 1)+' %' : '—')+'</td><td class="small">'+esc(t.createdBy || '')+'</td><td><button class="btn sm" data-tropen="'+esc(t.id)+'">Reprendre</button></td></tr>'; }).join('')
-      : '<tr><td colspan="10" class="empty">'+(L.length ? 'Aucun devis ne correspond à la recherche.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
+function vTrLand(){ var L = ST.transports, cur = ST.trIn && ((ST.trIn.items || []).length || ST.trIn.tid);
+  var h = '<section class="view"><div class="trl-top"><button class="btn pri trl-new" data-trnew2><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouveau devis transport</button>'+
+    (cur ? '<button class="btn trl-cont" data-trcont>Continuer le devis en cours<span class="small muted">'+esc([trClient(ST.trIn), ST.trIn.ville, (ST.trIn.items || []).length+' ligne(s) de colis'].filter(Boolean).join(' · '))+'</span></button>' : '')+'</div>';
+  if (!L) return h + '<div class="panel pb muted">Chargement des devis…</div></section>';
+  var F = ST.trLF = ST.trLF || { q:'', st:'', ent:'', car:'', m:'', by:'', s:'date', d:-1 }, R = trLandRows(), act = R.filter(function(t){ return t.status !== 'annule' && t.status !== 'brouillon'; });
+  var sum = function(A, k){ return A.reduce(function(s, t){ return E.r2(s + (+t[k] || 0)); }, 0); }, sv = sum(act, 'total'), sm = sum(act.filter(function(t){ return t.marge !== undefined && t.marge !== null; }), 'marge');
+  h += '<div class="kpis">'+kpi('Brouillons', R.filter(function(t){ return t.status === 'brouillon'; }).length, 'à finaliser')+kpi('Validés', R.filter(function(t){ return t.status === 'valide'; }).length, 'à facturer')+kpi('Facturés', R.filter(function(t){ return t.status === 'facture'; }).length, '')+
+    kpi('Vente HT', eur(sv), 'validés et facturés')+kpi('Marge', eur(sm), sv ? fr(sm / sv * 100, 1)+' % de la vente' : '')+'</div>';
+  var opt = function(id, k, lab, A){ return '<label class="fld"><span>'+lab+'</span><select id="'+id+'"><option value="">Tous</option>'+A.map(function(o){ var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="'+esc(v)+'"'+(F[k] === v ? ' selected' : '')+'>'+esc(l)+'</option>'; }).join('')+'</select></label>'; };
+  var uq = function(f){ return uniqA(L.map(f).filter(Boolean)).sort(function(a, b){ return String(a).localeCompare(String(b), 'fr', { numeric:true }); }); };
+  h += '<div class="panel"><div class="ph"><h2>Devis transport</h2><span class="muted small">'+(R.length === L.length ? L.length : R.length+' sur '+L.length)+' devis · toutes entités · clic sur une ligne pour la reprendre</span><div class="sp"><button class="btn sm" data-a="xlsTr"'+(R.length && canSave() ? '' : ' disabled')+'>Exporter (.xlsx)</button></div></div>'+
+    '<div class="pb chopt"><label class="fld chq"><span>Rechercher</span><input id="trq" type="search" value="'+esc(F.q || '')+'" placeholder="entité, client, commune, contremaître, appareil, transporteur…"></label>'+
+    opt('trlf_st', 'st', 'Statut', Object.keys(TRST).map(function(k){ return [k, TRST[k]]; }))+opt('trlf_ent', 'ent', 'Entité / client', uq(function(t){ return t.agLabel || agLabel(t.ag); }))+opt('trlf_car', 'car', 'Transporteur', uq(function(t){ return t.buyCarrier; }))+
+    opt('trlf_m', 'm', 'Mois de livraison', uq(function(t){ return (t.date || '').slice(0, 7); }).reverse().map(function(m){ return [m, monthLabel(m)]; }))+opt('trlf_by', 'by', 'Créé par', uq(function(t){ return t.createdBy; }))+
+    (F.q || F.st || F.ent || F.car || F.m || F.by ? '<button class="btn sm g" data-trlfx>Effacer les filtres</button>' : '')+'</div>';
+  h += '<div class="tw"><table class="chl trlt"><thead><tr>'+TRL_COLS.map(function(c){ var on = F.s === c[0]; return '<th'+(c[3] ? ' class="n"' : '')+' aria-sort="'+(on ? (F.d > 0 ? 'ascending' : 'descending') : 'none')+'"><button class="lnk chs'+(on ? ' on' : '')+'" data-trls="'+c[0]+'">'+c[1]+(on ? (F.d > 0 ? ' ▲' : ' ▼') : '')+'</button></th>'; }).join('')+'<th></th></tr></thead><tbody>'+
+    (R.length ? R.map(function(t){ var pc = t.margePct, ask = ST.trDelAsk === t.id;
+      return '<tr data-tropen="'+esc(t.id)+'" class="'+(t.status === 'annule' ? 'excl' : '')+'" style="cursor:pointer">'+
+        '<td>'+(role() === 'lecture' ? '<span class="pill">'+esc(TRST[t.status] || t.status || '—')+'</span>' : '<select data-trs="'+esc(t.id)+'" aria-label="Statut">'+Object.keys(TRST).map(function(k){ return '<option value="'+k+'"'+(t.status === k ? ' selected' : '')+'>'+TRST[k]+'</option>'; }).join('')+'</select>')+'</td>'+
+        '<td class="nowr">'+(t.date ? E.frDate(t.date) : '—')+'</td><td>'+esc(t.agLabel || agLabel(t.ag))+'</td><td>'+esc(t.cm || '—')+'</td><td class="nowr">'+esc(t.cmd || '—')+'</td><td>'+esc([t.cp, t.ville].filter(Boolean).join(' ') || '—')+'</td><td>'+esc(t.veh || '—')+'</td>'+
+        '<td class="n nowr">'+(t.total ? n2(t.total)+' <button class="trpi" data-trprice="'+esc(t.id)+'" title="Détail du prix" aria-label="Détail du prix">i</button>' : '—')+'</td><td>'+esc(t.buyCarrier || '—')+'</td><td class="n">'+(t.buyPrice ? n2(t.buyPrice) : '—')+'</td>'+
+        '<td class="n'+(t.marge < 0 ? ' neg' : '')+'">'+(t.marge !== undefined && t.marge !== null ? n2(t.marge) : '—')+'</td><td class="n">'+(pc !== undefined && pc !== null ? '<span class="mgp '+mgClass(pc)+'">'+fr(pc, 1)+' %</span>' : '—')+'</td>'+
+        '<td class="small">'+esc(t.createdBy || '')+'<br><span class="muted">'+(t.createdAt ? dt(t.createdAt) : '')+'</span></td>'+
+        '<td class="nowr"><button class="btn sm" data-tropen="'+esc(t.id)+'">Reprendre</button>'+(isAdmin() ? ' <button class="btn sm '+(ask ? 'pri' : 'g')+'" data-trdel2="'+esc(t.id)+'">'+(ask ? 'Confirmer' : 'Supprimer')+'</button>' : '')+'</td></tr>'; }).join('')+
+      '<tr class="tot"><td colspan="7">Total validés et facturés</td><td class="n">'+n2(sv)+'</td><td></td><td class="n">'+n2(sum(act, 'buyPrice'))+'</td><td class="n">'+n2(sm)+'</td><td class="n">'+(sv ? '<span class="mgp '+mgClass(sm / sv * 100)+'">'+fr(sm / sv * 100, 1)+' %</span>' : '')+'</td><td colspan="2"></td></tr>'
+      : '<tr><td colspan="14" class="empty">'+(L.length ? 'Aucun devis ne correspond aux filtres.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
   return h; }
+var TRL_COLS = [['st','Statut',function(t){ return Object.keys(TRST).indexOf(t.status); }],['date','Livraison',function(t){ return t.date || ''; }],['ent','Entité / client',function(t){ return t.agLabel || ''; }],['cm','Contremaître'],['cmd','Appareil'],['lieu','Lieu',function(t){ return (t.cp || '')+' '+(t.ville || ''); }],['veh','Véhicule'],
+  ['sell','Vente HT',function(t){ return +t.total || 0; },1],['car','Transporteur',function(t){ return t.buyCarrier || ''; }],['buy','Achat HT',function(t){ return +t.buyPrice || 0; },1],['mg','Marge',function(t){ return +t.marge || 0; },1],['pc','Taux de marge',function(t){ return t.margePct === null || t.margePct === undefined ? -1e9 : +t.margePct; },1],['by','Créé par',function(t){ return t.createdBy || ''; }]];
+function trLandRows(){ var F = ST.trLF || {}, q = GRP.norm(F.q || ''), L = (ST.transports || []).filter(function(t){
+    if (F.st && t.status !== F.st) return false; if (F.ent && (t.agLabel || agLabel(t.ag)) !== F.ent) return false; if (F.car && t.buyCarrier !== F.car) return false; if (F.m && (t.date || '').slice(0, 7) !== F.m) return false; if (F.by && t.createdBy !== F.by) return false;
+    return !q || [t.agLabel, t.client, t.cm, t.cmd, t.ville, t.cp, t.veh, t.buyCarrier, t.createdBy, TRST[t.status]].some(function(v){ return GRP.norm(v || '').indexOf(q) >= 0; }); });
+  var c = TRL_COLS.filter(function(x){ return x[0] === F.s; })[0] || TRL_COLS[1], v = function(t){ return c[2] ? c[2](t) : (t[c[0]] || ''); };
+  return L.sort(function(a, b){ var x = v(a), y = v(b); return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'fr', { numeric:true })) * (F.d || -1) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')); }); }
+/* détail du prix d'un transport : une ligne par élément (structure enregistrée, sinon relue dans la formule) */
+function trPriceLines(t){ if (Array.isArray(t.price) && t.price.length) return t.price;
+  var out = [], num = function(s){ return parseFloat(String(s).replace(/\s/g, '').replace(',', '.')) || 0; };
+  String(t.detail || '').split(' | ').forEach(function(seg, k, A){ var m = seg.match(/^(½ journée|Journée)\s+([\d.,]+)\s*\+\s*([\d.,]+)\s*h\s*×\s*([\d.,]+)\s*\+\s*([\d.,]+)\s*km\s*×\s*([\d.,]+)(?:\s*\+\s*manut\.\s*([\d.,]+))?\s*=\s*([\d.,\s]+)$/);
+    if (!m) return; var vs = String(t.veh || '').split(' + '), lab = A.length > 1 ? 'Camion '+(k + 1)+(vs[k] ? ' · '+vs[k] : '') : (t.veh || '');
+    out.push({ truck:lab, lines:[{ l:'Forfait '+m[1].toLowerCase(), q:'', u:'', v:num(m[2]) }, { l:'Heures supplémentaires', q:m[3]+' h', u:m[4]+' €/h', v:E.r2(num(m[3]) * num(m[4])) }, { l:'Kilomètres supplémentaires', q:m[5]+' km', u:m[6]+' €/km', v:E.r2(num(m[5]) * num(m[6])) }].concat(m[7] ? [{ l:'Manutentionnaire', q:'', u:'', v:num(m[7]) }] : []), total:num(m[8]) }); });
+  return out; }
+function trPriceOpen(id){ var t = (ST.transports || []).filter(function(x){ return x.id === id; })[0], box = $('modal'); if (!t || !box) return; var P = trPriceLines(t), pc = t.margePct;
+  var body = P.length ? P.map(function(g){ return '<tr class="grp"><th colspan="4">'+esc(g.truck || 'Vente')+'</th></tr>'+g.lines.map(function(x){ return '<tr><td>'+esc(x.l)+'</td><td class="n">'+esc(x.q || '')+'</td><td class="n">'+esc(x.u || '')+'</td><td class="n">'+n2(x.v)+'</td></tr>'; }).join('')+(P.length > 1 || g.lines.length > 1 ? '<tr class="sub"><td colspan="3">Sous-total</td><td class="n">'+n2(g.total)+'</td></tr>' : ''); }).join('')
+    : '<tr><td colspan="3">'+esc(t.detail || 'Prix de vente')+'</td><td class="n">'+n2(t.total)+'</td></tr>';
+  box.innerHTML = '<div class="mbox mbox-s bi" role="dialog" aria-modal="true" aria-labelledby="pr-t"><div class="mhead"><div><span class="lbl">'+esc([t.agLabel, t.date ? E.frDate(t.date) : '', [t.cp, t.ville].filter(Boolean).join(' ')].filter(Boolean).join(' · '))+'</span><h2 id="pr-t">Détail du prix · '+eur(t.total)+' HT</h2></div><div class="row"><button class="btn" data-buyinfoclose>Fermer</button></div></div><div class="mbody">'+
+    '<table class="prt"><thead><tr><th>Élément</th><th class="n">Quantité</th><th class="n">Prix unitaire</th><th class="n">Montant HT</th></tr></thead><tbody>'+body+
+    '<tr class="tot"><td colspan="3">Vente HT</td><td class="n">'+n2(t.total)+'</td></tr>'+
+    (t.buyPrice ? '<tr><td>Achat'+(t.buyCarrier ? ' · '+esc(t.buyCarrier) : '')+(t.buyWhat ? '<br><span class="small muted">'+esc(t.buyWhat)+'</span>' : '')+'</td><td></td><td></td><td class="n">'+n2(-t.buyPrice)+'</td></tr>' : '')+
+    (t.marge !== undefined && t.marge !== null ? '<tr class="tot"><td colspan="3">Marge'+(pc !== null && pc !== undefined ? ' <span class="mgp '+mgClass(pc)+'">'+fr(pc, 1)+' %</span>' : '')+'</td><td class="n">'+n2(t.marge)+'</td></tr>' : '')+'</tbody></table>'+
+    (t.zone ? '<p class="small muted" style="margin:8px 0 0">Grille de vente OTIS · zone '+esc(t.zone)+(t.h ? ' · durée '+fr(t.h)+' h' : '')+(t.km ? ' · '+fr(t.km, 0)+' km A/R' : '')+'</p>' : '')+'</div></div>';
+  box.hidden = false; document.body.classList.add('noscroll'); var b = box.querySelector('[data-buyinfoclose]'); if (b) b.focus(); }
 /* ---- validation ---- */
 function validateTransport(){ if (role() === 'lecture') return; var X = trDoc(), D = X.D, I = D.I, t = X.t; if (!D.cd || D.sell === null){ toast('Prix de vente à établir avant validation'); return; } if (!I.date){ toast('Renseigner la date de livraison'); ST.trStep = 'dem'; render(); return; }
   t.status = 'valide'; trSaveDoc(t).then(function(){ ST.trDone = { at:new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }), total:t.total, buy:t.buyPrice, carrier:t.buyCarrier, pc:t.margePct };
@@ -6650,10 +6704,10 @@ function vTrHistory(){
   return h + '</div></section>';
 }
 function exportTr(){
-  var F = (ST.transports||[]).filter(function(t){ return (!ST.trF.month || (t.date||'').slice(0,7) === ST.trF.month) && (!ST.trF.ag || t.ag === ST.trF.ag); });
+  var F = trLandRows();
   var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(F.map(function(t){ return { 'Date':E.frDate(t.date), 'Agence':t.agLabel||t.ag, 'Contremaître':t.cm, 'Appareil':t.cmd, 'Code postal':t.cp, 'Commune':t.ville, 'Zone':t.zone, 'Véhicule':t.veh, 'Palettes':t.pal, 'Poids kg':t.kg, 'Calcul':t.detail, 'Montant HT':t.total, 'Transporteur':t.buyCarrier || '', 'Achat HT':t.buyPrice === undefined ? '' : t.buyPrice, 'Marge':t.marge === undefined ? '' : t.marge, 'Statut':TRST[t.status]||t.status, 'Validé par':t.createdBy, 'Le':t.createdAt, 'Observations':t.obs||'' }; })), 'Transports');
-  saveXlsx(wb, 'Transports OTIS'+(ST.trF.month?' '+ST.trF.month:'')+'.xlsx');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(F.map(function(t){ return { 'Date':E.frDate(t.date), 'Agence':t.agLabel||t.ag, 'Contremaître':t.cm, 'Appareil':t.cmd, 'Code postal':t.cp, 'Commune':t.ville, 'Zone':t.zone, 'Véhicule':t.veh, 'Palettes':t.pal, 'Poids kg':t.kg, 'Calcul':t.detail, 'Montant HT':t.total, 'Transporteur':t.buyCarrier || '', 'Achat HT':t.buyPrice === undefined ? '' : t.buyPrice, 'Marge':t.marge === undefined ? '' : t.marge, 'Taux de marge %':t.margePct === undefined || t.margePct === null ? '' : t.margePct, 'Statut':TRST[t.status]||t.status, 'Validé par':t.createdBy, 'Le':t.createdAt, 'Observations':t.obs||'' }; })), 'Transports');
+  saveXlsx(wb, 'Devis transport '+new Date().toISOString().slice(0, 10)+'.xlsx');
 }
 
 /* ============ EXPORTS ============ */
@@ -6819,10 +6873,15 @@ document.addEventListener('click', function(e){
   if (d.cdfl){ ST.modal = { cdf:{ pdf:d.cdfl, all:false } }; renderModal(); return; }
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
-  if (d.trstep){ if (t.disabled) return; ST.trStep = d.trstep; render(); window.scrollTo(0, 0); return; }
+  if (d.trstep){ if (t.disabled) return; if ($('tform')) trSave(); ST.trStep = d.trstep; render(); window.scrollTo(0, 0); return; }
   if (d.trnew2 !== undefined){ ST.trIn = null; ST.trLand = false; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); return; }
   if (d.trcont !== undefined){ ST.trLand = false; render(); window.scrollTo(0, 0); return; }
-  if (d.tropen){ trOpen(d.tropen); return; }
+  if (d.tropen){ if (e.target.closest && e.target.closest('select')) return; trOpen(d.tropen); return; }
+  if (d.trhome !== undefined){ if ($('tform')) trSave(); ST.trLand = true; ST.trDone = null; render(); window.scrollTo(0, 0); return; }
+  if (d.trprice){ trPriceOpen(d.trprice); return; }
+  if (d.trls){ var LF = ST.trLF; if (LF.s === d.trls) LF.d = -(LF.d || -1); else { LF.s = d.trls; LF.d = /^(date|sell|buy|mg|pc)$/.test(d.trls) ? -1 : 1; } render(); return; }
+  if (d.trlfx !== undefined){ ST.trLF = { q:'', st:'', ent:'', car:'', m:'', by:'', s:ST.trLF.s, d:ST.trLF.d }; render(); return; }
+  if (d.trdel2 && isAdmin()){ if (ST.trDelAsk !== d.trdel2){ ST.trDelAsk = d.trdel2; render(); return; } var dd = d.trdel2; ST.trDelAsk = null; STORE.deleteTransport(dd).then(function(){ if (ST.trIn && ST.trIn.tid === dd){ ST.trIn.tid = null; ST.trIn.tstatus = null; } toast('Devis supprimé'); loadTransports(); }, function(er){ toast('Suppression impossible : '+er.message); }); return; }
   if (d.trdraft !== undefined){ trDraft(); return; }
   if (d.trnew !== undefined){ ST.trLand = false; ST.trIn = null; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); return; }
   if (d.trpal !== undefined){ trItems().push({ name:'Palette Europe', L:1200, W:800, H:1200, kg:300, qty:1, stack:false, rot:true }); render(); return; }
@@ -7119,8 +7178,10 @@ document.addEventListener('change', function(e){
     if (v2 === '__EXCL__') ST.ov.exclude[k] = 'Non rattachée : non facturée';
     else if (v2){ var q = v2.split('|'), ref = ST.R.records.filter(function(r){ return r.ag===q[0] && r.cm===q[1]; })[0]; ST.ov.assign[k] = { ag:q[0], agLabel:ref.agLabel, cm:q[1], cmCode:ref.cmCode }; }
     rebuild(); persist('Rattachement '+k+' → '+(v2||'aucun')); return; }
+  if (/^trlf_(st|ent|car|m|by)$/.test(t.id)){ ST.trLF[t.id.slice(5)] = t.value; render(); return; }
   if (t.id === 't_sell'){ trIn().sellMan = t.value; render(); return; }
-  if (t.id === 't_ag' && ST.module === 'trp'){ trSave(); ST.ent = t.value; ST.parAg = t.value; ST.trIn.ag = t.value; ST.trPick = null; TRW.cache = null; if (ST.trStep === 'ven' && !entOtis(t.value)) ST.trStep = 'dem'; render(); return; }
+  if (t.id === 't_ag' && ST.module === 'trp' && t.value === '__ext'){ trSave(); var IX = ST.trIn; IX.ext = true; IX.ag = ''; IX.cm = ''; IX.cmd = ''; ST.trPick = null; TRW.cache = null; if (ST.trStep === 'ven') ST.trStep = 'dem'; render(); var tc = $('t_client'); if (tc) tc.focus(); return; }
+  if (t.id === 't_ag' && ST.module === 'trp'){ trSave(); ST.trIn.ext = false; ST.ent = t.value; ST.parAg = t.value; ST.trIn.ag = t.value; ST.trPick = null; TRW.cache = null; if (ST.trStep === 'ven' && !entOtis(t.value)) ST.trStep = 'dem'; render(); return; }
   if (t.id === 't_ag'){ var dlst = $('t_cml'); if (dlst) dlst.innerHTML = ((ST.cfg.agencies[t.value]||{}).cmList||[]).map(function(c){ return '<option value="'+esc(c.nom)+'">'; }).join(''); }
   if (t.id === 't_vsel'){ var vv = $('t_ville'); if (vv){ vv.value = t.value; var TI2 = trIn(); TI2.ville = t.value; TI2.kmMan = false; TI2.hMan = false; trGeo(false); } trCalc(); return; }
   if (t.closest && t.closest('#tform')) trCalc();
@@ -7128,10 +7189,10 @@ document.addEventListener('change', function(e){
 document.addEventListener('input', function(e){
   if (e.target.id === 'infoq'){ INFO.q = e.target.value; var pq = e.target.selectionStart; render(); var q2 = $('infoq'); if (q2){ q2.focus(); q2.setSelectionRange(pq, pq); } return; }
   if (e.target && /^c_(client|po|bp|bl|ref)$/.test(e.target.id)){ trIn()[e.target.id.slice(2)] = e.target.value; return; }
-  if (e.target && e.target.id === 'trq'){ var rq = e.target, rp = rq.selectionStart; ST.trQ = rq.value; render(); var nr = $('trq'); if (nr){ nr.focus(); try { nr.setSelectionRange(rp, rp); } catch(_){} } return; }
+  if (e.target && e.target.id === 'trq'){ var rq = e.target, rp = rq.selectionStart; ST.trLF = ST.trLF || {}; ST.trLF.q = rq.value; render(); var nr = $('trq'); if (nr){ nr.focus(); try { nr.setSelectionRange(rp, rp); } catch(_){} } return; }
   if (e.target && e.target.id === 'chq'){ var cq = e.target, cp = cq.selectionStart; ST.chF.q = cq.value; render(); var nq = $('chq'); if (nq){ nq.focus(); try { nq.setSelectionRange(cp, cp); } catch(_){} } return; }
   var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (tp[1] === 'stack'){ var sq = document.querySelector('[data-tri="'+tp[0]+'|sn"]'); if (sq) sq.hidden = !e.target.checked; if (e.target.checked && !it0.sn) it0.sn = 2; } var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
-  if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trIn(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
+  if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trSave(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
     else if (ti === 't_ville'){ TI.kmMan = false; TI.hMan = false; trGeo(false); }
     else if (ti === 't_km') TI.kmMan = true; else if (ti === 't_h') TI.hMan = true;
