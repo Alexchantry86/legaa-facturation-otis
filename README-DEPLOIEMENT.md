@@ -107,6 +107,13 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.6 — Devis transport : liste unique
+- Onglets Transports validés et Modélisation retirés : la page Devis transport liste tous les devis (brouillons, validés, facturés, annulés), toutes entités, avec indicateurs, recherche, filtres (statut, entité, transporteur, mois, utilisateur), tri par colonne, export Excel, statut modifiable.
+- Colonnes transporteur, taux de marge (couleur selon les seuils) ; picto (i) à côté du prix de vente : détail ligne par ligne (forfait, heures, kilomètres, manutention, achat, marge). Détail enregistré à la validation ; anciens transports : relu dans la formule.
+- Bouton Nouveau devis transport mis en avant ; lien « Tous les devis transport » dans l'assistant.
+- Demande : « Autre client (hors OTIS) » avec nom du client libre.
+- Correctif : les champs saisis à l'étape Demande sont conservés au changement d'étape.
+
 ## v7.5 — Devis transport et chargement
 - Devis transport : page d'accueil (nouveau devis, continuer le devis en cours, reprendre un devis existant avec recherche) ; enregistrement en brouillon (collection `transports`, statut « Brouillon ») et reprise d'un transport validé.
 - Demande : entité choisie dans le bloc 1 (toutes les entités), plus dans le bandeau ; contremaître et appareil seulement pour une entité OTIS ; « Quel chantier » devient « Lieu de livraison ».
