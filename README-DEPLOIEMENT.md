@@ -107,6 +107,13 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.5 — Devis transport et chargement
+- Devis transport : page d'accueil (nouveau devis, continuer le devis en cours, reprendre un devis existant avec recherche) ; enregistrement en brouillon (collection `transports`, statut « Brouillon ») et reprise d'un transport validé.
+- Demande : entité choisie dans le bloc 1 (toutes les entités), plus dans le bandeau ; contremaître et appareil seulement pour une entité OTIS ; « Quel chantier » devient « Lieu de livraison ».
+- Entité OTIS : case « OTIS » dans Paramétrage › Paramétrage (par défaut : parcours Logistique activé ou « OTIS » dans le nom ou le client Odoo).
+- Hors OTIS : pas d'étape Vente ; en synthèse, prix de vente préconisé entre ×1,20 et ×1,40 de l'achat retenu (×1,30 par défaut), modifiable.
+- Chargement : types écartés pour hayon ou grue sélectionnables ; gerbage par colis sur 2, 3 ou 4 (Excel : colonne Gerbable = oui, 2, 3 ou 4) ; vue 3D refaite (cabine, roues, portes arrière ouvertes, hayon, grue, plateau, cotes L × l × H) ; déplacement manuel des colis (glisser, double-clic pour tourner, contrôle hauteur, appui et gerbage), conservé à l'enregistrement.
+
 ## v7.4 — Chargements : identification et recherche
 - Chaque chargement porte : client (propriétaire du stock, repris du bon), N° PO, N° bon de préparation (repris du bon, cumulé si plusieurs), N° bon de livraison, référence (références OTIS du bon par défaut), un ID (CH-AAMMJJ-XXXX) et son auteur (créé par / modifié par).
 - Liste : tri par colonne, filtres client et utilisateur, recherche libre (ID, PO, BL, BP, client, utilisateur, référence). L'administrateur voit les chargements de tous les utilisateurs ; s'il enregistre le plan d'un autre, une copie à son nom est créée (règle inchangée).
