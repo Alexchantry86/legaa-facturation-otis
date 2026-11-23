@@ -107,6 +107,9 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.7 — Devis transport : ID et dates
+- ID par devis (TR-AAMMJJ-XXXX, attribué au premier enregistrement ; anciens devis : TR- + identifiant), colonnes Créé le / par et Modifié le / par, recherche par ID, tri par défaut sur la dernière modification, export complété.
+
 ## v7.6 — Devis transport : liste unique
 - Onglets Transports validés et Modélisation retirés : la page Devis transport liste tous les devis (brouillons, validés, facturés, annulés), toutes entités, avec indicateurs, recherche, filtres (statut, entité, transporteur, mois, utilisateur), tri par colonne, export Excel, statut modifiable.
 - Colonnes transporteur, taux de marge (couleur selon les seuils) ; picto (i) à côté du prix de vente : détail ligne par ligne (forfait, heures, kilomètres, manutention, achat, marge). Détail enregistré à la validation ; anciens transports : relu dans la formule.

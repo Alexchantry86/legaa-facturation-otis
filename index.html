@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.6 · 23/11/2026 (Devis transport : liste unique triable et filtrable, détail du prix, taux de marge, client hors OTIS) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.7 · 23/11/2026 (Devis transport : ID, dates de création et de modification) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1829,7 +1829,7 @@ var STORE = (function () {
   }
 
   /* ---- Transports ---- */
-  function listTransports() { return db.collection('transports').orderBy('createdAt', 'desc').limit(1000).get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.createdAt = tsToIso(x.createdAt); return x; }); }); }
+  function listTransports() { return db.collection('transports').orderBy('createdAt', 'desc').limit(1000).get().then(function (q) { return q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.createdAt = tsToIso(x.createdAt); x.updatedAt = x.updatedAt ? tsToIso(x.updatedAt) : ''; return x; }); }); }
   function addTransport(t) { var x = clean(t); x.createdAt = TS(); x.createdBy = profile.email; return db.collection('transports').add(x).then(function (r) { return log('transport', (t.date || '') + ' ' + t.cp + ' ' + t.veh + ' ' + t.total + ' €').then(function () { return r.id; }); }); }
   function updateTransport(id, patch) { var x = clean(patch); x.updatedAt = TS(); x.updatedBy = profile.email; return db.doc('transports/' + id).update(x).then(function () { return log('transport', id + ' ' + JSON.stringify(patch)); }); }
   function deleteTransport(id) { return db.doc('transports/' + id).delete().then(function () { return log('transport', 'Suppression ' + id); }); }
@@ -5192,7 +5192,7 @@ function trNav(){ var ST0 = trSteps(), i = ST0.map(function(x){ return x[0]; }).
   return '<div class="nextbar">'+(pv ? '<button class="btn" data-trstep="'+pv[0]+'">← '+pv[1]+'</button>' : '')+'<span class="why">'+esc(why || (I.savedAt ? 'Enregistré à '+I.savedAt : I.tid ? (TRST[I.tstatus] || 'Enregistré') : ''))+'</span>'+sv+(nx ? '<button class="btn pri" data-trstep="'+nx[0]+'"'+(why ? ' disabled' : '')+'>Étape suivante : '+nx[1]+' →</button>' : '')+'</div>'; }
 function vTrWiz(){ if (ST.trLand) return vTrLand(); var V = ST.trDone, s = trStep();
   var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+'</span><span class="sp"></span><button class="btn sm" data-trhome>Tous les devis</button><button class="btn sm g" data-trnew>Nouveau devis</button></div>' : '';
-  var h = '<section class="view trw"><div class="trw-back"><button class="lnk" data-trhome>← Tous les devis transport</button>'+(trIn().tid ? '<span class="pill">'+esc(TRST[trIn().tstatus] || '')+'</span>' : '')+'</div>'+ban+trStepper();
+  var h = '<section class="view trw"><div class="trw-back"><button class="lnk" data-trhome>← Tous les devis transport</button>'+(trIn().tid ? '<b class="small">'+esc(trIn().tnum || '')+'</b><span class="pill">'+esc(TRST[trIn().tstatus] || '')+'</span>' : '')+'</div>'+ban+trStepper();
   h += s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn();
   return h + trNav() + '</section>'; }
 function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<td><input class="tri" data-tri="'+i+'|'+k+'" value="'+esc(v === undefined || v === null ? '' : v)+'"'+(t === 'n' ? ' inputmode="decimal"' : '')+' style="width:'+w+'" aria-label="'+k+'"></td>'; };
@@ -5577,7 +5577,7 @@ function trPdf(){ if (!window.jspdf){ toast('Bibliothèque PDF non chargée'); r
     doc.save(CH ? 'Plan de chargement '+String(I.ref || new Date().toISOString().slice(0, 10)).replace(/[^\w -]/g, '-')+'.pdf' : 'Transport '+(I.date || '')+' '+String(trClient(I)).replace(/[^\w -]/g, '')+' '+(I.ville || '')+'.pdf'); TRW.busy = false; render();
   }).catch(function(e){ TRW.busy = false; render(); toast('PDF impossible : '+e.message); }); }
 /* ---- Devis transport : accueil (nouveau / reprendre), brouillons ---- */
-function trInSnap(){ var I = clone(trIn()); delete I.tid; delete I.tstatus; return I; }
+function trInSnap(){ var I = clone(trIn()); delete I.tid; delete I.tstatus; delete I.tnum; return I; }
 function trDoc(){ var D = trSynData(), I = D.I, T = trTot(), cd = D.cd;
   var t = { date:I.date || '', ag:I.ag || '', agLabel:trClient(I), ext:!!I.ext, client:I.ext ? (I.client || '') : '', cm:I.cm || '', cmd:I.cmd || '', cp:I.cp || '', ville:I.ville || '', flux:I.flux === 'ab' ? 'ab' : 'aa', hayon:!!I.hayon, grue:!!I.grue, man:!!I.man,
     kg:Math.round(T.kg), vol:Math.round(T.m3 * 100) / 100, len:Math.round(T.len), h:+I.h || 0, km:+I.km || 0, obs:I.obs || '', otis:trOtis(), total:D.sell,
@@ -5593,7 +5593,8 @@ function trDoc(){ var D = trSynData(), I = D.I, T = trTot(), cd = D.cd;
     else if (D.sell !== null) t.price = [{ truck:'Prix hors grille', total:D.sell, lines:trNum(I.sellMan) > 0 || D.buy === null ? [{ l:'Prix de vente saisi', q:'', u:'', v:D.sell }] : [{ l:'Achat retenu'+(D.P ? ' · '+D.P.x.carrier : ''), q:'', u:'', v:D.buy }, { l:'Coefficient appliqué', q:'× '+fr(+I.sellK || 1.3, 2), u:'', v:E.r2(D.sell - D.buy) }] }]; }
   if (D.P){ t.buyCarrier = D.P.x.carrier; t.buyWhat = D.P.x.per.map(function(q){ return q.what; }).join(' | '); t.buyPrice = D.P.x.price; t.buyPicked = !!D.P.picked; t.marge = D.mg; t.margePct = D.pc === null ? null : Math.round(D.pc * 10) / 10; }
   return { t:t, D:D }; }
-function trSaveDoc(t){ var I = trIn(); return (I.tid ? STORE.updateTransport(I.tid, t).then(function(){ return I.tid; }) : STORE.addTransport(t)).then(function(id){ I.tid = id; I.tstatus = t.status; ST.transports = null; loadTransports(); return id; }); }
+function trId(t){ return t.num || 'TR-'+String(t.id || '').slice(0, 6).toUpperCase(); }
+function trSaveDoc(t){ var I = trIn(); if (!I.tid){ I.tnum = chNewNum().replace(/^CH/, 'TR'); t.num = I.tnum; } return (I.tid ? STORE.updateTransport(I.tid, t).then(function(){ return I.tid; }) : STORE.addTransport(t)).then(function(id){ I.tid = id; I.tstatus = t.status; ST.transports = null; loadTransports(); return id; }); }
 function trDraft(){ if (role() === 'lecture') return; if ($('tform')) trSave(); var I = trIn(), X = trDoc(), t = X.t; t.status = I.tstatus && I.tstatus !== 'brouillon' ? I.tstatus : 'brouillon';
   trSaveDoc(t).then(function(){ I.savedAt = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }); toast(t.status === 'brouillon' ? 'Brouillon enregistré' : 'Modifications enregistrées'); render(); }, function(e){ toast('Enregistrement impossible : '+e.message); }); }
 /* reprise d'un devis : brouillon ou transport validé (anciens transports : reconstruits depuis leurs champs) */
@@ -5602,42 +5603,42 @@ function trOpen(id){ var t = (ST.transports || []).filter(function(x){ return x.
     items:(t.colis || []).map(function(c){ return { name:c.name || '', L:c.L === null ? '' : c.L, W:c.W === null ? '' : c.W, H:c.H === null ? '' : c.H, kg:c.kg === null ? '' : c.kg, qty:c.qty || 1, stack:!!c.stack, sn:c.sn || 2, rot:c.rot !== false }; }),
     vt:((t.camions || [])[0] || {}).type || '' };
   if (!t.inp && t.otis === false && t.total) I.sellMan = String(t.total);
-  I.tid = t.id; I.tstatus = t.status || 'valide'; if (ST.cfg.agencies[I.ag]){ ST.ent = I.ag; ST.parAg = I.ag; }
+  I.tid = t.id; I.tnum = trId(t); I.tstatus = t.status || 'valide'; if (ST.cfg.agencies[I.ag]){ ST.ent = I.ag; ST.parAg = I.ag; }
   ST.trIn = I; ST.trPick = t.pick || null; ST.trDone = null; TRW.cache = null; TRW.k = 0; ST.trLand = false;
   ST.trStep = t.step || ((t.colis || []).length ? 'syn' : 'dem'); render(); window.scrollTo(0, 0); }
 function vTrLand(){ var L = ST.transports, cur = ST.trIn && ((ST.trIn.items || []).length || ST.trIn.tid);
   var h = '<section class="view"><div class="trl-top"><button class="btn pri trl-new" data-trnew2><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouveau devis transport</button>'+
     (cur ? '<button class="btn trl-cont" data-trcont>Continuer le devis en cours<span class="small muted">'+esc([trClient(ST.trIn), ST.trIn.ville, (ST.trIn.items || []).length+' ligne(s) de colis'].filter(Boolean).join(' · '))+'</span></button>' : '')+'</div>';
   if (!L) return h + '<div class="panel pb muted">Chargement des devis…</div></section>';
-  var F = ST.trLF = ST.trLF || { q:'', st:'', ent:'', car:'', m:'', by:'', s:'date', d:-1 }, R = trLandRows(), act = R.filter(function(t){ return t.status !== 'annule' && t.status !== 'brouillon'; });
+  var F = ST.trLF = ST.trLF || { q:'', st:'', ent:'', car:'', m:'', by:'', s:'upd', d:-1 }, R = trLandRows(), act = R.filter(function(t){ return t.status !== 'annule' && t.status !== 'brouillon'; });
   var sum = function(A, k){ return A.reduce(function(s, t){ return E.r2(s + (+t[k] || 0)); }, 0); }, sv = sum(act, 'total'), sm = sum(act.filter(function(t){ return t.marge !== undefined && t.marge !== null; }), 'marge');
   h += '<div class="kpis">'+kpi('Brouillons', R.filter(function(t){ return t.status === 'brouillon'; }).length, 'à finaliser')+kpi('Validés', R.filter(function(t){ return t.status === 'valide'; }).length, 'à facturer')+kpi('Facturés', R.filter(function(t){ return t.status === 'facture'; }).length, '')+
     kpi('Vente HT', eur(sv), 'validés et facturés')+kpi('Marge', eur(sm), sv ? fr(sm / sv * 100, 1)+' % de la vente' : '')+'</div>';
   var opt = function(id, k, lab, A){ return '<label class="fld"><span>'+lab+'</span><select id="'+id+'"><option value="">Tous</option>'+A.map(function(o){ var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="'+esc(v)+'"'+(F[k] === v ? ' selected' : '')+'>'+esc(l)+'</option>'; }).join('')+'</select></label>'; };
   var uq = function(f){ return uniqA(L.map(f).filter(Boolean)).sort(function(a, b){ return String(a).localeCompare(String(b), 'fr', { numeric:true }); }); };
   h += '<div class="panel"><div class="ph"><h2>Devis transport</h2><span class="muted small">'+(R.length === L.length ? L.length : R.length+' sur '+L.length)+' devis · toutes entités · clic sur une ligne pour la reprendre</span><div class="sp"><button class="btn sm" data-a="xlsTr"'+(R.length && canSave() ? '' : ' disabled')+'>Exporter (.xlsx)</button></div></div>'+
-    '<div class="pb chopt"><label class="fld chq"><span>Rechercher</span><input id="trq" type="search" value="'+esc(F.q || '')+'" placeholder="entité, client, commune, contremaître, appareil, transporteur…"></label>'+
+    '<div class="pb chopt"><label class="fld chq"><span>Rechercher</span><input id="trq" type="search" value="'+esc(F.q || '')+'" placeholder="ID, entité, client, commune, contremaître, appareil, transporteur…"></label>'+
     opt('trlf_st', 'st', 'Statut', Object.keys(TRST).map(function(k){ return [k, TRST[k]]; }))+opt('trlf_ent', 'ent', 'Entité / client', uq(function(t){ return t.agLabel || agLabel(t.ag); }))+opt('trlf_car', 'car', 'Transporteur', uq(function(t){ return t.buyCarrier; }))+
     opt('trlf_m', 'm', 'Mois de livraison', uq(function(t){ return (t.date || '').slice(0, 7); }).reverse().map(function(m){ return [m, monthLabel(m)]; }))+opt('trlf_by', 'by', 'Créé par', uq(function(t){ return t.createdBy; }))+
     (F.q || F.st || F.ent || F.car || F.m || F.by ? '<button class="btn sm g" data-trlfx>Effacer les filtres</button>' : '')+'</div>';
   h += '<div class="tw"><table class="chl trlt"><thead><tr>'+TRL_COLS.map(function(c){ var on = F.s === c[0]; return '<th'+(c[3] ? ' class="n"' : '')+' aria-sort="'+(on ? (F.d > 0 ? 'ascending' : 'descending') : 'none')+'"><button class="lnk chs'+(on ? ' on' : '')+'" data-trls="'+c[0]+'">'+c[1]+(on ? (F.d > 0 ? ' ▲' : ' ▼') : '')+'</button></th>'; }).join('')+'<th></th></tr></thead><tbody>'+
     (R.length ? R.map(function(t){ var pc = t.margePct, ask = ST.trDelAsk === t.id;
-      return '<tr data-tropen="'+esc(t.id)+'" class="'+(t.status === 'annule' ? 'excl' : '')+'" style="cursor:pointer">'+
+      return '<tr data-tropen="'+esc(t.id)+'" class="'+(t.status === 'annule' ? 'excl' : '')+'" style="cursor:pointer"><td class="nowr"><b>'+esc(trId(t))+'</b></td>'+
         '<td>'+(role() === 'lecture' ? '<span class="pill">'+esc(TRST[t.status] || t.status || '—')+'</span>' : '<select data-trs="'+esc(t.id)+'" aria-label="Statut">'+Object.keys(TRST).map(function(k){ return '<option value="'+k+'"'+(t.status === k ? ' selected' : '')+'>'+TRST[k]+'</option>'; }).join('')+'</select>')+'</td>'+
         '<td class="nowr">'+(t.date ? E.frDate(t.date) : '—')+'</td><td>'+esc(t.agLabel || agLabel(t.ag))+'</td><td>'+esc(t.cm || '—')+'</td><td class="nowr">'+esc(t.cmd || '—')+'</td><td>'+esc([t.cp, t.ville].filter(Boolean).join(' ') || '—')+'</td><td>'+esc(t.veh || '—')+'</td>'+
         '<td class="n nowr">'+(t.total ? n2(t.total)+' <button class="trpi" data-trprice="'+esc(t.id)+'" title="Détail du prix" aria-label="Détail du prix">i</button>' : '—')+'</td><td>'+esc(t.buyCarrier || '—')+'</td><td class="n">'+(t.buyPrice ? n2(t.buyPrice) : '—')+'</td>'+
         '<td class="n'+(t.marge < 0 ? ' neg' : '')+'">'+(t.marge !== undefined && t.marge !== null ? n2(t.marge) : '—')+'</td><td class="n">'+(pc !== undefined && pc !== null ? '<span class="mgp '+mgClass(pc)+'">'+fr(pc, 1)+' %</span>' : '—')+'</td>'+
-        '<td class="small">'+esc(t.createdBy || '')+'<br><span class="muted">'+(t.createdAt ? dt(t.createdAt) : '')+'</span></td>'+
+        '<td class="small nowr">'+(t.createdAt ? dt(t.createdAt) : '—')+'<br><span class="muted">'+esc(t.createdBy || '')+'</span></td><td class="small nowr">'+(t.updatedAt ? dt(t.updatedAt)+'<br><span class="muted">'+esc(t.updatedBy || '')+'</span>' : '—')+'</td>'+
         '<td class="nowr"><button class="btn sm" data-tropen="'+esc(t.id)+'">Reprendre</button>'+(isAdmin() ? ' <button class="btn sm '+(ask ? 'pri' : 'g')+'" data-trdel2="'+esc(t.id)+'">'+(ask ? 'Confirmer' : 'Supprimer')+'</button>' : '')+'</td></tr>'; }).join('')+
-      '<tr class="tot"><td colspan="7">Total validés et facturés</td><td class="n">'+n2(sv)+'</td><td></td><td class="n">'+n2(sum(act, 'buyPrice'))+'</td><td class="n">'+n2(sm)+'</td><td class="n">'+(sv ? '<span class="mgp '+mgClass(sm / sv * 100)+'">'+fr(sm / sv * 100, 1)+' %</span>' : '')+'</td><td colspan="2"></td></tr>'
-      : '<tr><td colspan="14" class="empty">'+(L.length ? 'Aucun devis ne correspond aux filtres.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
+      '<tr class="tot"><td colspan="8">Total validés et facturés</td><td class="n">'+n2(sv)+'</td><td></td><td class="n">'+n2(sum(act, 'buyPrice'))+'</td><td class="n">'+n2(sm)+'</td><td class="n">'+(sv ? '<span class="mgp '+mgClass(sm / sv * 100)+'">'+fr(sm / sv * 100, 1)+' %</span>' : '')+'</td><td colspan="3"></td></tr>'
+      : '<tr><td colspan="16" class="empty">'+(L.length ? 'Aucun devis ne correspond aux filtres.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
   return h; }
-var TRL_COLS = [['st','Statut',function(t){ return Object.keys(TRST).indexOf(t.status); }],['date','Livraison',function(t){ return t.date || ''; }],['ent','Entité / client',function(t){ return t.agLabel || ''; }],['cm','Contremaître'],['cmd','Appareil'],['lieu','Lieu',function(t){ return (t.cp || '')+' '+(t.ville || ''); }],['veh','Véhicule'],
-  ['sell','Vente HT',function(t){ return +t.total || 0; },1],['car','Transporteur',function(t){ return t.buyCarrier || ''; }],['buy','Achat HT',function(t){ return +t.buyPrice || 0; },1],['mg','Marge',function(t){ return +t.marge || 0; },1],['pc','Taux de marge',function(t){ return t.margePct === null || t.margePct === undefined ? -1e9 : +t.margePct; },1],['by','Créé par',function(t){ return t.createdBy || ''; }]];
+var TRL_COLS = [['id','ID',function(t){ return trId(t); }],['st','Statut',function(t){ return Object.keys(TRST).indexOf(t.status); }],['date','Livraison',function(t){ return t.date || ''; }],['ent','Entité / client',function(t){ return t.agLabel || ''; }],['cm','Contremaître'],['cmd','Appareil'],['lieu','Lieu',function(t){ return (t.cp || '')+' '+(t.ville || ''); }],['veh','Véhicule'],
+  ['sell','Vente HT',function(t){ return +t.total || 0; },1],['car','Transporteur',function(t){ return t.buyCarrier || ''; }],['buy','Achat HT',function(t){ return +t.buyPrice || 0; },1],['mg','Marge',function(t){ return +t.marge || 0; },1],['pc','Taux de marge',function(t){ return t.margePct === null || t.margePct === undefined ? -1e9 : +t.margePct; },1],['crt','Créé le',function(t){ return t.createdAt || ''; }],['upd','Modifié le',function(t){ return t.updatedAt || t.createdAt || ''; }]];
 function trLandRows(){ var F = ST.trLF || {}, q = GRP.norm(F.q || ''), L = (ST.transports || []).filter(function(t){
     if (F.st && t.status !== F.st) return false; if (F.ent && (t.agLabel || agLabel(t.ag)) !== F.ent) return false; if (F.car && t.buyCarrier !== F.car) return false; if (F.m && (t.date || '').slice(0, 7) !== F.m) return false; if (F.by && t.createdBy !== F.by) return false;
-    return !q || [t.agLabel, t.client, t.cm, t.cmd, t.ville, t.cp, t.veh, t.buyCarrier, t.createdBy, TRST[t.status]].some(function(v){ return GRP.norm(v || '').indexOf(q) >= 0; }); });
-  var c = TRL_COLS.filter(function(x){ return x[0] === F.s; })[0] || TRL_COLS[1], v = function(t){ return c[2] ? c[2](t) : (t[c[0]] || ''); };
+    return !q || [trId(t), t.agLabel, t.client, t.cm, t.cmd, t.ville, t.cp, t.veh, t.buyCarrier, t.createdBy, TRST[t.status]].some(function(v){ return GRP.norm(v || '').indexOf(q) >= 0; }); });
+  var c = TRL_COLS.filter(function(x){ return x[0] === (F.s || 'upd'); })[0] || TRL_COLS[0], v = function(t){ return c[2] ? c[2](t) : (t[c[0]] || ''); };
   return L.sort(function(a, b){ var x = v(a), y = v(b); return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'fr', { numeric:true })) * (F.d || -1) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')); }); }
 /* détail du prix d'un transport : une ligne par élément (structure enregistrée, sinon relue dans la formule) */
 function trPriceLines(t){ if (Array.isArray(t.price) && t.price.length) return t.price;
@@ -6706,7 +6707,7 @@ function vTrHistory(){
 function exportTr(){
   var F = trLandRows();
   var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(F.map(function(t){ return { 'Date':E.frDate(t.date), 'Agence':t.agLabel||t.ag, 'Contremaître':t.cm, 'Appareil':t.cmd, 'Code postal':t.cp, 'Commune':t.ville, 'Zone':t.zone, 'Véhicule':t.veh, 'Palettes':t.pal, 'Poids kg':t.kg, 'Calcul':t.detail, 'Montant HT':t.total, 'Transporteur':t.buyCarrier || '', 'Achat HT':t.buyPrice === undefined ? '' : t.buyPrice, 'Marge':t.marge === undefined ? '' : t.marge, 'Taux de marge %':t.margePct === undefined || t.margePct === null ? '' : t.margePct, 'Statut':TRST[t.status]||t.status, 'Validé par':t.createdBy, 'Le':t.createdAt, 'Observations':t.obs||'' }; })), 'Transports');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(F.map(function(t){ return { 'ID':trId(t), 'Date':E.frDate(t.date), 'Agence':t.agLabel||t.ag, 'Contremaître':t.cm, 'Appareil':t.cmd, 'Code postal':t.cp, 'Commune':t.ville, 'Zone':t.zone, 'Véhicule':t.veh, 'Palettes':t.pal, 'Poids kg':t.kg, 'Calcul':t.detail, 'Montant HT':t.total, 'Transporteur':t.buyCarrier || '', 'Achat HT':t.buyPrice === undefined ? '' : t.buyPrice, 'Marge':t.marge === undefined ? '' : t.marge, 'Taux de marge %':t.margePct === undefined || t.margePct === null ? '' : t.margePct, 'Statut':TRST[t.status]||t.status, 'Créé par':t.createdBy, 'Créé le':t.createdAt ? dt(t.createdAt) : '', 'Modifié par':t.updatedBy || '', 'Modifié le':t.updatedAt ? dt(t.updatedAt) : '', 'Observations':t.obs||'' }; })), 'Transports');
   saveXlsx(wb, 'Devis transport '+new Date().toISOString().slice(0, 10)+'.xlsx');
 }
 
@@ -6879,7 +6880,7 @@ document.addEventListener('click', function(e){
   if (d.tropen){ if (e.target.closest && e.target.closest('select')) return; trOpen(d.tropen); return; }
   if (d.trhome !== undefined){ if ($('tform')) trSave(); ST.trLand = true; ST.trDone = null; render(); window.scrollTo(0, 0); return; }
   if (d.trprice){ trPriceOpen(d.trprice); return; }
-  if (d.trls){ var LF = ST.trLF; if (LF.s === d.trls) LF.d = -(LF.d || -1); else { LF.s = d.trls; LF.d = /^(date|sell|buy|mg|pc)$/.test(d.trls) ? -1 : 1; } render(); return; }
+  if (d.trls){ var LF = ST.trLF; if (LF.s === d.trls) LF.d = -(LF.d || -1); else { LF.s = d.trls; LF.d = /^(date|sell|buy|mg|pc|crt|upd|id)$/.test(d.trls) ? -1 : 1; } render(); return; }
   if (d.trlfx !== undefined){ ST.trLF = { q:'', st:'', ent:'', car:'', m:'', by:'', s:ST.trLF.s, d:ST.trLF.d }; render(); return; }
   if (d.trdel2 && isAdmin()){ if (ST.trDelAsk !== d.trdel2){ ST.trDelAsk = d.trdel2; render(); return; } var dd = d.trdel2; ST.trDelAsk = null; STORE.deleteTransport(dd).then(function(){ if (ST.trIn && ST.trIn.tid === dd){ ST.trIn.tid = null; ST.trIn.tstatus = null; } toast('Devis supprimé'); loadTransports(); }, function(er){ toast('Suppression impossible : '+er.message); }); return; }
   if (d.trdraft !== undefined){ trDraft(); return; }
