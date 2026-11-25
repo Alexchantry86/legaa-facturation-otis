@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.7 · 25/11/2026 (Devis transport : ID, dates, statuts verrouillés, N° devis / PO, navigation ; colis : supports, renversable ; chargement : gerbage multi-dimensions, fiche colis ; achat : contact, prix du type de camion ; vente A→B en journée) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.8 · 25/11/2026 (Colis : colonnes centrées) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1299,7 +1299,7 @@ table.info-t td.nowrap{white-space:nowrap}
 .trro input:not([type=search]),.trro select,.trro textarea,.trro .drop,.trro .trtpl,.trro label.ck{pointer-events:none;opacity:.7}.trro-b{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;border-left:3px solid var(--ink-2)}.trro-b>div:first-child{display:flex;flex-direction:column;gap:3px}
 .o3-c{font-size:12.5px;line-height:1.4}.o3-c a{color:inherit}
 .tr3d{position:relative}.tr3tip{position:absolute;z-index:3;width:220px;display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff;border:1px solid var(--ink-2);border-radius:3px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15);pointer-events:none}
-.trc th{text-align:center}.trc th:nth-child(2){text-align:left}.trgrp{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;background:var(--surface-2,#f3f5f8)}.trgrp .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.trg-row td{border-bottom:0}.trg-sub td{padding-top:0}
+.trc th,.trc td{text-align:center;vertical-align:middle}.trc th:nth-child(2),.trc td:nth-child(2){text-align:left}.trc td input.tri{text-align:center}.trc td:nth-child(2) input.tri{text-align:left}.trc .trg-sub td{text-align:left}.trgrp{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;background:var(--surface-2,#f3f5f8)}.trgrp .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.trg-row td{border-bottom:0}.trg-sub td{padding-top:0}
 .trrefs{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end}.trrefs .fld{display:flex;flex-direction:column;gap:3px}.trrefs input{width:200px}.trro input.trref{pointer-events:auto;opacity:1}
 .trnavh{display:flex;align-items:center;gap:8px;margin-left:auto}.trnavh .tab[disabled]{opacity:.4;cursor:default}
 .trw-back{display:flex;gap:10px;align-items:center;margin:0 0 10px}.trl-top{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin-bottom:16px}.trl-new{display:inline-flex;align-items:center;gap:10px;font-size:17px;padding:14px 24px;min-height:56px}.trl-cont{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 16px}
