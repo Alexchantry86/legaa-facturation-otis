@@ -107,6 +107,11 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.8 — Colis
+- Tableau des colis : intitulés et données centrés dans chaque colonne (nom du colis aligné à gauche).
+- Vue 3D : camions détaillés (cabine avec pare-brise, calandre, phares, rétroviseurs ; essieux jumelés, réservoir, protections latérales ; porteur caisse, plateau à ridelles, fourgon, semi-remorque avec tracteur) ; porteur grue = plateau à ridelles avec grue repliée et stabilisateurs à l'arrière.
+- Déplacement manuel : en glissant un colis au-dessus d'une autre pile, il se pose sur le dessus du colis visé (alignement sur ses bords).
+
 ## v7.7 — Devis transport : ID et dates
 - ID par devis (TR-AAMMJJ-XXXX, attribué au premier enregistrement ; anciens devis : TR- + identifiant), colonnes Créé le / par et Modifié le / par, recherche par ID, tri par défaut sur la dernière modification, export complété.
 - Cycle de statuts verrouillé : « Validé » uniquement via « Valider le transport » en synthèse ; un devis validé, facturé ou annulé s'ouvre en synthèse en lecture seule (montants enregistrés rappelés) ; « Modifier » le repasse en brouillon, à valider de nouveau ; « Réactiver » pour un annulé. Transitions dans la liste : Brouillon → Annulé ; Validé → Facturé ou Annulé ; Annulé → Brouillon ; Facturé → Validé (administrateur). Colonne Étape (x/6) pour les brouillons.
