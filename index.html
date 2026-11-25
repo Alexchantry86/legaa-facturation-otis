@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.8 · 25/11/2026 (Colis : colonnes centrées ; 3D : modèles de camions détaillés, grue arrière ; dépôt d'un colis sur une autre pile) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.9 · 25/11/2026 (Plan de chargement : commandes du colis sélectionné — Avant, Arrière, Gauche, Droite, Monter, Descendre, Tourner) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1298,7 +1298,7 @@ table.info-t td.nowrap{white-space:nowrap}
 .chopt .chq{flex:1 1 280px}.chopt .chq input{width:100%;min-width:0}.chl .nowr{white-space:nowrap}.chl th .chs{font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;text-decoration:none;cursor:pointer;padding:0}.chl th .chs.on{color:var(--ink)}
 .trro input:not([type=search]),.trro select,.trro textarea,.trro .drop,.trro .trtpl,.trro label.ck{pointer-events:none;opacity:.7}.trro-b{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;border-left:3px solid var(--ink-2)}.trro-b>div:first-child{display:flex;flex-direction:column;gap:3px}
 .o3-c{font-size:12.5px;line-height:1.4}.o3-c a{color:inherit}
-.tr3d{position:relative}.tr3tip{position:absolute;z-index:3;width:220px;display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff;border:1px solid var(--ink-2);border-radius:3px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15);pointer-events:none}
+.tr3d{position:relative}.tr3bar{margin-top:6px;display:flex;flex-direction:column;gap:5px;padding:6px;background:#fff;border:1px solid var(--ink-2);border-radius:3px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15)}.tr3bh{display:flex;align-items:center;gap:8px;min-width:0}.tr3bh span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#5b6570}.tr3bg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.tr3bar button{padding:8px 2px;font:inherit;font-size:12px;color:#1d2329;background:#f4f6f8;border:1px solid #c9d1da;border-radius:3px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tr3bar button:active{background:#e1e6eb}.tr3bh button{flex:none;padding:3px 9px}.tr3tip{position:absolute;z-index:3;width:220px;display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:#fff;border:1px solid var(--ink-2);border-radius:3px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15);pointer-events:none}
 .trc th,.trc td{text-align:center;vertical-align:middle}.trc th:nth-child(2),.trc td:nth-child(2){text-align:left}.trc td input.tri{text-align:center}.trc td:nth-child(2) input.tri{text-align:left}.trc .trg-sub td{text-align:left}.trgrp{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;background:var(--surface-2,#f3f5f8)}.trgrp .fld{display:flex;flex-direction:column;gap:3px;font-size:12.5px}.trg-row td{border-bottom:0}.trg-sub td{padding-top:0}
 .trrefs{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end}.trrefs .fld{display:flex;flex-direction:column;gap:3px}.trrefs input{width:200px}.trro input.trref{pointer-events:auto;opacity:1}
 .trnavh{display:flex;align-items:center;gap:8px;margin-left:auto}.trnavh .tab[disabled]{opacity:.4;cursor:default}
@@ -5266,7 +5266,7 @@ function vTrChg(){ var C = trCands(), I = trIn(), cd = trCand(), ch = ST.module 
     (cd.force ? '<div class="pb note" style="margin:0">Type non retenu ('+esc(cd.force)+') choisi manuellement.</div>' : '')+
     '<div class="pb"><div class="trk"><span>caisse <b>'+fr(cd.c.L / 1000, 2)+' × '+fr(cd.c.W / 1000, 2)+' × '+fr(cd.c.H / 1000, 2)+'</b> m · CU '+fr(cd.c.P / 1000, 1)+' t</span><span><b>'+s.n+'</b> colis</span><span><b>'+fr(s.kg, 0)+'</b> kg ('+Math.round(s.kp * 100)+' % de la CU)</span><span><b>'+fr(s.m3, 2)+'</b> m³ ('+Math.round(s.vp * 100)+' %)</span><span>longueur utilisée <b>'+fr(s.ldm / 1000, 2)+'</b> m</span><span>≈ <b>'+s.pal+'</b> pal. au sol</span></div>'+
     '<div class="tr3w"><div id="tr3d" class="tr3d" role="img" aria-label="Plan de chargement en 3D du camion '+(k + 1)+'"><span class="muted small">Chargement de la vue 3D…</span></div><div class="tr3v seg2">'+[['iso','3D'],['top','Dessus'],['side','Côté'],['back','Arrière']].map(function(v){ return '<button class="'+(TRW.view === v[0] ? 'on' : '')+'" data-trv="'+v[0]+'">'+v[1]+'</button>'; }).join('')+'</div></div>'+
-    '<p class="small muted" style="margin:8px 0 0">Avant (cabine) à gauche, portes à droite. Glisser un colis pour le déplacer (vue Dessus conseillée), double-clic pour le tourner ; glisser le fond pour tourner la vue, molette pour zoomer.'+(trIn().pos && trIn().pos.vt === cd.t.code ? ' <button class="lnk small" data-tr3reset>Rétablir le plan calculé</button>' : '')+'</p></div></div></div>';
+    '<p class="small muted" style="margin:8px 0 0">Avant (cabine) à gauche, portes à droite. Toucher un colis pour le sélectionner : boutons Avant, Arrière, Gauche, Droite, Monter (sur une pile voisine), Descendre et Tourner. On peut aussi le glisser à la souris ou au doigt ; glisser le fond pour tourner la vue, molette pour zoomer.'+(trIn().pos && trIn().pos.vt === cd.t.code ? ' <button class="lnk small" data-tr3reset>Rétablir le plan calculé</button>' : '')+'</p></div></div></div>';
   return h; }
 function vTrVen(){ var cd = trCand(), V = trSell(), I = trIn();
   if (!V || V.noZone) return '<div class="panel pb note">'+(String(I.cp).slice(0, 2) === '78' ? 'Yvelines : choisir la zone A ou B à l\'étape Demande.' : 'Code postal à compléter à l\'étape Demande pour déterminer la zone.')+'</div>';
@@ -5320,7 +5320,7 @@ function vTrSyn(){ var D = trSynData(), I = D.I, cls = mgClass(D.pc), T = trTot(
   h += '<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-trpdf'+(TRW.busy ? ' disabled' : '')+'>'+(TRW.busy ? 'Préparation du PDF…' : 'Télécharger le PDF de synthèse')+'</button><span class="small muted">à joindre au bon de commande (PO) dans Odoo</span><span class="sp"></span>'+(ST.trRO && trLocked(I.tstatus) ? '' : '<button class="btn pri" data-a="addTr"'+(role() === 'lecture' || D.sell === null ? ' disabled' : '')+'>'+(I.tid ? 'Valider de nouveau' : 'Valider le transport')+'</button>')+'</div>';
   return h + '</div></div>'; }
 /* ---- vue 3D (three.js, chargé à la demande) ---- */
-var TR3 = { lib:null, rd:null, scn:null, cam:null, ctl:null, grp:null, raf:0, el:null, cd:null, k:0, meshes:[], drag:null, keep:null };
+var TR3 = { sel:null, selK:'', step:200, lib:null, rd:null, scn:null, cam:null, ctl:null, grp:null, raf:0, el:null, cd:null, k:0, meshes:[], drag:null, keep:null };
 function tr3Lib(){ if (TR3.lib) return Promise.resolve(TR3.lib);
   return Promise.all([import('three'), import('three/addons/controls/OrbitControls.js')]).then(function(m){ TR3.lib = { T:m[0], OC:m[1].OrbitControls }; return TR3.lib; }); }
 /* silhouette selon le type de véhicule (libellé / code du référentiel) */
@@ -5476,7 +5476,7 @@ function tr3Bind(dom){
     var blk = K.b.some(function(o){ return o !== b && Math.abs(o.z - (b.z + b.h)) <= 1 && o.x < b.x + b.l - 1 && b.x < o.x + o.l - 1 && o.y < b.y + b.w - 1 && b.y < o.y + o.w - 1; });
     var pl = new T.Plane(new T.Vector3(0, 1, 0), -(b.z + b.h / 2) * m), pt = new T.Vector3(); if (!tr3Ray(e).ray.intersectPlane(pl, pt)) return;
     TR3.ctl.enabled = false; hit.object.material.emissive.setHex(0x2A3B50); dom.setPointerCapture(e.pointerId);
-    TR3.drag = { me:hit.object, b:b, pl:pl, dx:pt.x / m - b.x, dy:pt.z / m - b.y, x:b.x, y:b.y, f:null, moved:false, blk:blk, sx:e.clientX, sy:e.clientY }; }, true);
+    TR3.sel = hit.object.userData.i; TR3.drag = { me:hit.object, b:b, pl:pl, dx:pt.x / m - b.x, dy:pt.z / m - b.y, x:b.x, y:b.y, f:null, moved:false, blk:blk, sx:e.clientX, sy:e.clientY }; }, true);
   dom.addEventListener('pointermove', function(e){ var D = TR3.drag; if (!D) return; if (!D.moved && Math.hypot(e.clientX - D.sx, e.clientY - D.sy) < 4) return;
     if (D.blk){ if (!D.warned){ D.warned = true; toast('Déplacer d\'abord les colis posés sur '+D.b.u.name); } return; } var pt = new TR3.lib.T.Vector3(); if (!tr3Ray(e).ray.intersectPlane(D.pl, pt)) return;
     var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = D.b, m = 1 / 1000, x = Math.round((pt.x / m - D.dx) / 10) * 10, y = Math.round((pt.z / m - D.dy) / 10) * 10;
@@ -5490,14 +5490,49 @@ function tr3Bind(dom){
     var f = tr3Fit(c, K, b, x, y, b.l, b.w); D.x = x; D.y = y; D.f = f; D.moved = true;
     D.me.position.set((x + b.l / 2) * m, ((f.ok ? f.z : b.z) + b.h / 2) * m, (y + b.w / 2) * m); D.me.material.emissive.setHex(f.ok ? 0x2A3B50 : 0x8A1F1F); });
   var up = function(e){ var D = TR3.drag; if (!D) return; TR3.drag = null; TR3.ctl.enabled = true; D.me.material.emissive.setHex(0x000000); var b = D.b, m = 1 / 1000;
-    if (!D.moved){ tr3Tip(b, e); return; }
+    if (!D.moved){ tr3Mark(); tr3Bar(); return; }
     if (D.f && D.f.ok){ tr3Commit(b, D.x, D.y, D.f.z, b.l, b.w, D.f); return; }
-    D.me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); toast('Déplacement impossible : '+((D.f && D.f.why) || 'position invalide')); };
+    D.me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); tr3Mark(); toast('Déplacement impossible : '+((D.f && D.f.why) || 'position invalide')); };
   dom.addEventListener('pointerup', up); dom.addEventListener('pointercancel', up);
   dom.addEventListener('dblclick', function(e){ if (!TR3.cd || ro()) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return; var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = K.b[hit.object.userData.i];
     if (!b.u.rot){ toast('Rotation non autorisée pour '+b.u.name); return; }
     var x = Math.min(b.x, c.L - b.w), y = Math.min(b.y, c.W - b.l), f = tr3Fit(c, K, b, x, y, b.w, b.l);
     if (!f.ok){ toast('Rotation impossible : '+f.why); return; } tr3Commit(b, x, y, f.z, b.w, b.l, f); }); }
+/* ---- commandes du colis sélectionné : translation par pas, montée sur une pile, descente, rotation ---- */
+function tr3Mark(){ (TR3.meshes || []).forEach(function(me){ me.material.emissive.setHex(me.userData.i === TR3.sel ? 0x2A3B50 : 0x000000); }); }
+function tr3Bar(){ var el = $('tr3d'), br = el && el.parentNode.querySelector('.tr3bar'); if (!el) return; var K = TR3.cd && TR3.cd.R.C[TR3.k], b = K && TR3.sel !== null ? K.b[TR3.sel] : null;
+  var ro = ST.module === 'trp' && ST.trRO && trLocked((ST.trIn || {}).tstatus); if (!b || ro){ if (br) br.remove(); return; }
+  if (!br){ br = document.createElement('div'); br.className = 'tr3bar'; el.parentNode.insertBefore(br, el.nextSibling);
+    br.addEventListener('pointerdown', function(e){ e.stopPropagation(); });
+    br.addEventListener('click', function(e){ var bt = e.target.closest('button[data-tr3m]'); e.stopPropagation(); if (bt) tr3Act(bt.getAttribute('data-tr3m')); }); }
+  var st = TR3.step, u = b.u, B = function(a, t, d){ return '<button type="button" data-tr3m="'+a+'"'+(d ? ' title="'+d+'"' : '')+'>'+t+'</button>'; };
+  br.innerHTML = '<div class="tr3bh"><b>'+esc(u.name)+'</b><span>'+[b.l, b.w, b.h].join(' × ')+' mm · '+fr(u.kg, 0)+' kg · '+(b.z > 0 ? 'niveau '+(b.lv || 2) : 'au sol')+' · à '+fr(b.x / 1000, 2)+' m</span>'+B('x', '×', 'Fermer')+'</div>'+
+    '<div class="tr3bg">'+B('av', '◀ Avant', 'Vers la cabine')+B('ar', 'Arrière ▶', 'Vers les portes')+B('g', 'Gauche', 'Côté gauche (conducteur)')+B('d', 'Droite', 'Côté droit')+'</div>'+
+    '<div class="tr3bg">'+B('up', 'Monter', 'Sur la pile voisine la plus proche')+B('dn', 'Descendre', 'À la place libre la plus proche, plus bas')+B('rot', 'Tourner')+B('st', 'Pas '+(st >= 1000 ? '1 m' : (st / 10)+' cm'), 'Longueur d\'un déplacement')+'</div>'; }
+function tr3Act(a){ var cd = TR3.cd, c = cd && cd.c, K = cd && cd.R.C[TR3.k], b = K && K.b[TR3.sel]; if (!b) return;
+  if (a === 'x'){ TR3.sel = null; tr3Mark(); tr3Bar(); return; }
+  if (a === 'st'){ TR3.step = TR3.step === 50 ? 200 : TR3.step === 200 ? 1000 : 50; tr3Bar(); return; }
+  var E = 1, ovl = function(o){ return o.x < b.x + b.l - E && b.x < o.x + o.l - E && o.y < b.y + b.w - E && b.y < o.y + o.w - E; };
+  if (K.b.some(function(o){ return o !== b && Math.abs(o.z - (b.z + b.h)) <= E && ovl(o); })){ toast('Déplacer d\'abord les colis posés sur '+b.u.name); return; }
+  var cx = function(x, l){ return Math.max(0, Math.min(c.L - l, Math.round(x))); }, cy = function(y, w){ return Math.max(0, Math.min(c.W - w, Math.round(y))); };
+  if (a === 'rot'){ if (!b.u.rot){ toast('Rotation non autorisée pour '+b.u.name); return; } var rx = cx(b.x, b.w), ry = cy(b.y, b.l), rf = tr3Fit(c, K, b, rx, ry, b.w, b.l);
+    if (!rf.ok){ toast('Rotation impossible : '+rf.why); return; } tr3Commit(b, rx, ry, rf.z, b.w, b.l, rf); return; }
+  if (a === 'av' || a === 'ar' || a === 'g' || a === 'd'){ var s = TR3.step, sx = a === 'av' ? -1 : a === 'ar' ? 1 : 0, sy = a === 'g' ? 1 : a === 'd' ? -1 : 0;
+    var x1 = cx(b.x + sx * s, b.l), y1 = cy(b.y + sy * s, b.w); if (x1 === b.x && y1 === b.y){ toast('Paroi de la caisse atteinte'); return; }
+    /* on avance au même niveau jusqu'au contact ; à défaut, le colis monte ou descend s'il le peut */
+    var n = Math.max(Math.abs(x1 - b.x), Math.abs(y1 - b.y)), f, why = '';
+    for (var d = n; d >= 10; d -= 10){ var xx = b.x + sx * d, yy = b.y + sy * d; f = tr3Fit(c, K, b, xx, yy, b.l, b.w); if (f.ok && Math.abs(f.z - b.z) <= E){ tr3Commit(b, xx, yy, f.z, b.l, b.w, f); return; } }
+    f = tr3Fit(c, K, b, x1, y1, b.l, b.w); if (f.ok){ tr3Commit(b, x1, y1, f.z, b.l, b.w, f); return; }
+    toast('Déplacement impossible : '+(f.why || 'position invalide')); return; }
+  /* positions candidates : coins et centre de chaque colis, bords de caisse, grille de 100 mm */
+  var P = [], why2 = '';
+  K.b.forEach(function(o){ if (o === b) return; [[o.x, o.y], [o.x + o.l - b.l, o.y], [o.x, o.y + o.w - b.w], [o.x + o.l - b.l, o.y + o.w - b.w], [o.x + (o.l - b.l) / 2, o.y + (o.w - b.w) / 2], [o.x + o.l, o.y], [o.x - b.l, o.y], [o.x, o.y + o.w], [o.x, o.y - b.w]].forEach(function(q){ P.push([cx(q[0], b.l), cy(q[1], b.w)]); }); });
+  if (a === 'dn') for (var gx = 0; gx <= c.L - b.l; gx += 100) for (var gy = 0; gy <= c.W - b.w; gy += 100) P.push([gx, gy]);
+  var best = null, bd = 1e12;
+  P.forEach(function(q){ var f = tr3Fit(c, K, b, q[0], q[1], b.l, b.w); if (!f.ok){ if (a === 'up' && !why2 && f.why && f.why !== 'hors de la caisse') why2 = f.why; return; }
+    if (a === 'up' ? f.z <= b.z + E : f.z >= b.z - E) return; var dd = Math.hypot(q[0] - b.x, q[1] - b.y) + (a === 'dn' ? f.z * 3 : 0); if (dd < bd){ bd = dd; best = { x:q[0], y:q[1], f:f }; } });
+  if (!best){ toast(a === 'up' ? 'Aucune pile disponible pour ce colis'+(why2 ? ' ('+why2+')' : '') : 'Aucune place libre plus bas'); return; }
+  tr3Commit(b, best.x, best.y, best.f.z, b.l, b.w, best.f); }
 /* fiche du colis cliqué dans la vue 3D */
 function tr3Tip(b, e){ var el = $('tr3d'), tp = el && el.querySelector('.tr3tip'); if (!el) return; if (!b){ if (tp) tp.remove(); return; }
   if (!tp){ tp = document.createElement('div'); tp.className = 'tr3tip'; el.appendChild(tp); }
@@ -5510,7 +5545,7 @@ function tr3Show(){ var el = $('tr3d'), cd = trCand(); if (!el || !cd) return; v
     el.innerHTML = ''; el.appendChild(TR3.rd.domElement); var w = el.clientWidth || 600, hh = el.clientHeight || 360; TR3.rd.setSize(w, hh, false);
     if (TR3.ctl) TR3.ctl.dispose(); TR3.ctl = new Lb.OC(TR3.cam, TR3.rd.domElement); TR3.ctl.enableDamping = true; TR3.ctl.dampingFactor = .12;
     if (TR3.grp){ TR3.scn.remove(TR3.grp); TR3.grp.traverse(function(o){ if (o.geometry) o.geometry.dispose(); if (o.material){ if (o.material.map) o.material.map.dispose(); if (o.material.dispose) o.material.dispose(); } }); }
-    TR3.grp = tr3Scene(T, cd.c, K, cd.t); TR3.scn.add(TR3.grp); TR3.cd = cd; TR3.k = k; TR3.meshes = TR3.grp.userData.meshes;
+    TR3.grp = tr3Scene(T, cd.c, K, cd.t); TR3.scn.add(TR3.grp); TR3.cd = cd; TR3.k = k; TR3.meshes = TR3.grp.userData.meshes; var sk = cd.t.code+':'+k; if (TR3.selK !== sk || TR3.sel === null || !K.b[TR3.sel]){ TR3.sel = null; TR3.selK = sk; } tr3Mark(); tr3Bar();
     if (TR3.keep){ var kp = TR3.keep; TR3.keep = null; TR3.cam.fov = kp.fov; TR3.cam.aspect = w / hh; TR3.cam.updateProjectionMatrix(); TR3.cam.position.copy(kp.p); TR3.cam.up.copy(kp.up); TR3.ctl.target.copy(kp.t); TR3.ctl.update(); }
     else tr3View(T, TR3.cam, TR3.ctl, TR3.grp.userData.bb, TRW.view, w / hh);
     cancelAnimationFrame(TR3.raf); var loop = function(){ if (!document.body.contains(TR3.rd.domElement)){ cancelAnimationFrame(TR3.raf); return; } TR3.raf = requestAnimationFrame(loop); TR3.ctl.update(); TR3.rd.render(TR3.scn, TR3.cam); }; loop();
