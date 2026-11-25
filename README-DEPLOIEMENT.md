@@ -107,6 +107,15 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.7 — Devis transport : ID et dates
+- ID par devis (TR-AAMMJJ-XXXX, attribué au premier enregistrement ; anciens devis : TR- + identifiant), colonnes Créé le / par et Modifié le / par, recherche par ID, tri par défaut sur la dernière modification, export complété.
+- Cycle de statuts verrouillé : « Validé » uniquement via « Valider le transport » en synthèse ; un devis validé, facturé ou annulé s'ouvre en synthèse en lecture seule (montants enregistrés rappelés) ; « Modifier » le repasse en brouillon, à valider de nouveau ; « Réactiver » pour un annulé. Transitions dans la liste : Brouillon → Annulé ; Validé → Facturé ou Annulé ; Annulé → Brouillon ; Facturé → Validé (administrateur). Colonne Étape (x/6) pour les brouillons.
+- Colonnes N° devis et N° PO (saisis en synthèse, modifiables après validation) ; flèches Précédent / Suivant dans le bandeau pour passer d'un devis à l'autre (ordre de la liste filtrée).
+- Demande : option « manutentionnaire en plus » retirée. Vente OTIS : flux A → B facturé au tarif journée.
+- Colis : en-têtes centrés ; option Renversable (posé sur le côté) ; regroupement de colis cochés sur un support (palette 1200 × 800, 1200 × 1000 ou dimensions libres) avec rangement calculé, colis unique, dégroupable.
+- Chargement : gerbage de colis de dimensions différentes (descente par gravité, appui ≥ 75 %, posé sur les coins des colis gerbables) ; dépôt manuel sur un autre colis (appui ≥ 50 %) ; clic sur un colis : nom, dimensions, poids, gerbage.
+- Achat : contact et téléphone du transporteur dans chaque solution ; prix d'achat pris sur les véhicules de la grille rattachés au type de camion choisi (grille sans ce type : écartée).
+
 ## v7.6 — Devis transport : liste unique
 - Onglets Transports validés et Modélisation retirés : la page Devis transport liste tous les devis (brouillons, validés, facturés, annulés), toutes entités, avec indicateurs, recherche, filtres (statut, entité, transporteur, mois, utilisateur), tri par colonne, export Excel, statut modifiable.
 - Colonnes transporteur, taux de marge (couleur selon les seuils) ; picto (i) à côté du prix de vente : détail ligne par ligne (forfait, heures, kilomètres, manutention, achat, marge). Détail enregistré à la validation ; anciens transports : relu dans la formule.
