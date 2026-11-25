@@ -109,6 +109,7 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 
 ## v7.7 — Devis transport : ID et dates
 - ID par devis (TR-AAMMJJ-XXXX, attribué au premier enregistrement ; anciens devis : TR- + identifiant), colonnes Créé le / par et Modifié le / par, recherche par ID, tri par défaut sur la dernière modification, export complété.
+- Cycle de statuts verrouillé : « Validé » uniquement via « Valider le transport » en synthèse ; un devis validé, facturé ou annulé s'ouvre en synthèse en lecture seule (montants enregistrés rappelés) ; « Modifier » le repasse en brouillon, à valider de nouveau ; « Réactiver » pour un annulé. Transitions dans la liste : Brouillon → Annulé ; Validé → Facturé ou Annulé ; Annulé → Brouillon ; Facturé → Validé (administrateur). Colonne Étape (x/6) pour les brouillons.
 
 ## v7.6 — Devis transport : liste unique
 - Onglets Transports validés et Modélisation retirés : la page Devis transport liste tous les devis (brouillons, validés, facturés, annulés), toutes entités, avec indicateurs, recherche, filtres (statut, entité, transporteur, mois, utilisateur), tri par colonne, export Excel, statut modifiable.

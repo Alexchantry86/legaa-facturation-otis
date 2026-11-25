@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.7 · 23/11/2026 (Devis transport : ID, dates de création et de modification) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.7 · 23/11/2026 (Devis transport : ID, dates, cycle de statuts verrouillé, colonne Étape) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -1296,6 +1296,7 @@ table.info-t td.nowrap{white-space:nowrap}
 .rail .rgrp{display:flex;flex-direction:column;gap:2px;margin:8px 0;padding:6px 0 6px;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
 .rail .rgrp.nb{border-top:0;margin-top:0}
 .chopt .chq{flex:1 1 280px}.chopt .chq input{width:100%;min-width:0}.chl .nowr{white-space:nowrap}.chl th .chs{font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;text-decoration:none;cursor:pointer;padding:0}.chl th .chs.on{color:var(--ink)}
+.trro input:not([type=search]),.trro select,.trro textarea,.trro .drop,.trro .trtpl,.trro label.ck{pointer-events:none;opacity:.7}.trro-b{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;border-left:3px solid var(--ink-2)}.trro-b>div:first-child{display:flex;flex-direction:column;gap:3px}
 .trw-back{display:flex;gap:10px;align-items:center;margin:0 0 10px}.trl-top{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin-bottom:16px}.trl-new{display:inline-flex;align-items:center;gap:10px;font-size:17px;padding:14px 24px;min-height:56px}.trl-cont{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 16px}
 .trpi{width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font:600 11px/1 Georgia,serif;font-style:italic;color:var(--ink-2);cursor:pointer;margin-left:4px;vertical-align:1px}.trpi:hover{border-color:var(--ink);color:var(--ink)}
 .mgp{display:inline-block;padding:1px 7px;border-radius:10px;font-weight:600;font-size:12.5px}.mgp.mg-r{background:#fdecea;color:#b42318}.mgp.mg-o{background:#fff4e5;color:#b45309}.mgp.mg-g{background:#e9f6ee;color:#1e7b3c}
@@ -5188,12 +5189,18 @@ function trStepper(){ var ST0 = trSteps(), cur = trStep(), i0 = ST0.map(function
     return (i ? '<i class="stc'+(i <= i0 ? ' done' : '')+'" aria-hidden="true"></i>' : '')+'<button class="trw-b'+(i < i0 ? ' done' : '')+'" data-trstep="'+s[0]+'" aria-current="'+(cur === s[0] ? 'step' : 'false')+'"'+(dis ? ' disabled' : '')+'><span class="stl">'+(i < i0 ? '✓' : i + 1)+'</span><span class="stx">'+s[1]+'</span></button>'; }).join('')+'</nav>'; }
 function trNav(){ var ST0 = trSteps(), i = ST0.map(function(x){ return x[0]; }).indexOf(trStep()), pv = ST0[i - 1], nx = ST0[i + 1], why = '';
   if (nx && !trStepOk(nx[0])) why = nx[0] === 'chg' ? 'Ajouter au moins un colis avec ses trois dimensions.' : 'Aucun camion du référentiel ne prend ces colis avec ces contraintes.';
-  var I = trIn(), sv = role() !== 'lecture' ? '<button class="btn" data-trdraft>'+(I.tid ? 'Enregistrer les modifications' : 'Enregistrer le brouillon')+'</button>' : '';
+  var I = trIn(), sv = role() !== 'lecture' && !(ST.trRO && trLocked(I.tstatus)) ? '<button class="btn" data-trdraft>'+(I.tid ? 'Enregistrer les modifications' : 'Enregistrer le brouillon')+'</button>' : '';
   return '<div class="nextbar">'+(pv ? '<button class="btn" data-trstep="'+pv[0]+'">← '+pv[1]+'</button>' : '')+'<span class="why">'+esc(why || (I.savedAt ? 'Enregistré à '+I.savedAt : I.tid ? (TRST[I.tstatus] || 'Enregistré') : ''))+'</span>'+sv+(nx ? '<button class="btn pri" data-trstep="'+nx[0]+'"'+(why ? ' disabled' : '')+'>Étape suivante : '+nx[1]+' →</button>' : '')+'</div>'; }
 function vTrWiz(){ if (ST.trLand) return vTrLand(); var V = ST.trDone, s = trStep();
   var ban = V ? '<div class="tr-done"><span class="ok-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Validé</b><span>Transport enregistré à '+esc(V.at)+' : vente <b>'+eur(V.total)+' HT</b>'+(V.buy ? ' · achat '+eur(V.buy)+' ('+esc(V.carrier)+') · marge <b class="'+mgClass(V.pc)+'">'+fr(V.pc, 1)+' %</b>' : '')+'</span><span class="sp"></span><button class="btn sm" data-trhome>Tous les devis</button><button class="btn sm g" data-trnew>Nouveau devis</button></div>' : '';
   var h = '<section class="view trw"><div class="trw-back"><button class="lnk" data-trhome>← Tous les devis transport</button>'+(trIn().tid ? '<b class="small">'+esc(trIn().tnum || '')+'</b><span class="pill">'+esc(TRST[trIn().tstatus] || '')+'</span>' : '')+'</div>'+ban+trStepper();
-  h += s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn();
+  var RO = ST.trRO && trLocked(trIn().tstatus);
+  if (RO){ var R0 = ST.trRef || {}, st = trIn().tstatus, old = R0.id && !R0.inp;
+    h += '<div class="panel pb trro-b"><div><b>'+esc(TRST[st])+' · lecture seule</b><span class="small muted">'+(st === 'facture' ? 'Un devis facturé n\'est plus modifiable'+(isAdmin() ? ' (administrateur : repasser en Validé depuis la liste)' : '')+'.' : st === 'annule' ? 'Devis annulé.' : 'Pour le modifier, il repasse en brouillon et devra être validé de nouveau.')+'</span>'+
+      (R0.total ? '<span class="small">Montants enregistrés : vente '+eur(R0.total)+(R0.buyPrice ? ' · achat '+eur(R0.buyPrice)+(R0.buyCarrier ? ' ('+esc(R0.buyCarrier)+')' : '') : '')+(R0.margePct !== undefined && R0.margePct !== null ? ' · marge <span class="mgp '+mgClass(R0.margePct)+'">'+fr(R0.margePct, 1)+' %</span>' : '')+'</span>' : '')+
+      (old ? '<span class="small neg">Devis antérieur au parcours en 6 étapes : colis et chargement non enregistrés ; les écrans recalculent avec les grilles actuelles.</span>' : '')+'</div>'+
+      '<div class="row">'+(trCand() ? '<button class="btn sm" data-trpdf>PDF</button>' : '')+(role() === 'lecture' ? '' : st === 'valide' ? '<button class="btn sm pri" data-trunlock>Modifier (repasser en brouillon)</button>' : st === 'annule' ? '<button class="btn sm" data-trunlock>Réactiver en brouillon</button>' : '')+'</div></div>'; }
+  h += '<div class="'+(RO ? 'trro' : '')+'">'+(s === 'dem' ? trForm('wiz') : s === 'col' ? vTrCol() : s === 'chg' ? vTrChg() : s === 'ven' ? vTrVen() : s === 'ach' ? vTrAch() : vTrSyn())+'</div>';
   return h + trNav() + '</section>'; }
 function vTrCol(){ var IT = trItems(), cell = function(i, k, v, w, t){ return '<td><input class="tri" data-tri="'+i+'|'+k+'" value="'+esc(v === undefined || v === null ? '' : v)+'"'+(t === 'n' ? ' inputmode="decimal"' : '')+' style="width:'+w+'" aria-label="'+k+'"></td>'; };
   var h = '<div class="panel"><div class="ph"><h2>Colis à charger</h2><span class="muted small">Dimensions en mm, poids en kg par colis</span><div class="sp"><button class="btn sm" data-trpal>+ Palette Europe</button><button class="btn sm" data-tradd>+ Ligne</button>'+(IT.length ? '<button class="btn sm g" data-trclear>Vider</button>' : '')+'</div></div>'+
@@ -5268,7 +5275,7 @@ function vTrSyn(){ var D = trSynData(), I = D.I, cls = mgClass(D.pc), T = trTot(
     '<tr><th>Colis</th><td>'+T.n+' colis · '+fr(T.kg, 0)+' kg · '+fr(T.m3, 2)+' m³</td></tr>'+
     '<tr><th>Camion(s)</th><td>'+esc(trWhat(D.cd))+'</td></tr>'+
     '<tr><th>Transporteur</th><td>'+(D.P ? esc(D.P.x.carrier)+' · '+eur(D.P.x.price)+' HT' : '—')+'</td></tr>'+(I.obs ? '<tr><th>Observation</th><td>'+esc(I.obs)+'</td></tr>' : '')+'</tbody></table>';
-  h += '<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-trpdf'+(TRW.busy ? ' disabled' : '')+'>'+(TRW.busy ? 'Préparation du PDF…' : 'Télécharger le PDF de synthèse')+'</button><span class="small muted">à joindre au bon de commande (PO) dans Odoo</span><span class="sp"></span><button class="btn pri" data-a="addTr"'+(role() === 'lecture' || D.sell === null ? ' disabled' : '')+'>Valider le transport</button></div>';
+  h += '<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" data-trpdf'+(TRW.busy ? ' disabled' : '')+'>'+(TRW.busy ? 'Préparation du PDF…' : 'Télécharger le PDF de synthèse')+'</button><span class="small muted">à joindre au bon de commande (PO) dans Odoo</span><span class="sp"></span>'+(ST.trRO && trLocked(I.tstatus) ? '' : '<button class="btn pri" data-a="addTr"'+(role() === 'lecture' || D.sell === null ? ' disabled' : '')+'>'+(I.tid ? 'Valider de nouveau' : 'Valider le transport')+'</button>')+'</div>';
   return h + '</div></div>'; }
 /* ---- vue 3D (three.js, chargé à la demande) ---- */
 var TR3 = { lib:null, rd:null, scn:null, cam:null, ctl:null, grp:null, raf:0, el:null, cd:null, k:0, meshes:[], drag:null, keep:null };
@@ -5355,7 +5362,8 @@ function tr3Commit(b, x, y, z, l, w, f){ var cd = TR3.cd, I = trIn(), k = TR3.k,
   I.pos.mv[k+':'+K.b.indexOf(b)] = { x:x, y:y, z:z, l:l, w:w }; cd.manSig = JSON.stringify(I.pos.mv); cd.S[k] = trKStats(cd.c, K);
   TR3.keep = { p:TR3.cam.position.clone(), t:TR3.ctl.target.clone(), up:TR3.cam.up.clone(), fov:TR3.cam.fov }; render(); }
 function tr3Bind(dom){
-  dom.addEventListener('pointerdown', function(e){ if (!TR3.cd || e.button > 0) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return;
+  var ro = function(){ return ST.module === 'trp' && ST.trRO && trLocked((ST.trIn || {}).tstatus); };
+  dom.addEventListener('pointerdown', function(e){ if (!TR3.cd || e.button > 0 || ro()) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return;
     var K = TR3.cd.R.C[TR3.k], b = K.b[hit.object.userData.i], T = TR3.lib.T, m = 1 / 1000; if (!b) return;
     e.stopImmediatePropagation(); e.preventDefault();
     if (K.b.some(function(o){ return o !== b && Math.abs(o.z - (b.z + b.h)) <= 1 && o.x < b.x + b.l - 1 && b.x < o.x + o.l - 1 && o.y < b.y + b.w - 1 && b.y < o.y + o.w - 1; })){ toast('Déplacer d\'abord les colis posés sur '+b.u.name); return; }
@@ -5375,7 +5383,7 @@ function tr3Bind(dom){
     if (D.f && D.f.ok){ tr3Commit(b, D.x, D.y, D.f.z, b.l, b.w, D.f); return; }
     D.me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); toast('Déplacement impossible : '+((D.f && D.f.why) || 'position invalide')); };
   dom.addEventListener('pointerup', up); dom.addEventListener('pointercancel', up);
-  dom.addEventListener('dblclick', function(e){ if (!TR3.cd) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return; var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = K.b[hit.object.userData.i];
+  dom.addEventListener('dblclick', function(e){ if (!TR3.cd || ro()) return; var hit = tr3Ray(e).intersectObjects(TR3.meshes, false)[0]; if (!hit) return; var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = K.b[hit.object.userData.i];
     if (!b.u.rot){ toast('Rotation non autorisée pour '+b.u.name); return; }
     var x = Math.min(b.x, c.L - b.w), y = Math.min(b.y, c.W - b.l), f = tr3Fit(c, K, b, x, y, b.w, b.l);
     if (!f.ok){ toast('Rotation impossible : '+f.why); return; } tr3Commit(b, x, y, f.z, b.w, b.l, f); }); }
@@ -5604,8 +5612,8 @@ function trOpen(id){ var t = (ST.transports || []).filter(function(x){ return x.
     vt:((t.camions || [])[0] || {}).type || '' };
   if (!t.inp && t.otis === false && t.total) I.sellMan = String(t.total);
   I.tid = t.id; I.tnum = trId(t); I.tstatus = t.status || 'valide'; if (ST.cfg.agencies[I.ag]){ ST.ent = I.ag; ST.parAg = I.ag; }
-  ST.trIn = I; ST.trPick = t.pick || null; ST.trDone = null; TRW.cache = null; TRW.k = 0; ST.trLand = false;
-  ST.trStep = t.step || ((t.colis || []).length ? 'syn' : 'dem'); render(); window.scrollTo(0, 0); }
+  ST.trIn = I; ST.trPick = t.pick || null; ST.trDone = null; TRW.cache = null; TRW.k = 0; ST.trLand = false; ST.trRO = trLocked(I.tstatus); ST.trRef = t;
+  ST.trStep = ST.trRO ? 'syn' : (t.step || ((t.colis || []).length ? 'syn' : 'dem')); render(); window.scrollTo(0, 0); }
 function vTrLand(){ var L = ST.transports, cur = ST.trIn && ((ST.trIn.items || []).length || ST.trIn.tid);
   var h = '<section class="view"><div class="trl-top"><button class="btn pri trl-new" data-trnew2><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouveau devis transport</button>'+
     (cur ? '<button class="btn trl-cont" data-trcont>Continuer le devis en cours<span class="small muted">'+esc([trClient(ST.trIn), ST.trIn.ville, (ST.trIn.items || []).length+' ligne(s) de colis'].filter(Boolean).join(' · '))+'</span></button>' : '')+'</div>';
@@ -5624,17 +5632,19 @@ function vTrLand(){ var L = ST.transports, cur = ST.trIn && ((ST.trIn.items || [
   h += '<div class="tw"><table class="chl trlt"><thead><tr>'+TRL_COLS.map(function(c){ var on = F.s === c[0]; return '<th'+(c[3] ? ' class="n"' : '')+' aria-sort="'+(on ? (F.d > 0 ? 'ascending' : 'descending') : 'none')+'"><button class="lnk chs'+(on ? ' on' : '')+'" data-trls="'+c[0]+'">'+c[1]+(on ? (F.d > 0 ? ' ▲' : ' ▼') : '')+'</button></th>'; }).join('')+'<th></th></tr></thead><tbody>'+
     (R.length ? R.map(function(t){ var pc = t.margePct, ask = ST.trDelAsk === t.id;
       return '<tr data-tropen="'+esc(t.id)+'" class="'+(t.status === 'annule' ? 'excl' : '')+'" style="cursor:pointer"><td class="nowr"><b>'+esc(trId(t))+'</b></td>'+
-        '<td>'+(role() === 'lecture' ? '<span class="pill">'+esc(TRST[t.status] || t.status || '—')+'</span>' : '<select data-trs="'+esc(t.id)+'" aria-label="Statut">'+Object.keys(TRST).map(function(k){ return '<option value="'+k+'"'+(t.status === k ? ' selected' : '')+'>'+TRST[k]+'</option>'; }).join('')+'</select>')+'</td>'+
+        '<td>'+(role() === 'lecture' ? '<span class="pill">'+esc(TRST[t.status] || t.status || '—')+'</span>' : '<select data-trs="'+esc(t.id)+'" aria-label="Statut"'+(trNext(t.status).length < 2 ? ' disabled' : '')+'>'+trNext(t.status).map(function(k){ return '<option value="'+k+'"'+(t.status === k ? ' selected' : '')+'>'+TRST[k]+'</option>'; }).join('')+'</select>')+'</td>'+
+        '<td class="small nowr">'+(t.status === 'brouillon' ? (function(e){ return e.i+'/'+e.n+' · '+esc(e.l); })(trEtape(t)) : '—')+'</td>'+
         '<td class="nowr">'+(t.date ? E.frDate(t.date) : '—')+'</td><td>'+esc(t.agLabel || agLabel(t.ag))+'</td><td>'+esc(t.cm || '—')+'</td><td class="nowr">'+esc(t.cmd || '—')+'</td><td>'+esc([t.cp, t.ville].filter(Boolean).join(' ') || '—')+'</td><td>'+esc(t.veh || '—')+'</td>'+
         '<td class="n nowr">'+(t.total ? n2(t.total)+' <button class="trpi" data-trprice="'+esc(t.id)+'" title="Détail du prix" aria-label="Détail du prix">i</button>' : '—')+'</td><td>'+esc(t.buyCarrier || '—')+'</td><td class="n">'+(t.buyPrice ? n2(t.buyPrice) : '—')+'</td>'+
         '<td class="n'+(t.marge < 0 ? ' neg' : '')+'">'+(t.marge !== undefined && t.marge !== null ? n2(t.marge) : '—')+'</td><td class="n">'+(pc !== undefined && pc !== null ? '<span class="mgp '+mgClass(pc)+'">'+fr(pc, 1)+' %</span>' : '—')+'</td>'+
         '<td class="small nowr">'+(t.createdAt ? dt(t.createdAt) : '—')+'<br><span class="muted">'+esc(t.createdBy || '')+'</span></td><td class="small nowr">'+(t.updatedAt ? dt(t.updatedAt)+'<br><span class="muted">'+esc(t.updatedBy || '')+'</span>' : '—')+'</td>'+
         '<td class="nowr"><button class="btn sm" data-tropen="'+esc(t.id)+'">Reprendre</button>'+(isAdmin() ? ' <button class="btn sm '+(ask ? 'pri' : 'g')+'" data-trdel2="'+esc(t.id)+'">'+(ask ? 'Confirmer' : 'Supprimer')+'</button>' : '')+'</td></tr>'; }).join('')+
-      '<tr class="tot"><td colspan="8">Total validés et facturés</td><td class="n">'+n2(sv)+'</td><td></td><td class="n">'+n2(sum(act, 'buyPrice'))+'</td><td class="n">'+n2(sm)+'</td><td class="n">'+(sv ? '<span class="mgp '+mgClass(sm / sv * 100)+'">'+fr(sm / sv * 100, 1)+' %</span>' : '')+'</td><td colspan="3"></td></tr>'
-      : '<tr><td colspan="16" class="empty">'+(L.length ? 'Aucun devis ne correspond aux filtres.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
+      '<tr class="tot"><td colspan="9">Total validés et facturés</td><td class="n">'+n2(sv)+'</td><td></td><td class="n">'+n2(sum(act, 'buyPrice'))+'</td><td class="n">'+n2(sm)+'</td><td class="n">'+(sv ? '<span class="mgp '+mgClass(sm / sv * 100)+'">'+fr(sm / sv * 100, 1)+' %</span>' : '')+'</td><td colspan="3"></td></tr>'
+      : '<tr><td colspan="17" class="empty">'+(L.length ? 'Aucun devis ne correspond aux filtres.' : 'Aucun devis enregistré.')+'</td></tr>')+'</tbody></table></div></div></section>';
   return h; }
-var TRL_COLS = [['id','ID',function(t){ return trId(t); }],['st','Statut',function(t){ return Object.keys(TRST).indexOf(t.status); }],['date','Livraison',function(t){ return t.date || ''; }],['ent','Entité / client',function(t){ return t.agLabel || ''; }],['cm','Contremaître'],['cmd','Appareil'],['lieu','Lieu',function(t){ return (t.cp || '')+' '+(t.ville || ''); }],['veh','Véhicule'],
+var TRL_COLS = [['id','ID',function(t){ return trId(t); }],['st','Statut',function(t){ return Object.keys(TRST).indexOf(t.status); }],['etp','Étape',function(t){ return t.status === 'brouillon' ? trEtape(t).i : 99; }],['date','Livraison',function(t){ return t.date || ''; }],['ent','Entité / client',function(t){ return t.agLabel || ''; }],['cm','Contremaître'],['cmd','Appareil'],['lieu','Lieu',function(t){ return (t.cp || '')+' '+(t.ville || ''); }],['veh','Véhicule'],
   ['sell','Vente HT',function(t){ return +t.total || 0; },1],['car','Transporteur',function(t){ return t.buyCarrier || ''; }],['buy','Achat HT',function(t){ return +t.buyPrice || 0; },1],['mg','Marge',function(t){ return +t.marge || 0; },1],['pc','Taux de marge',function(t){ return t.margePct === null || t.margePct === undefined ? -1e9 : +t.margePct; },1],['crt','Créé le',function(t){ return t.createdAt || ''; }],['upd','Modifié le',function(t){ return t.updatedAt || t.createdAt || ''; }]];
+function trEtape(t){ var S = t.otis === false || t.ext ? TR_STEPS.filter(function(x){ return x[0] !== 'ven'; }) : TR_STEPS, i = S.map(function(x){ return x[0]; }).indexOf(t.step || 'dem'); if (i < 0) i = 0; return { i:i + 1, n:S.length, l:S[i][1] }; }
 function trLandRows(){ var F = ST.trLF || {}, q = GRP.norm(F.q || ''), L = (ST.transports || []).filter(function(t){
     if (F.st && t.status !== F.st) return false; if (F.ent && (t.agLabel || agLabel(t.ag)) !== F.ent) return false; if (F.car && t.buyCarrier !== F.car) return false; if (F.m && (t.date || '').slice(0, 7) !== F.m) return false; if (F.by && t.createdBy !== F.by) return false;
     return !q || [trId(t), t.agLabel, t.client, t.cm, t.cmd, t.ville, t.cp, t.veh, t.buyCarrier, t.createdBy, TRST[t.status]].some(function(v){ return GRP.norm(v || '').indexOf(q) >= 0; }); });
@@ -5659,7 +5669,7 @@ function trPriceOpen(id){ var t = (ST.transports || []).filter(function(x){ retu
   box.hidden = false; document.body.classList.add('noscroll'); var b = box.querySelector('[data-buyinfoclose]'); if (b) b.focus(); }
 /* ---- validation ---- */
 function validateTransport(){ if (role() === 'lecture') return; var X = trDoc(), D = X.D, I = D.I, t = X.t; if (!D.cd || D.sell === null){ toast('Prix de vente à établir avant validation'); return; } if (!I.date){ toast('Renseigner la date de livraison'); ST.trStep = 'dem'; render(); return; }
-  t.status = 'valide'; trSaveDoc(t).then(function(){ ST.trDone = { at:new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }), total:t.total, buy:t.buyPrice, carrier:t.buyCarrier, pc:t.margePct };
+  t.status = 'valide'; trSaveDoc(t).then(function(){ ST.trRO = true; ST.trRef = t; ST.trDone = { at:new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }), total:t.total, buy:t.buyPrice, carrier:t.buyCarrier, pc:t.margePct };
     window.scrollTo(0, 0); toast('Transport validé : '+eur(t.total)+' HT'); render(); }, function(e){ toast('Validation impossible : '+e.message); }); }
 
 function vDevis(){ var V = ST.trDone;
@@ -6689,6 +6699,9 @@ function vEntTrp(a){
 function trCalc(){ calcTransport(); calcBuy(); calcSyn(); }
 function loadTransports(){ return STORE.listTransports().then(function(L){ ST.transports = L; if (ST.module !== 'log') render(); }, function(e){ toast('Historique inaccessible : '+e.message); }); }
 var TRST = { brouillon:'Brouillon', valide:'Validé', facture:'Facturé', annule:'Annulé' };
+/* cycle verrouillé : « Validé » uniquement via la synthèse ; transitions autorisées depuis la liste */
+function trNext(st){ var M = { brouillon:['brouillon', 'annule'], valide:['valide', 'facture', 'annule'], facture:isAdmin() ? ['facture', 'valide'] : ['facture'], annule:['annule', 'brouillon'] }; return M[st] || [st || 'brouillon']; }
+function trLocked(st){ return st === 'valide' || st === 'facture' || st === 'annule'; }
 function vTrHistory(){
   if (!ST.transports){ loadTransports(); return '<section class="view"><div class="panel empty">Chargement…</div></section>'; }
   var L = ST.transports, months = uniqA(L.map(function(t){ return (t.date||'').slice(0,7); }).filter(Boolean)).sort().reverse();
@@ -6875,8 +6888,10 @@ document.addEventListener('click', function(e){
   if (d.savgo !== undefined){ ST.ent = null; ST.gearOpen = false; ST.module = 'sav'; if (d.savgo === 'adv') SAV.tab = 'adv'; else if (d.savgo === 'quiz'){ if (!SAV.list) savLoad().then(function(){ qzStart(SAV.set); render(); }); else qzStart(SAV.set); } render(); window.scrollTo(0,0); return; }
   if (d.svset){ if (SAV.mode === 'quiz' && SAV.tab === 'q') qzCapture(); SAV.tab = 'q'; if (SAV.mode === 'quiz') qzStart(d.svset); else SAV.set = d.svset; render(); return; }
   if (d.trstep){ if (t.disabled) return; if ($('tform')) trSave(); ST.trStep = d.trstep; render(); window.scrollTo(0, 0); return; }
-  if (d.trnew2 !== undefined){ ST.trIn = null; ST.trLand = false; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); return; }
+  if (d.trnew2 !== undefined){ ST.trRO = false; ST.trRef = null; ST.trIn = null; ST.trLand = false; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); window.scrollTo(0, 0); return; }
   if (d.trcont !== undefined){ ST.trLand = false; render(); window.scrollTo(0, 0); return; }
+  if (ST.module === 'trp' && ST.trRO && trLocked((ST.trIn || {}).tstatus) && (d.trpal !== undefined || d.tradd !== undefined || d.trcdel !== undefined || d.trclear !== undefined || d.trall || d.trveh || d.trpick || d.trsk || d.tr3reset !== undefined || d.trdraft !== undefined || d.a === 'addTr' )){ toast('Devis en lecture seule : cliquer sur « Modifier » pour le reprendre'); return; }
+  if (d.trunlock !== undefined){ var IU = trIn(), wasA = IU.tstatus === 'annule'; STORE.updateTransport(IU.tid, { status:'brouillon' }).then(function(){ IU.tstatus = 'brouillon'; ST.trRO = false; ST.trDone = null; if (ST.trRef) ST.trRef.status = 'brouillon'; ST.transports = null; loadTransports(); toast(wasA ? 'Devis réactivé en brouillon' : 'Devis repassé en brouillon : à valider de nouveau'); render(); }, function(er){ toast('Impossible : '+er.message); }); return; }
   if (d.tropen){ if (e.target.closest && e.target.closest('select')) return; trOpen(d.tropen); return; }
   if (d.trhome !== undefined){ if ($('tform')) trSave(); ST.trLand = true; ST.trDone = null; render(); window.scrollTo(0, 0); return; }
   if (d.trprice){ trPriceOpen(d.trprice); return; }
@@ -6884,7 +6899,7 @@ document.addEventListener('click', function(e){
   if (d.trlfx !== undefined){ ST.trLF = { q:'', st:'', ent:'', car:'', m:'', by:'', s:ST.trLF.s, d:ST.trLF.d }; render(); return; }
   if (d.trdel2 && isAdmin()){ if (ST.trDelAsk !== d.trdel2){ ST.trDelAsk = d.trdel2; render(); return; } var dd = d.trdel2; ST.trDelAsk = null; STORE.deleteTransport(dd).then(function(){ if (ST.trIn && ST.trIn.tid === dd){ ST.trIn.tid = null; ST.trIn.tstatus = null; } toast('Devis supprimé'); loadTransports(); }, function(er){ toast('Suppression impossible : '+er.message); }); return; }
   if (d.trdraft !== undefined){ trDraft(); return; }
-  if (d.trnew !== undefined){ ST.trLand = false; ST.trIn = null; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); return; }
+  if (d.trnew !== undefined){ ST.trRO = false; ST.trRef = null; ST.trLand = false; ST.trIn = null; ST.trStep = 'dem'; ST.trDone = null; ST.trPick = null; TRW.cache = null; TRW.k = 0; render(); return; }
   if (d.trpal !== undefined){ trItems().push({ name:'Palette Europe', L:1200, W:800, H:1200, kg:300, qty:1, stack:false, rot:true }); render(); return; }
   if (d.tradd !== undefined){ trItems().push({ name:'', L:'', W:'', H:'', kg:'', qty:1, stack:false, rot:true }); render(); var nl = document.querySelectorAll('[data-tri$="|name"]'); if (nl.length) nl[nl.length - 1].focus(); return; }
   if (d.trcdel !== undefined){ trItems().splice(+d.trcdel, 1); render(); return; }
@@ -7156,7 +7171,7 @@ document.addEventListener('change', function(e){
   if (t.id === 'persel'){ selectMonth(ST.ag, t.value); return; }
   if (t.id === 'parsel'){ ST.parAg = t.value; render(); return; }
   if (t.id === 'trf_m' || t.id === 'trf_a'){ ST.trF = { month:$('trf_m').value, ag:$('trf_a').value }; render(); return; }
-  if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
+  if (d.trs){ var tr = (ST.transports||[]).filter(function(x){ return x.id === d.trs; })[0]; if (tr && trNext(tr.status).indexOf(t.value) < 0){ t.value = tr.status; toast('Changement de statut non autorisé'); return; } if (tr){ tr.status = t.value; STORE.updateTransport(d.trs, { status:t.value }).then(function(){ toast('Statut : '+TRST[t.value]); render(); }); } return; }
   if (t.id === 'lf_type' || t.id === 'lf_q'){ ST.logF.type = $('lf_type').value; ST.logF.q = $('lf_q').value; render(); return; }
   if (d.urole){ adminAct(STORE.updateUser(d.urole, { role: t.value }), 'Rôle modifié'); return; }
   if (t.dataset.dqown !== undefined && t.type === 'checkbox'){ DQ.owners = DQ.owners.filter(function(x){ return x !== t.value; }); if (t.checked) DQ.owners.push(t.value); var fl0 = document.querySelector('#fpop .fpop-l'), st1 = fl0 ? fl0.scrollTop : 0; dqRun(); render(); fl0 = document.querySelector('#fpop .fpop-l'); if (fl0) fl0.scrollTop = st1; return; }
