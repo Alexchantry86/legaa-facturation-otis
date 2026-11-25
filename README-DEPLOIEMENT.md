@@ -107,6 +107,12 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v8.0 — Devis transport sur mobile, gerbage simplifié
+
+- Accueil Devis transport sur téléphone : compteurs Brouillons / Validés / Facturés cliquables (filtre), ligne Vente et marge, recherche, bouton Filtres repliable, tri, une carte par devis (ID, statut et étape, client, lieu et date, véhicule et transporteur, vente et taux de marge, changement de statut). L'affichage ordinateur ne change pas.
+- Étapes du devis sur une seule ligne sur téléphone.
+- Gerbage : le choix « sur 2 / 3 / 4 » est supprimé ; un colis coché Gerbable accepte jusqu'à 4 niveaux.
+
 ## v7.9 — Plan de chargement : commandes du colis sélectionné
 
 - Toucher un colis dans la vue 3D le sélectionne et affiche sous la vue : Avant, Arrière, Gauche, Droite (pas de 5 cm, 20 cm ou 1 m), Monter (sur la pile voisine la plus proche), Descendre (place libre la plus proche, plus bas) et Tourner.
