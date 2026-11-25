@@ -107,6 +107,12 @@ Remplacer les fichiers modifiés sur GitHub (Upload files → Commit). Si `fires
 - Demande de transport : 3 solutions d'achat en blocs simplifiés (rang, transporteur, prix, marge, véhicule) avec picto (i) ouvrant le détail du calcul ; tableau des solutions classé (rang 1, 2, 3…).
 - Facturer : sélecteur de période sur fond blanc.
 
+## v7.9 — Plan de chargement : commandes du colis sélectionné
+
+- Toucher un colis dans la vue 3D le sélectionne et affiche sous la vue : Avant, Arrière, Gauche, Droite (pas de 5 cm, 20 cm ou 1 m), Monter (sur la pile voisine la plus proche), Descendre (place libre la plus proche, plus bas) et Tourner.
+- Un déplacement latéral ou en longueur s'arrête au contact du colis voisin ; un refus indique la raison (colis non gerbable, gerbage maximum, appui insuffisant).
+- Le glisser à la souris ou au doigt reste disponible.
+
 ## v7.8 — Colis
 - Tableau des colis : intitulés et données centrés dans chaque colonne (nom du colis aligné à gauche).
 - Vue 3D : camions détaillés (cabine avec pare-brise, calandre, phares, rétroviseurs ; essieux jumelés, réservoir, protections latérales ; porteur caisse, plateau à ridelles, fourgon, semi-remorque avec tracteur) ; porteur grue = plateau à ridelles avec grue repliée et stabilisateurs à l'arrière.
