@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v7.8 · 25/11/2026 (Colis : colonnes centrées) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v7.8 · 25/11/2026 (Colis : colonnes centrées ; 3D : modèles de camions détaillés, grue arrière ; dépôt d'un colis sur une autre pile) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5331,39 +5331,104 @@ function tr3Label(T, txt, h){ var cv = document.createElement('canvas'), x = cv.
   x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(0, 0, w, cv.height); x.strokeStyle = '#0F2238'; x.lineWidth = 3; x.strokeRect(1.5, 1.5, w - 3, cv.height - 3); x.fillStyle = '#0F2238'; x.textBaseline = 'middle'; x.fillText(txt, 14, cv.height / 2 + 2);
   var tx = new T.CanvasTexture(cv); tx.anisotropy = 4; var sp = new T.Sprite(new T.SpriteMaterial({ map:tx, depthTest:false, transparent:true })); sp.scale.set(h * w / cv.height, h, 1); sp.renderOrder = 10; return sp; }
 /* caisse, cabine, roues, portes, hayon, grue, cotes ; colis numérotés (userData.i) ; boîte englobante dans g.userData.bb */
+/* ---- modèle 3D du véhicule : châssis, cabine détaillée, essieux, carrosserie selon le type, grue arrière ----
+   repère : x = longueur (0 = avant de la caisse, cabine en x négatif), y = hauteur (0 = plancher), z = largeur */
+function tr3Truck(T, g, kind, L, W, H, t){ var ink = 0x0F2238, grue = !!(t && t.grue), open = kind === 'plateau' || grue;
+  var mat = function(col, op, em){ return new T.MeshLambertMaterial({ color:col, transparent:op !== undefined && op < 1, opacity:op === undefined ? 1 : op, depthWrite:op === undefined || op >= 1, emissive:em || 0x000000 }); };
+  var box = function(x0, x1, y0, y1, z0, z1, mt){ var me = new T.Mesh(new T.BoxGeometry(Math.abs(x1 - x0) || 0.001, Math.abs(y1 - y0) || 0.001, Math.abs(z1 - z0) || 0.001), mt); me.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); g.add(me); return me; };
+  var cyl = function(r, len, x, y, z, ax, mt, seg){ var me = new T.Mesh(new T.CylinderGeometry(r, r, len, seg || 24), mt); if (ax === 'z') me.rotation.x = Math.PI / 2; if (ax === 'x') me.rotation.z = Math.PI / 2; me.position.set(x, y, z); g.add(me); return me; };
+  var edges = function(me, col){ me.add(new T.LineSegments(new T.EdgesGeometry(me.geometry), new T.LineBasicMaterial({ color:col || ink }))); return me; };
+  var C = { cab:0xE9ECEF, cab2:0x3E5873, glass:0x1B2836, steel:0x262D36, alu:0xA7B1BC, tire:0x151719, rim:0xC9CFD6, red:0xB3261E, amber:0xF0A202, light:0xF4F1DE, crane:0xC0281F, bed:0x9AA3AD };
+  var van = kind === 'van', semi = kind === 'semi';
+  var wr = van ? 0.34 : 0.5, chTop = -0.1, chBot = -0.36, gy = chBot - wr * 0.55 - wr; /* gy = sol */
+  /* plancher */
+  edges(box(0, L, -0.1, 0, 0, W, mat(open ? C.bed : 0xB4BEC9)), 0x5B6672);
+  /* roue : pneu, jante, moyeu ; garde-boue */
+  var wheel = function(x, twin){ [0.16, W - 0.16].forEach(function(z){ var zo = z < W / 2 ? -1 : 1;
+      cyl(wr, twin ? 0.42 : 0.3, x, gy + wr, z, 'z', mat(C.tire), 28); cyl(wr * 0.62, (twin ? 0.42 : 0.3) + 0.01, x, gy + wr, z, 'z', mat(C.rim), 20); cyl(wr * 0.22, (twin ? 0.42 : 0.3) + 0.03, x, gy + wr, z, 'z', mat(0x5C6670), 12);
+      box(x - wr * 1.1, x + wr * 1.1, gy + wr * 2.05, gy + wr * 2.12, z - 0.2, z + 0.2, mat(C.steel)); }); };
+  /* cabine type poids lourd : caisse de cabine, pare-brise, vitres, calandre, phares, pare-chocs, rétroviseurs, marchepieds */
+  var cab = function(x0, x1, top){ var y0 = gy + wr * 1.15, cm = mat(C.cab);
+    edges(box(x0, x1, y0, top, -0.04, W + 0.04, cm), 0x9AA3AD);
+    box(x0 + 0.25, x1 - 0.05, top, top + 0.22, 0.15, W - 0.15, cm); /* déflecteur de toit */
+    box(x0 - 0.02, x0 + 0.01, top - 1.05, top - 0.12, 0.1, W - 0.1, mat(C.glass)); /* pare-brise */
+    [-0.05, W + 0.05].forEach(function(z){ box(x0 + 0.12, x0 + (x1 - x0) * 0.62, top - 1.0, top - 0.15, z - 0.006, z + 0.006, mat(C.glass)); box(x0 + 0.1, x0 + (x1 - x0) * 0.66, y0 + 0.35, top - 1.05, z - 0.004, z + 0.004, mat(0xCDD3D9)); /* vitre, porte */
+      box(x0 - 0.28, x0 - 0.04, top - 0.95, top - 0.45, z + (z < 0 ? -0.18 : 0.1), z + (z < 0 ? -0.1 : 0.18), mat(C.steel)); box(x0 - 0.05, x0 + 0.02, top - 0.75, top - 0.7, z + (z < 0 ? -0.15 : 0), z + (z < 0 ? 0 : 0.15), mat(C.steel)); /* rétroviseur */
+      box(x0 + 0.25, x0 + 0.85, y0 - 0.25, y0 - 0.18, z + (z < 0 ? -0.08 : -0.02), z + (z < 0 ? 0.02 : 0.08), mat(C.steel)); /* marchepied */ });
+    box(x0 - 0.03, x0 + 0.01, y0 + 0.45, top - 1.15, 0.45, W - 0.45, mat(C.cab2)); /* calandre */
+    for (var k = 0; k < 4; k++) box(x0 - 0.035, x0 - 0.02, y0 + 0.55 + k * 0.14, y0 + 0.58 + k * 0.14, 0.5, W - 0.5, mat(0x8A97A5));
+    [0.12, W - 0.42].forEach(function(z){ box(x0 - 0.04, x0, y0 + 0.28, y0 + 0.42, z, z + 0.3, mat(C.light, 1, 0x555544)); }); /* phares */
+    box(x0 - 0.08, x0 + 0.02, y0 - 0.05, y0 + 0.25, -0.02, W + 0.02, mat(C.steel)); /* pare-chocs */ };
+  var tank = function(x0, x1){ cyl(0.27, x1 - x0, (x0 + x1) / 2, chBot - 0.25, -0.02, 'x', mat(C.alu), 18); }; /* réservoir */
+  var guard = function(x0, x1){ [0.02, W - 0.02].forEach(function(z){ box(x0, x1, chBot - 0.32, chBot - 0.26, z - 0.02, z + 0.02, mat(C.alu)); box(x0, x1, chBot - 0.12, chBot - 0.06, z - 0.02, z + 0.02, mat(C.alu)); }); }; /* protections latérales */
+  var rear = function(x){ box(x - 0.05, x + 0.05, chBot - 0.35, chBot - 0.2, 0.05, W - 0.05, mat(C.steel)); [0.1, W - 0.4].forEach(function(z){ box(x + 0.02, x + 0.06, chBot - 0.15, chBot, z, z + 0.3, mat(C.red, 1, 0x330000)); }); }; /* pare-chocs, feux */
+  var cx0, xEnd = L;
+  if (van){ /* fourgon : cabine intégrée, capot */
+    cx0 = -1.85; box(-0.05, L, chBot + 0.05, chTop, W * 0.25, W * 0.75, mat(C.steel));
+    edges(box(-1.85, -1.0, gy + wr * 1.0, gy + wr * 1.0 + 0.85, 0.02, W - 0.02, mat(C.cab)), 0x9AA3AD); /* capot */
+    var tc = Math.min(H, 2.0); edges(box(-1.05, -0.02, gy + wr * 1.0, tc, -0.02, W + 0.02, mat(C.cab)), 0x9AA3AD);
+    var ws = box(-1.32, -0.92, gy + wr * 1.0 + 0.85, tc - 0.1, 0.12, W - 0.12, mat(C.glass)); ws.rotation.z = -0.55; ws.position.x = -1.03; ws.scale.x = 0.08;
+    [-0.03, W + 0.03].forEach(function(z){ box(-0.95, -0.35, tc - 0.75, tc - 0.15, z - 0.005, z + 0.005, mat(C.glass)); box(-1.3, -1.05, tc - 0.75, tc - 0.6, z + (z < 0 ? -0.12 : 0.02), z + (z < 0 ? -0.02 : 0.12), mat(C.steel)); });
+    [0.12, W - 0.37].forEach(function(z){ box(-1.88, -1.84, gy + wr * 1.0 + 0.5, gy + wr * 1.0 + 0.65, z, z + 0.25, mat(C.light, 1, 0x555544)); });
+    box(-1.92, -1.82, gy + wr * 0.95, gy + wr * 0.95 + 0.25, 0, W, mat(C.steel));
+    wheel(-1.3); wheel(Math.max(0.8, L * 0.72)); rear(L);
+  } else if (semi){ /* tracteur + semi-remorque */
+    var tx0 = -5.1; cx0 = tx0;
+    box(tx0 + 0.1, 1.2, chBot, chTop - 0.15, W * 0.28, W * 0.72, mat(C.steel)); /* châssis tracteur */
+    cyl(0.55, 0.1, 0.7, chTop - 0.1, W / 2, 'y', mat(0x5C6670), 24); /* sellette */
+    cab(tx0, tx0 + 2.3, gy + 3.7); wheel(tx0 + 1.2); wheel(-0.55, true); wheel(0.8, true); tank(tx0 + 2.4, tx0 + 3.6);
+    box(0, L - 0.3, chBot, chTop, W * 0.25, W * 0.75, mat(C.steel)); /* châssis remorque */
+    [L - 1.3, L - 2.65, L - 4.0].forEach(function(x){ wheel(x, true); }); guard(1.6, L - 4.7); rear(L);
+    [3.4].forEach(function(x){ box(x - 0.05, x + 0.05, gy + 0.2, chBot, W * 0.3, W * 0.34, mat(C.steel)); box(x - 0.05, x + 0.05, gy + 0.2, chBot, W * 0.66, W * 0.7, mat(C.steel)); }); /* béquilles */
+  } else { /* porteur (caisse, plateau ou grue) */
+    var cabL = 2.25, gap = grue ? 0.15 : 0.12; cx0 = -(cabL + gap);
+    box(cx0 + 0.2, L + (grue ? 1.15 : -0.1), chBot, chTop, W * 0.26, W * 0.74, mat(C.steel)); /* longerons */
+    cab(cx0, -gap, gy + (H > 2.3 ? 3.35 : 3.1));
+    var fa = cx0 + 0.75, ra = Math.max(L * 0.6, 2.2), big = L > 6.8 || grue;
+    wheel(fa); if (grue && L > 5.5) wheel(fa + 1.45); /* 8×4 : deux essieux avant */
+    wheel(ra, true); if (big) wheel(ra + 1.35, true);
+    tank(-gap + 0.1, Math.min(ra - wr - 0.3, -gap + 1.4)); guard(Math.min(ra - wr - 0.25, -gap + 1.5), ra - wr - 0.1);
+    xEnd = grue ? L + 1.15 : L; rear(xEnd);
+  }
+  /* carrosserie */
+  var o = { x0:cx0 - 0.4, ground:gy };
+  if (open){ var rh = 0.45, rm = mat(0xD5DAE0);
+    [[-0.05, 0], [W, W + 0.05]].forEach(function(zz){ edges(box(0, L, 0, rh, zz[0], zz[1], rm), 0x7D8894); for (var x = 1.2; x < L; x += 1.2) box(x - 0.03, x + 0.03, 0, rh, zz[0] - 0.01, zz[1] + 0.01, mat(C.alu)); }); /* ridelles */
+    edges(box(-0.06, 0, 0, Math.min(H, 1.5), 0, W, mat(0x2F3842, 0.85)), 0x8A97A5); /* rehausse avant (grille) */
+    for (var gx = 0.25; gx < W; gx += 0.25) box(-0.07, -0.05, 0.05, Math.min(H, 1.5) - 0.05, gx - 0.01, gx + 0.01, mat(C.alu));
+    edges(box(L - 0.04, L, 0, rh, 0, W, rm), 0x7D8894); /* ridelle arrière */
+    var ed = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(L, H, W)), new T.LineDashedMaterial({ color:ink, dashSize:0.15, gapSize:0.1 })); ed.position.set(L / 2, H / 2, W / 2); ed.computeLineDistances(); g.add(ed); /* gabarit de chargement */
+  } else { var sh = new T.Mesh(new T.BoxGeometry(L, H, W), new T.MeshBasicMaterial({ color:0x52647A, transparent:true, opacity:.07, side:T.BackSide, depthWrite:false })); sh.position.set(L / 2, H / 2, W / 2); g.add(sh);
+    var eb = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(L, H, W)), new T.LineBasicMaterial({ color:ink })); eb.position.set(L / 2, H / 2, W / 2); g.add(eb);
+    edges(box(-0.06, 0, -0.03, H + 0.03, -0.03, W + 0.03, mat(0xDDE2E7)), 0x7D8894); /* face avant pleine */
+    box(0, L, H, H + 0.04, -0.03, 0, mat(C.alu)); box(0, L, H, H + 0.04, W, W + 0.03, mat(C.alu)); box(0, L, -0.12, -0.08, -0.03, 0, mat(C.alu)); box(0, L, -0.12, -0.08, W, W + 0.03, mat(C.alu)); /* profils */
+    box(L - 0.03, L + 0.03, -0.1, H + 0.04, -0.04, 0.02, mat(C.steel)); box(L - 0.03, L + 0.03, -0.1, H + 0.04, W - 0.02, W + 0.04, mat(C.steel)); box(L - 0.03, L + 0.03, H - 0.04, H + 0.04, 0, W, mat(C.steel)); /* cadre arrière */
+    [[-W / 2, -0.04], [W + 0.04, W * 1.5]].forEach(function(zz){ var dr = box(L + 0.03, L + 0.07, 0, H, zz[0], zz[1], mat(0xC9D0D7, 0.7)); edges(dr, 0x6B7682);
+      box(L + 0.075, L + 0.09, 0.2, H - 0.2, (zz[0] + zz[1]) / 2 - 0.02, (zz[0] + zz[1]) / 2 + 0.02, mat(C.steel)); }); /* portes ouvertes, crémones */ }
+  /* hayon (déployé) */
+  if (t && t.hayon && !grue){ edges(box(xEnd, xEnd + 1.2, -0.1, -0.03, 0.05, W - 0.05, mat(C.alu)), 0x6B7682); [0.25, W - 0.25].forEach(function(z){ box(xEnd - 0.1, xEnd + 0.05, chBot - 0.2, -0.05, z - 0.04, z + 0.04, mat(C.steel)); }); }
+  /* grue de déchargement à l'arrière : stabilisateurs, socle, colonne, bras repliés, crochet */
+  if (grue){ var cr = mat(C.crane), bk = mat(C.steel), gx0 = L + 0.08, gx1 = L + 1.05;
+    box(gx0 + 0.1, gx1 - 0.1, chBot - 0.15, chTop, -0.75, W + 0.75, bk); /* poutre de stabilisateurs */
+    [-0.7, W + 0.7].forEach(function(z){ box(gx0 + 0.35, gx1 - 0.35, gy + 0.1, chBot - 0.1, z - 0.08, z + 0.08, cr); box(gx0 + 0.25, gx1 - 0.25, gy, gy + 0.08, z - 0.2, z + 0.2, bk); }); /* vérins, patins */
+    edges(box(gx0, gx1, chTop, 0.45, 0.2, W - 0.2, cr), 0x5A1410); /* socle */
+    var cy = 0.45, ch = Math.min(Math.max(H, 1.8), 2.4) + 0.2, cz = W * 0.62;
+    edges(box(gx0 + 0.18, gx1 - 0.18, cy, ch, cz - 0.28, cz + 0.28, cr), 0x5A1410); /* colonne */
+    cyl(0.22, 0.75, (gx0 + gx1) / 2, ch - 0.25, cz, 'z', mat(0x2B2F33), 20); /* articulation */
+    var b1 = box(0, 1, 0, 1, 0, 1, cr); b1.geometry = new T.BoxGeometry(0.34, 2.2, 0.36); b1.position.set(gx0 - 0.42, ch + 0.78, cz); b1.rotation.z = 0.5; edges(b1, 0x5A1410); /* bras principal relevé vers l'avant */
+    var b2 = box(0, 1, 0, 1, 0, 1, cr); b2.geometry = new T.BoxGeometry(0.26, 2.3, 0.28); b2.position.set(gx0 - 0.25, ch + 0.62, cz - 0.36); b2.rotation.z = 0.5; edges(b2, 0x5A1410); /* bras articulé replié contre le bras principal */
+    var b3 = box(0, 1, 0, 1, 0, 1, mat(0x2B2F33)); b3.geometry = new T.BoxGeometry(0.14, 1.9, 0.16); b3.position.set(gx0 - 0.12, ch + 0.5, cz - 0.62); b3.rotation.z = 0.5; /* rallonges */
+    cyl(0.07, 0.9, gx0 - 0.15, ch + 0.2, cz + 0.27, 'y', mat(C.alu), 10); /* vérin */
+    cyl(0.025, 0.7, gx0 - 1.0, ch + 1.25, cz - 0.62, 'y', bk, 8); box(gx0 - 1.08, gx0 - 0.92, ch + 0.82, ch + 0.92, cz - 0.68, cz - 0.56, mat(C.amber)); /* crochet */
+    box(gx0 + 0.3, gx1 - 0.3, cy + 0.3, cy + 0.9, -0.08, 0.15, mat(0x3A4148)); /* poste de commande */
+    o.y1 = ch + 1.9; }
+  o.x1 = xEnd + (t && t.hayon && !grue ? 1.25 : 0) + (grue ? 0.1 : 0);
+  return o; }
 function tr3Scene(T, c, K, t){ var g = new T.Group(), m = 1 / 1000, L = c.L * m, W = c.W * m, H = c.H * m, kind = tr3Kind(t), ink = 0x0F2238, meshes = [];
   var mat = function(col, op){ return new T.MeshLambertMaterial({ color:col, transparent:op !== undefined && op < 1, opacity:op === undefined ? 1 : op, depthWrite:op === undefined || op >= 1 }); };
   var box = function(x0, x1, y0, y1, z0, z1, mt){ var me = new T.Mesh(new T.BoxGeometry(Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0)), mt); me.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); g.add(me); return me; };
   var line = function(P, col){ var G = new T.BufferGeometry().setFromPoints(P.map(function(p){ return new T.Vector3(p[0], p[1], p[2]); })); var l = new T.Line(G, new T.LineBasicMaterial({ color:col || ink })); g.add(l); return l; };
-  var wr = kind === 'van' ? 0.33 : 0.5, chY = -0.3, gy = chY - wr * 0.5 - wr, cabC = 0x47627F, glass = 0x1B2836, steel = 0x2B3440;
-  /* plancher et châssis */
-  box(0, L, -0.08, 0, 0, W, mat(0xB4BEC9));
-  var cx0 = kind === 'semi' ? -0.3 : kind === 'van' ? -1.75 : (t && t.grue ? -2.65 : -2.2);
-  box(cx0, L - 0.25, chY, -0.08, W * 0.22, W * 0.78, mat(steel));
-  /* roues (essieux) */
-  var wheel = function(x){ [0.14, W - 0.14].forEach(function(z){ var me = new T.Mesh(new T.CylinderGeometry(wr, wr, 0.28, 24), mat(0x16191D)); me.rotation.x = Math.PI / 2; me.position.set(x, gy + wr, z); g.add(me);
-    var hb = new T.Mesh(new T.CylinderGeometry(wr * 0.45, wr * 0.45, 0.3, 16), mat(0x8E99A6)); hb.rotation.x = Math.PI / 2; hb.position.copy(me.position); g.add(hb); }); };
-  if (kind === 'semi'){ [L - 1.3, L - 2.65, L - 4.0].forEach(wheel); }
-  else if (kind === 'van'){ wheel(-1.15); wheel(Math.max(0.8, L * 0.72)); }
-  else { wheel(cx0 + 0.95); wheel(L * 0.68); if (L > 6.8) wheel(L * 0.68 + 1.15); }
-  /* cabine (avant du camion = x négatif) */
-  var cab = function(x0, x1, y1){ box(x0, x1, gy + wr * 0.9, y1, -0.02, W + 0.02, mat(cabC));
-    box(x0 - 0.01, x0 + 0.02, (gy + y1) / 2 + 0.25, y1 - 0.18, 0.12, W - 0.12, mat(glass)); /* pare-brise */
-    [-0.03, W + 0.03].forEach(function(z){ box(x0 + 0.15, x0 + (x1 - x0) * 0.55, (gy + y1) / 2 + 0.25, y1 - 0.2, z - 0.005, z + 0.005, mat(glass)); }); /* vitres latérales */
-    box(x0 - 0.04, x0, gy + wr * 0.9, gy + wr * 1.6, 0.05, W - 0.05, mat(steel)); /* pare-chocs */ };
-  if (kind === 'semi'){ var tx0 = -4.9; box(tx0 + 1.9, 0.9, chY - 0.15, chY + 0.05, W * 0.2, W * 0.8, mat(steel)); cab(tx0, tx0 + 2.2, gy + 3.55); [tx0 + 1.0, -0.6, 0.55].forEach(wheel); }
-  else if (kind === 'van'){ box(-1.75, -0.95, gy + wr * 0.9, gy + 1.35, 0.02, W - 0.02, mat(cabC)); cab(-1.15, -0.04, Math.min(H, 1.9)); }
-  else cab(cx0, (t && t.grue ? -0.55 : -0.12), Math.max(1.8, Math.min(H, 2.1)));
-  /* caisse : plateau ouvert, sinon parois translucides, avant plein, portes arrière ouvertes */
-  var edgeBox = function(){ var ed = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(L, H, W)), new T.LineBasicMaterial({ color:ink })); ed.position.set(L / 2, H / 2, W / 2); g.add(ed); return ed; };
-  if (kind === 'plateau'){ box(0, L, 0, 0.25, -0.02, 0.02, mat(0x8C99A8)); box(0, L, 0, 0.25, W - 0.02, W + 0.02, mat(0x8C99A8)); box(-0.03, 0.01, 0, 1.0, 0, W, mat(0x8C99A8));
-    var ed = edgeBox(); ed.material = new T.LineDashedMaterial({ color:ink, dashSize:0.15, gapSize:0.1 }); ed.computeLineDistances(); }
-  else { var sh = new T.Mesh(new T.BoxGeometry(L, H, W), new T.MeshBasicMaterial({ color:0x52647A, transparent:true, opacity:.07, side:T.BackSide, depthWrite:false })); sh.position.set(L / 2, H / 2, W / 2); g.add(sh); edgeBox();
-    box(-0.04, 0, 0, H, 0, W, mat(0x7D8B9B, 0.55)); /* face avant */
-    box(L - 0.02, L + 0.02, H - 0.06, H, 0, W, mat(steel)); /* traverse arrière */
-    [[-W / 2, -0.03], [W + 0.03, W * 1.5]].forEach(function(zz){ var dr = box(L + 0.01, L + 0.05, 0.03, H - 0.03, zz[0], zz[1], mat(0x9AA6B3, 0.6)); dr.add(new T.LineSegments(new T.EdgesGeometry(dr.geometry), new T.LineBasicMaterial({ color:ink }))); }); /* portes arrière ouvertes à 90° */ }
-  if (t && t.hayon){ box(L, L + 1.1, -0.08, -0.02, 0.05, W - 0.05, mat(0x9AA6B3)); line([[L + 1.1, -0.02, 0.05], [L + 1.1, -0.02, W - 0.05]]); }
-  if (t && t.grue){ var gc = mat(0xC9A227); box(-0.5, -0.2, chY, H + 0.5, W * 0.35, W * 0.65, gc); box(-0.5, L * 0.6, H + 0.32, H + 0.52, W * 0.42, W * 0.58, gc); }
+  var TV = tr3Truck(T, g, kind, L, W, H, t), gy = TV.ground;
   /* cotes de la caisse */
   var sf = Math.max(0.6, Math.min(1.6, Math.max(L, W * 2.5, H * 2.5) / 7)), lh = 0.34 * sf, tk = 0.08 * sf, f2 = function(v){ return fr(v, 2)+' m'; };
   var dim = function(a, b, n, txt, lp){ line([a, b]); line([[a[0] - n[0] * tk, a[1] - n[1] * tk, a[2] - n[2] * tk], [a[0] + n[0] * tk, a[1] + n[1] * tk, a[2] + n[2] * tk]]); line([[b[0] - n[0] * tk, b[1] - n[1] * tk, b[2] - n[2] * tk], [b[0] + n[0] * tk, b[1] + n[1] * tk, b[2] + n[2] * tk]]);
@@ -5375,8 +5440,8 @@ function tr3Scene(T, c, K, t){ var g = new T.Group(), m = 1 / 1000, L = c.L * m,
   /* colis */
   K.b.forEach(function(b, i){ var geo = new T.BoxGeometry(b.l * m, b.h * m, b.w * m), me = new T.Mesh(geo, new T.MeshLambertMaterial({ color:new T.Color(TR_COL[b.u.ti % TR_COL.length]), emissive:0x000000 }));
     me.position.set((b.x + b.l / 2) * m, (b.z + b.h / 2) * m, (b.y + b.w / 2) * m); me.add(new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color:ink }))); me.userData.i = i; g.add(me); meshes.push(me); });
-  var x0 = kind === 'semi' ? -4.95 : cx0 - 0.1, x1 = L + (t && t.hayon ? 1.15 : 0) + o + lh * 3, y1 = Math.max(H + o + lh * 1.6, t && t.grue ? H + 0.6 : 0);
-  g.userData = { meshes:meshes, bb:{ x0:x0, x1:x1, y0:gy, y1:y1, z0:kind === 'plateau' ? -0.1 : -W / 2, z1:kind === 'plateau' ? W + 0.1 : W * 1.5 } };
+  var opn = kind === 'plateau' || (t && t.grue), x0 = TV.x0, x1 = Math.max(TV.x1, L + o + lh * 3), y1 = Math.max(H + o + lh * 1.6, TV.y1 || 0);
+  g.userData = { meshes:meshes, bb:{ x0:x0, x1:x1, y0:gy, y1:y1, z0:opn ? (t && t.grue ? -0.8 : -0.1) : -W / 2, z1:opn ? (t && t.grue ? W + 0.8 : W + 0.1) : W * 1.5 } };
   return g; }
 function tr3View(T, cam, ctl, bb, v, aspect){ var Lx = bb.x1 - bb.x0, Hy = bb.y1 - bb.y0, Wz = bb.z1 - bb.z0, ctr = new T.Vector3((bb.x0 + bb.x1) / 2, (bb.y0 + bb.y1) / 2, (bb.z0 + bb.z1) / 2);
   cam.fov = v === 'iso' ? 35 : 10; cam.aspect = aspect; cam.updateProjectionMatrix();
@@ -5415,9 +5480,12 @@ function tr3Bind(dom){
   dom.addEventListener('pointermove', function(e){ var D = TR3.drag; if (!D) return; if (!D.moved && Math.hypot(e.clientX - D.sx, e.clientY - D.sy) < 4) return;
     if (D.blk){ if (!D.warned){ D.warned = true; toast('Déplacer d\'abord les colis posés sur '+D.b.u.name); } return; } var pt = new TR3.lib.T.Vector3(); if (!tr3Ray(e).ray.intersectPlane(D.pl, pt)) return;
     var c = TR3.cd.c, K = TR3.cd.R.C[TR3.k], b = D.b, m = 1 / 1000, x = Math.round((pt.x / m - D.dx) / 10) * 10, y = Math.round((pt.z / m - D.dy) / 10) * 10;
+    /* pointeur au-dessus d'une autre pile : le colis est centré sur le dessus du colis visé */
+    var oth = TR3.meshes.filter(function(me){ return me !== D.me; }), hh = tr3Ray(e).intersectObjects(oth, false).filter(function(h){ return h.face && h.face.normal.y > 0.5; })[0];
+    if (hh){ x = Math.round((hh.point.x / m - b.l / 2) / 10) * 10; y = Math.round((hh.point.z / m - b.w / 2) / 10) * 10; }
     /* aimantation sur les parois et les colis voisins (60 mm) */
     var sn = function(v, C){ var bst = v, d0 = 61; C.forEach(function(q){ var d = Math.abs(q - v); if (d < d0){ d0 = d; bst = q; } }); return bst; };
-    var CX = [0, c.L - b.l], CY = [0, c.W - b.w]; K.b.forEach(function(o){ if (o === b) return; CX.push(o.x + o.l, o.x - b.l); CY.push(o.y + o.w, o.y - b.w); });
+    var CX = [0, c.L - b.l], CY = [0, c.W - b.w]; K.b.forEach(function(o){ if (o === b) return; CX.push(o.x + o.l, o.x - b.l, o.x, o.x + o.l - b.l); CY.push(o.y + o.w, o.y - b.w, o.y, o.y + o.w - b.w); });
     x = Math.max(0, Math.min(c.L - b.l, sn(x, CX))); y = Math.max(0, Math.min(c.W - b.w, sn(y, CY)));
     var f = tr3Fit(c, K, b, x, y, b.l, b.w); D.x = x; D.y = y; D.f = f; D.moved = true;
     D.me.position.set((x + b.l / 2) * m, ((f.ok ? f.z : b.z) + b.h / 2) * m, (y + b.w / 2) * m); D.me.material.emissive.setHex(f.ok ? 0x2A3B50 : 0x8A1F1F); });
