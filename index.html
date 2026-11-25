@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pilotage">
-<!-- Version : v8.0 · 25/11/2026 (Devis transport : accueil mobile en cartes, filtres repliés, tri ; gerbage simplifié : gerbable = 4 niveaux) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
+<!-- Version : v8.1 · 25/11/2026 (Gerbage : un colis gerbable n'a plus de limite de niveaux, seule la hauteur de caisse limite) — fichier unique ; seul config.js (configuration Firebase) reste séparé -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -5093,7 +5093,7 @@ function trStep(){ var s = ST.trStep || 'dem'; return trSteps().some(function(x)
 function trUnits(){ var U = [], bad = [];
   trItems().forEach(function(it, ti){ var L = trNum(it.L), W = trNum(it.W), H = trNum(it.H), kg = trNum(it.kg) || 0, q = Math.max(0, Math.round(trNum(it.qty) || 0));
     if (!(L > 0 && W > 0 && H > 0)){ if (q) bad.push(it.name || 'Colis '+(ti + 1)); return; }
-    var sn = it.stack ? 4 : 1;
+    var sn = it.stack ? 999 : 1;
     for (var k = 0; k < q; k++) U.push({ ti:ti, name:(it.name || 'Colis '+(ti + 1))+(q > 1 ? ' #'+(k + 1) : ''), L:L, W:W, H:H, kg:kg, stack:!!it.stack, sn:sn, rot:it.rot !== false, tip:!!it.tip }); });
   return { U:U, bad:bad }; }
 function trTot(){ var r = trUnits(), U = r.U; return { n:U.length, kg:U.reduce(function(s, u){ return s + u.kg; }, 0), m3:U.reduce(function(s, u){ return s + u.L * u.W * u.H / 1e9; }, 0), len:U.reduce(function(m, u){ return Math.max(m, u.L, u.W); }, 0), bad:r.bad }; }
@@ -5113,7 +5113,7 @@ function trPack(c, U0){
       if (x < -E || y < -E || x + l > c.L + E || y + w > c.W + E) return; if (K.kg + u.kg > c.P + E) return;
       var z = 0; for (var i = 0; i < K.b.length; i++){ var b = K.b[i]; if (overl(x, x + l, b.x, b.x + b.l) && overl(y, y + w, b.y, b.y + b.w)) z = Math.max(z, b.z + b.h); }
       if (z + h > c.H + E) return;
-      var lv = 1, lim = u.stack ? u.sn : 99;
+      var lv = 1, lim = u.stack ? u.sn : 999;
       if (z > E){ var a = 0; for (var j = 0; j < K.b.length; j++){ var o = K.b[j]; if (Math.abs(o.z + o.h - z) > 1) continue; var ox = Math.min(x + l, o.x + o.l) - Math.max(x, o.x), oy = Math.min(y + w, o.y + o.w) - Math.max(y, o.y); if (ox > E && oy > E){ if (!o.u.stack || o.lv + 1 > o.lim) return; lv = Math.max(lv, o.lv + 1); lim = Math.min(lim, o.lim); a += ox * oy; } } if (a < 0.75 * l * w || lv > lim) return; }
       if (!best || x < best.x - E || (Math.abs(x - best.x) <= E && (z < best.z - E || (Math.abs(z - best.z) <= E && y < best.y - E)))) best = { x:x, y:y, z:z, l:l, w:w, h:h, lv:lv, lim:lim }; };
     var O = ori(u);
@@ -5225,7 +5225,7 @@ function trGroup(){ var IT = trItems(), S = TRW.sel || {}, idx = Object.keys(S).
   if (sp[0] === 'lib'){ L = trNum(($('trgL') || {}).value); W = trNum(($('trgW') || {}).value); sh = trNum(($('trgH') || {}).value) || 0; skg = trNum(($('trgK') || {}).value) || 0; if (!(L > 0 && W > 0)){ toast('Renseigner la longueur et la largeur du support'); return; } }
   var sub = idx.map(function(i){ return IT[i]; }), U = [], bad = [];
   sub.forEach(function(it, k){ var Ld = trNum(it.L), Wd = trNum(it.W), Hd = trNum(it.H), kg = trNum(it.kg) || 0, q = Math.max(1, Math.round(trNum(it.qty) || 1)); if (!(Ld > 0 && Wd > 0 && Hd > 0)){ bad.push(it.name || 'ligne '+(idx[k] + 1)); return; }
-    for (var j = 0; j < q; j++) U.push({ ti:k, name:it.name || 'Colis', L:Ld, W:Wd, H:Hd, kg:kg, stack:!!it.stack, sn:it.stack ? 4 : 1, rot:it.rot !== false, tip:!!it.tip }); });
+    for (var j = 0; j < q; j++) U.push({ ti:k, name:it.name || 'Colis', L:Ld, W:Wd, H:Hd, kg:kg, stack:!!it.stack, sn:it.stack ? 999 : 1, rot:it.rot !== false, tip:!!it.tip }); });
   if (bad.length){ toast('Dimensions manquantes : '+bad.join(', ')); return; }
   var Hmax = 2200 - sh, R = trPack({ L:L, W:W, H:Hmax, P:1e9 }, U);
   if (R.out.length || R.C.length !== 1){ toast('Les colis ne tiennent pas sur un support '+L+' × '+W+' (hauteur chargée 2,2 m max) : choisir un support plus grand'); return; }
@@ -5457,9 +5457,9 @@ function tr3Fit(c, K, b, x, y, l, w){ var E0 = 1, ov = function(a0, a1, b0, b1){
   if (x < -E0 || y < -E0 || x + l > c.L + E0 || y + w > c.W + E0) return { ok:false, why:'hors de la caisse' };
   K.b.forEach(function(o){ if (o === b || !ov(x, x + l, o.x, o.x + o.l) || !ov(y, y + w, o.y, o.y + o.w)) return; z = Math.max(z, o.z + o.h); });
   if (z + b.h > c.H + E0) return { ok:false, why:'trop haut à cet endroit' };
-  var lv = 1, lim = b.u.stack ? b.u.sn : 99, a = 0, bad = '';
-  if (z > E0){ K.b.forEach(function(o){ if (o === b || Math.abs(o.z + o.h - z) > E0 || !ov(x, x + l, o.x, o.x + o.l) || !ov(y, y + w, o.y, o.y + o.w)) return; if (!o.u.stack) bad = o.u.name+' n\'est pas gerbable'; else if ((o.lv || 1) + 1 > (o.lim || 99)) bad = 'gerbage maximum atteint sur '+o.u.name;
-      lv = Math.max(lv, (o.lv || 1) + 1); lim = Math.min(lim, o.lim || 99); a += (Math.min(x + l, o.x + o.l) - Math.max(x, o.x)) * (Math.min(y + w, o.y + o.w) - Math.max(y, o.y)); });
+  var lv = 1, lim = b.u.stack ? (b.u.sn || 999) : 999, a = 0, bad = '';
+  if (z > E0){ K.b.forEach(function(o){ if (o === b || Math.abs(o.z + o.h - z) > E0 || !ov(x, x + l, o.x, o.x + o.l) || !ov(y, y + w, o.y, o.y + o.w)) return; if (!o.u.stack) bad = o.u.name+' n\'est pas gerbable'; else if ((o.lv || 1) + 1 > (o.lim || 999)) bad = 'gerbage maximum atteint sur '+o.u.name;
+      lv = Math.max(lv, (o.lv || 1) + 1); lim = Math.min(lim, o.lim || 999); a += (Math.min(x + l, o.x + o.l) - Math.max(x, o.x)) * (Math.min(y + w, o.y + o.w) - Math.max(y, o.y)); });
     if (bad) return { ok:false, why:bad }; if (a < 0.5 * l * w) return { ok:false, why:'appui insuffisant (moins de 50 % de la base)' }; if (lv > lim) return { ok:false, why:'gerbage maximum atteint' }; }
   return { ok:true, z:z, lv:lv, lim:lim }; }
 function tr3Ray(e){ var T = TR3.lib.T, r = TR3.rd.domElement.getBoundingClientRect(), rc = new T.Raycaster(); rc.setFromCamera(new T.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), TR3.cam); return rc; }
@@ -5536,7 +5536,7 @@ function tr3Act(a){ var cd = TR3.cd, c = cd && cd.c, K = cd && cd.R.C[TR3.k], b 
 /* fiche du colis cliqué dans la vue 3D */
 function tr3Tip(b, e){ var el = $('tr3d'), tp = el && el.querySelector('.tr3tip'); if (!el) return; if (!b){ if (tp) tp.remove(); return; }
   if (!tp){ tp = document.createElement('div'); tp.className = 'tr3tip'; el.appendChild(tp); }
-  var r = el.getBoundingClientRect(), u = b.u; tp.innerHTML = '<b>'+esc(u.name)+'</b><span>'+[b.l, b.w, b.h].join(' × ')+' mm · '+fr(u.kg, 0)+' kg</span><span>'+(u.stack ? 'gerbable (4 niveaux max.)' : 'non gerbable')+(b.tip ? ' · posé sur le côté' : b.rot ? ' · tourné' : '')+(b.z > 0 ? ' · gerbé' : '')+(b.man ? ' · déplacé' : '')+'</span><span class="muted">à '+fr(b.x / 1000, 2)+' m de l\'avant</span>';
+  var r = el.getBoundingClientRect(), u = b.u; tp.innerHTML = '<b>'+esc(u.name)+'</b><span>'+[b.l, b.w, b.h].join(' × ')+' mm · '+fr(u.kg, 0)+' kg</span><span>'+(u.stack ? 'gerbable (sans limite de niveaux, hauteur de caisse seule limite)' : 'non gerbable')+(b.tip ? ' · posé sur le côté' : b.rot ? ' · tourné' : '')+(b.z > 0 ? ' · gerbé' : '')+(b.man ? ' · déplacé' : '')+'</span><span class="muted">à '+fr(b.x / 1000, 2)+' m de l\'avant</span>';
   tp.style.left = Math.max(4, Math.min(r.width - 230, (e ? e.clientX - r.left : 20) + 12))+'px'; tp.style.top = Math.max(4, Math.min(r.height - 90, (e ? e.clientY - r.top : 20) + 12))+'px'; }
 function tr3Show(){ var el = $('tr3d'), cd = trCand(); if (!el || !cd) return; var k = Math.min(TRW.k, cd.n - 1), K = cd.R.C[k];
   tr3Lib().then(function(Lb){ var T = Lb.T; if (!document.body.contains(el)) return;
@@ -5657,7 +5657,7 @@ function chNum(x){ return x.num || 'CH-'+String(x.id || '').slice(0, 6).toUpperC
 function chNewNum(){ var d = new Date(), p = function(n){ return String(n).padStart(2, '0'); }, r = ''; for (var i = 0; i < 4; i++) r += '23456789ABCDEFGHJKMNPQRSTUVWXYZ'.charAt(Math.floor(Math.random() * 31));
   return 'CH-'+String(d.getFullYear()).slice(2)+p(d.getMonth() + 1)+p(d.getDate())+'-'+r; }
 function chSnap(){ var I = trIn(), cd = trCand(), T = trTot(), o = { pos:I.pos || null, hayon:!!I.hayon, grue:!!I.grue, vt:cd ? cd.t.code : '', veh:cd ? trWhat(cd) : '', camions:cd ? cd.n : 0, n:T.n, kg:Math.round(T.kg), m3:Math.round(T.m3 * 100) / 100,
-    items:trItems().map(function(it){ return { name:String(it.name || ''), L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty) || 1, stack:!!it.stack, sn:it.stack ? 4 : null, rot:it.rot !== false, tip:!!it.tip, src:it.src || '', grp:it.grp || null, sup:it.sup || null }; }),
+    items:trItems().map(function(it){ return { name:String(it.name || ''), L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty) || 1, stack:!!it.stack, sn:null, rot:it.rot !== false, tip:!!it.tip, src:it.src || '', grp:it.grp || null, sup:it.sup || null }; }),
     bps:(I.bps || []).map(function(b){ return { ref:b.ref || '', H:b.H || {} }; }) };
   CH_F.forEach(function(f){ o[f[0]] = String(I[f[0]] || '').trim(); }); return o; }
 function chSave(){ var I = trIn(); if (!trTot().n){ toast('Aucun colis à enregistrer'); return; }
@@ -5740,7 +5740,7 @@ function trInSnap(){ var I = clone(trIn()); delete I.tid; delete I.tstatus; dele
 function trDoc(){ var D = trSynData(), I = D.I, T = trTot(), cd = D.cd;
   var t = { po:I.po || '', ndev:I.ndev || '', date:I.date || '', ag:I.ag || '', agLabel:trClient(I), ext:!!I.ext, client:I.ext ? (I.client || '') : '', cm:I.cm || '', cmd:I.cmd || '', cp:I.cp || '', ville:I.ville || '', flux:I.flux === 'ab' ? 'ab' : 'aa', hayon:!!I.hayon, grue:!!I.grue, man:!!I.man,
     kg:Math.round(T.kg), vol:Math.round(T.m3 * 100) / 100, len:Math.round(T.len), h:+I.h || 0, km:+I.km || 0, obs:I.obs || '', otis:trOtis(), total:D.sell,
-    colis:trItems().map(function(it){ return { name:it.name || '', L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty), stack:!!it.stack, sn:it.stack ? 4 : null, rot:it.rot !== false, tip:!!it.tip }; }),
+    colis:trItems().map(function(it){ return { name:it.name || '', L:trNum(it.L), W:trNum(it.W), H:trNum(it.H), kg:trNum(it.kg), qty:trNum(it.qty), stack:!!it.stack, sn:null, rot:it.rot !== false, tip:!!it.tip }; }),
     inp:trInSnap(), pick:ST.trPick || null, step:trStep() };
   if (cd){ t.pal = cd.S.reduce(function(s, x){ return s + x.pal; }, 0); t.veh = D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.v.label; }).join(' + ') : trWhat(cd); t.zone = D.V ? D.V.zone : null;
     t.detail = D.V && D.V.ok ? D.V.rows.map(function(r){ return r.best.q.detail; }).join(' | ') : (trNum(I.sellMan) > 0 ? 'Prix de vente saisi (hors grille)' : 'Prix de vente = achat × '+fr(+I.sellK || 1.3, 2)+' (hors grille)');
@@ -7390,7 +7390,7 @@ document.addEventListener('input', function(e){
   if (e.target && /^c_(client|po|bp|bl|ref)$/.test(e.target.id)){ trIn()[e.target.id.slice(2)] = e.target.value; return; }
   if (e.target && e.target.id === 'trq'){ var rq = e.target, rp = rq.selectionStart; ST.trLF = ST.trLF || {}; ST.trLF.q = rq.value; render(); var nr = $('trq'); if (nr){ nr.focus(); try { nr.setSelectionRange(rp, rp); } catch(_){} } return; }
   if (e.target && e.target.id === 'chq'){ var cq = e.target, cp = cq.selectionStart; ST.chF.q = cq.value; render(); var nq = $('chq'); if (nq){ nq.focus(); try { nq.setSelectionRange(cp, cp); } catch(_){} } return; }
-  var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (tp[1] === 'stack') it0.sn = e.target.checked ? 4 : null; var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
+  var tri = e.target.dataset && e.target.dataset.tri; if (tri){ var tp = tri.split('|'), it0 = trItems()[+tp[0]]; if (it0){ it0[tp[1]] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (tp[1] === 'stack') it0.sn = null; var tt = $('trtot'); if (tt) tt.innerHTML = trTotHtml(); } return; }
   if (e.target.closest && e.target.closest('#tform')){ var ti = e.target.id, TI = trSave(); if (ST.trDone){ ST.trDone = null; var bn = document.querySelector('.tr-done'); if (bn) bn.remove(); }
     if (ti === 't_cp'){ TI.kmMan = false; TI.hMan = false; if (/^\d{5}$/.test(e.target.value.trim())) trGeo(true); else trGeo(false); }
     else if (ti === 't_ville'){ TI.kmMan = false; TI.hMan = false; trGeo(false); }
